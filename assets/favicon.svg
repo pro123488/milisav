@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Inmobiliaria Bosch">
-  <rect width="48" height="48" rx="12" fill="#12332d"/>
-  <path d="M9 21 24 9l15 12" fill="none" stroke="#c8a15a" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M19 25v17M19 25h6a4 4 0 0 1 0 8h-6M19 33h7a4.5 4.5 0 0 1 0 9h-7" fill="none" stroke="#fbf8f2" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect width="48" height="48" rx="13" fill="#88f061"/>
+  <path d="M9 21 24 9l15 12" fill="none" stroke="#0a1628" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M19 25v17M19 25h6a4 4 0 0 1 0 8h-6M19 33h7a4.5 4.5 0 0 1 0 9h-7" fill="none" stroke="#0a1628" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

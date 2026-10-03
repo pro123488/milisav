@@ -2,6 +2,13 @@
 (function () {
   "use strict";
 
+  /* ==========================================================
+     Valores iniciales del simulador (puedes cambiarlos aquí)
+     rate = tasa de referencia en % efectivo anual (E.A.).
+     Es solo un punto de partida: cada persona puede modificarla.
+     ========================================================== */
+  var SIM = { locale: "es-CO", currency: "COP", value: 320000000, pct: 70, years: 20, rate: 12 };
+
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
 
@@ -41,42 +48,131 @@
       toggle.focus();
     }
   });
-  window.matchMedia("(min-width: 960px)").addEventListener("change", function (e) {
+  window.matchMedia("(min-width: 1024px)").addEventListener("change", function (e) {
     if (e.matches) setMenu(false);
   });
-
-  /* ---------- Animaciones de entrada ---------- */
-  var reveals = $$(".reveal");
-  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if ("IntersectionObserver" in window && !reduce) {
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("is-visible");
-          io.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
-    reveals.forEach(function (el, i) {
-      el.style.transitionDelay = (i % 4) * 70 + "ms";
-      io.observe(el);
-    });
-  } else {
-    reveals.forEach(function (el) { el.classList.add("is-visible"); });
-  }
 
   /* ---------- Año del pie ---------- */
   var year = $("#year");
   if (year) year.textContent = new Date().getFullYear();
 
+  /* ---------- Simulador de cuota ---------- */
+  var elValue = $("#s-value");
+  var elPct = $("#s-pct");
+  var elTerm = $("#s-term");
+  var elRate = $("#s-rate");
+  var outPct = $("#s-pct-out");
+  var outTerm = $("#s-term-out");
+  var outPay = $("#s-payment");
+  var outLoan = $("#s-loan");
+  var outDown = $("#s-down");
+  var simCta = $("#sim-cta");
+
+  var fmtMoney = new Intl.NumberFormat(SIM.locale, { style: "currency", currency: SIM.currency, maximumFractionDigits: 0 });
+  var fmtNumber = new Intl.NumberFormat(SIM.locale, { maximumFractionDigits: 0 });
+  var simCtaDefault = simCta.getAttribute("href");
+
+  // Cuota fija mensual (sistema francés) con tasa efectiva anual convertida a mensual.
+  function monthlyPayment(principal, years, effectiveAnnualPct) {
+    var n = years * 12;
+    var i = Math.pow(1 + effectiveAnnualPct / 100, 1 / 12) - 1;
+    if (i <= 0) return principal / n;
+    return (principal * i) / (1 - Math.pow(1 + i, -n));
+  }
+
+  function paintRange(input) {
+    var min = Number(input.min), max = Number(input.max);
+    input.style.setProperty("--fill", ((Number(input.value) - min) / (max - min)) * 100 + "%");
+  }
+
+  function readValue() {
+    return Number((elValue.value || "").replace(/\D/g, "")) || 0;
+  }
+
+  function updateSim() {
+    var value = readValue();
+    var pct = Number(elPct.value);
+    var years = Number(elTerm.value);
+    var rate = parseFloat(String(elRate.value).replace(",", "."));
+    var rateOk = isFinite(rate) && rate >= 0;
+    if (rateOk) rate = Math.min(rate, 60);
+
+    outPct.textContent = pct + "%";
+    outTerm.textContent = years + " años (" + years * 12 + " meses)";
+    paintRange(elPct);
+    paintRange(elTerm);
+
+    if (!value || !rateOk) {
+      outPay.textContent = "—";
+      outLoan.textContent = "—";
+      outDown.textContent = "—";
+      simCta.setAttribute("href", simCtaDefault);
+      return;
+    }
+
+    var loan = Math.round(value * pct / 100);
+    var down = value - loan;
+    var pay = Math.round(monthlyPayment(loan, years, rate));
+
+    outPay.textContent = fmtMoney.format(pay);
+    outLoan.textContent = fmtMoney.format(loan);
+    outDown.textContent = fmtMoney.format(down);
+
+    simCta.setAttribute("href", waUrl(
+      "Hola Mily, hice una simulación en tu página: inmueble de " + fmtMoney.format(value) +
+      ", financiando el " + pct + "% (" + fmtMoney.format(loan) + ") a " + years + " años (" + years * 12 +
+      " meses), tasa de referencia " + rate + "% E.A. Cuota estimada: " + fmtMoney.format(pay) +
+      ". Quiero asesoría."
+    ));
+  }
+
+  elValue.value = fmtNumber.format(SIM.value);
+  elPct.value = SIM.pct;
+  elTerm.value = SIM.years;
+  elRate.value = SIM.rate;
+
+  elValue.addEventListener("input", function () {
+    var digits = elValue.value.replace(/\D/g, "").slice(0, 12);
+    elValue.value = digits ? fmtNumber.format(Number(digits)) : "";
+    updateSim();
+  });
+  [elPct, elTerm, elRate].forEach(function (input) {
+    input.addEventListener("input", updateSim);
+  });
+  updateSim();
+
+  /* ---------- Animaciones de entrada ---------- */
+  function setupReveal() {
+    var reveals = $$(".reveal:not(.is-visible)");
+    var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if ("IntersectionObserver" in window && !reduce) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
+      reveals.forEach(function (el, i) {
+        el.style.transitionDelay = (i % 4) * 70 + "ms";
+        io.observe(el);
+      });
+    } else {
+      reveals.forEach(function (el) { el.classList.add("is-visible"); });
+    }
+  }
+
   /* ---------- Formulario → WhatsApp ---------- */
   var form = $("#contact-form");
   var nameInput = $("#f-name");
   var nameError = $("#f-name-error");
+  var phoneInput = $("#f-phone");
+  var cityInput = $("#f-city");
   var interest = $("#f-interest");
   var message = $("#f-message");
 
-  // Los botones "Quiero comprar / vender…" preseleccionan el interés del formulario.
+  // Los botones "Consultar…" preseleccionan el interés del formulario.
   $$("[data-interest]").forEach(function (el) {
     el.addEventListener("click", function () {
       var value = el.getAttribute("data-interest");
@@ -99,9 +195,12 @@
     nameInput.removeAttribute("aria-invalid");
     nameError.textContent = "";
 
-    var text = "Hola Mily, soy " + name + ". Me interesa: " + interest.value + ".";
+    var city = cityInput.value.trim();
+    var phone = phoneInput.value.trim();
+    var text = "Hola Mily, soy " + name + (city ? " de " + city : "") + ". Me interesa: " + interest.value + ".";
     var extra = message.value.trim();
     if (extra) text += "\n\n" + extra;
+    if (phone) text += "\n\nMi teléfono: " + phone;
 
     var url = waUrl(text);
     var win = window.open(url, "_blank", "noopener");
@@ -114,12 +213,7 @@
     }
   });
 
-  /* ---------- Propiedades ---------- */
-  var list = $("#prop-list");
-  var filtersBox = $("#prop-filters");
-  var emptyBox = $("#prop-empty");
-  var items = Array.isArray(window.PROPIEDADES) ? window.PROPIEDADES.filter(function (p) { return p && p.titulo; }) : [];
-
+  /* ---------- Helpers de DOM ---------- */
   function svgIcon(id) {
     var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("class", "icon");
@@ -135,6 +229,13 @@
     if (text != null) node.textContent = text;
     return node;
   }
+
+  /* ---------- Propiedades ---------- */
+  var list = $("#prop-list");
+  var filtersBox = $("#prop-filters");
+  var emptyBox = $("#prop-empty");
+  var items = Array.isArray(window.PROPIEDADES) ? window.PROPIEDADES.filter(function (p) { return p && p.titulo; }) : [];
+
   function feat(icon, label) {
     var li = el("li");
     li.appendChild(svgIcon(icon));
@@ -180,7 +281,7 @@
     if (p.area) feats.appendChild(feat("i-area", p.area));
     if (feats.children.length) body.appendChild(feats);
 
-    var cta = el("a", "btn btn-primary prop-cta");
+    var cta = el("a", "btn btn-navy prop-cta");
     cta.href = waUrl("Hola Mily, me interesa esta propiedad: " + p.titulo + (p.ubicacion ? " (" + p.ubicacion + ")" : "") + ". ¿Me das más información?");
     cta.target = "_blank";
     cta.rel = "noopener";
@@ -227,4 +328,27 @@
     }
     render("Todas");
   }
+
+  /* ---------- Testimonios (solo se muestran si hay datos reales) ---------- */
+  var testis = Array.isArray(window.TESTIMONIOS) ? window.TESTIMONIOS.filter(function (t) { return t && t.texto && t.nombre; }) : [];
+  if (testis.length) {
+    var testiSection = $("#testimonios");
+    var testiList = $("#testi-list");
+    testiSection.hidden = false;
+    testis.forEach(function (t) {
+      var box = el("article", "testi reveal");
+      box.appendChild(el("blockquote", null, "“" + t.texto + "”"));
+      var who = el("div", "testi-who");
+      var initials = t.nombre.split(/\s+/).slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join("");
+      who.appendChild(el("span", "avatar", initials));
+      var info = el("div");
+      info.appendChild(el("strong", null, t.nombre));
+      if (t.detalle) info.appendChild(el("small", null, t.detalle));
+      who.appendChild(info);
+      box.appendChild(who);
+      testiList.appendChild(box);
+    });
+  }
+
+  setupReveal();
 })();
