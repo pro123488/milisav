@@ -1,0 +1,319 @@
+<!--
+  INMOBILIARIA BOSCH · Parte 08 · Propiedades
+  Cómo usarla en Google Sites: Insertar → Incorporar → pestaña "Código para insertar" → pega TODO este archivo → Siguiente → Insertar.
+  Alto recomendado del bloque: 1150 px en celular · 950 px en computador (usa el mayor para que no se corte nada).
+  Color de fondo de esta parte: #ffffff (si ves franjas a los lados, pon ese color de fondo a la sección en Google Sites).
+-->
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&family=Syne:wght@500..800&display=swap">
+
+<script>(function () { var d = document.documentElement; d.setAttribute("data-tema", "nebulosa"); d.setAttribute("data-nav", "ghost"); d.setAttribute("data-tarjetas", "soft"); d.setAttribute("data-secciones", "slant"); d.setAttribute("data-fondo", "aurora"); })();</script>
+
+<style>
+:root { --dk: #101338; --dk-2: #080a24; --dk-3: #201b55; --dk-foot: #04051a; --dk-fg: #f2f0ff; --dk-muted: #d3d1f7; --lt: #f3f2ff; --lt-card: #ffffff; --lt-fg: #12123a; --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2312123a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); --lt-muted: #54558a; --ac: #ff7ddd; --ac-hi: #ffb4ef; --ac-2: #2fe3d2; --ac-ink: #1a0828; --ac-on-dk: #ff7ddd; --ac-on-lt: #b0179a; --g1: #ffb4ef; --g2: #ff7ddd; --g3: #2fe3d2; --ac-deep-1: #901687; --ac-deep-2: #1c887e; --solid: #201b55; --solid-fg: #ff8ae6; --solid-ink: #ffffff; --solid-hover: #484474; --mesh-1: #7f33a8; --mesh-2: #1fb0aa; --mesh-3: #5546f0; --dk-a05: color-mix(in srgb, var(--dk-fg) 5%, transparent); --dk-a07: color-mix(in srgb, var(--dk-fg) 7%, transparent); --dk-a10: color-mix(in srgb, var(--dk-fg) 10%, transparent); --dk-a13: color-mix(in srgb, var(--dk-fg) 13%, transparent); --dk-a18: color-mix(in srgb, var(--dk-fg) 18%, transparent); --dk-t80: color-mix(in srgb, var(--dk-fg) 80%, transparent); --lt-a06: color-mix(in srgb, var(--lt-fg) 6%, transparent); --lt-a10: color-mix(in srgb, var(--lt-fg) 10%, transparent); --lt-a20: color-mix(in srgb, var(--lt-fg) 20%, transparent); --ac-a14: color-mix(in srgb, var(--ac) 14%, transparent); --ac-a20: color-mix(in srgb, var(--ac) 20%, transparent); --ac-a50: color-mix(in srgb, var(--ac) 50%, transparent); --ac-a70: color-mix(in srgb, var(--ac) 70%, transparent); --nav-bg: color-mix(in srgb, var(--dk) 55%, transparent); --nav-bg-s: color-mix(in srgb, var(--dk-2) 85%, transparent); --nav-bg-m: color-mix(in srgb, var(--dk-2) 96%, transparent); --display: "Syne", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; --body: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; --label-font: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; --d-weight: 700; --d-track: -0.03em; --d-case: none; --d-scale: 0.9; --d-ws: .06em; --d-lh: 1; --r-xl: 40px; --r-lg: 28px; --r-md: 20px; --r-pill: 999px; --r-field: 16px; --r-icon: 16px; --r-circle: 50%; --cl-bg: var(--lt-card); --cl-line: var(--lt-a10); --cl-bw: 1px; --cl-sh: none; --cl-sh-h: 0 40px 70px -40px color-mix(in srgb, var(--lt-fg) 50%, transparent); --cl-lift: -6px; --cd-bg: linear-gradient(160deg, var(--dk-a07), var(--dk-a05)); --cd-line: var(--dk-a13); --cd-bw: 1px; --cd-sh: none; --cd-lift: -5px; --tint-bg: #ff7ddd; --tint-fg: #1a0828; --mq-bg: var(--ac); --mq-fg: var(--ac-ink); --art-filter: hue-rotate(120deg) saturate(1); --sec: clamp(88px, 11vw, 140px); --container: 1200px; --noise-op: .07; --mesh-k: 0.8; --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 96px; -webkit-text-size-adjust: 100%; }
+body { margin: 0; font-family: var(--body); font-size: 1rem; line-height: 1.65; color: var(--lt-fg); background: var(--dk-2); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; word-spacing: .04em; overflow-x: clip; }
+img, svg { display: block; max-width: 100%; }
+a { color: inherit; }
+h2, h3, p, ul { margin: 0; }
+ul { padding: 0; list-style: none; }
+button { font: inherit; color: inherit; }
+h2, h3 { font-family: var(--display); font-weight: var(--d-weight); letter-spacing: var(--d-track); text-transform: var(--d-case); word-spacing: var(--d-ws); text-wrap: balance; }
+:focus-visible { outline: 3px solid var(--ac-on-dk); outline-offset: 3px; border-radius: 8px; }
+.on-light :focus-visible { outline-color: var(--ac-on-lt); }
+section[id] { scroll-margin-top: -76px; }
+.container { width: min(100% - 40px, var(--container)); margin-inline: auto; }
+.icon { width: 1.25em; height: 1.25em; flex: none; }
+.grad-dark { background: linear-gradient(95deg, var(--ac-deep-1), var(--ac-on-lt) 50%, var(--ac-deep-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 26px; border-radius: var(--r-pill); border: 1.5px solid transparent; font-weight: 700; font-size: .97rem; line-height: 1.2; text-decoration: none; text-align: center; max-width: 100%; cursor: pointer; transition: transform .25s cubic-bezier(.2,.8,.2,1), background-color .2s, color .2s, border-color .2s, box-shadow .25s; }
+.btn:hover { transform: translateY(-2px); }
+.btn:active { transform: translateY(0) scale(.98); }
+.btn .icon { width: 1.15em; height: 1.15em; transition: transform .25s; }
+.btn:hover .icon-arrow { transform: translateX(4px); }
+.btn-lime { background: var(--ac); color: var(--ac-ink); box-shadow: 0 10px 40px -10px var(--ac-a70); }
+.btn-lime:hover { background: var(--ac-hi); box-shadow: 0 14px 50px -8px var(--ac-a70); }
+.btn-dark { background: var(--solid); color: var(--solid-ink); }
+.btn-dark:hover { background: var(--solid-hover); }
+.btn-ghost { color: var(--dk-fg); border-color: var(--dk-a13); background: var(--dk-a05); }
+.btn-ghost:hover { border-color: var(--ac-on-dk); color: var(--ac-on-dk); }
+.tag { display: inline-flex; align-items: center; gap: 10px; padding: 7px 16px; border-radius: var(--r-pill); font-family: var(--label-font); font-size: .8rem; font-weight: 700; letter-spacing: .01em; background: var(--lt-a06); color: var(--lt-fg); }
+.section { position: relative; padding: var(--sec) 0; }
+.white { background: var(--lt-card); color: var(--lt-fg); }
+.stack { margin-top: -44px; padding-top: calc(var(--sec) + 24px); border-radius: var(--r-xl) var(--r-xl) 0 0; box-shadow: 0 -30px 60px -40px rgba(0,0,0,.35); }
+.head { max-width: 760px; margin-bottom: clamp(40px, 6vw, 68px); }
+.head h2 { margin-top: 18px; font-size: calc(clamp(2.1rem, 5.6vw, 3.9rem) * var(--d-scale)); line-height: var(--d-lh); }
+.head p:not(.tag) { margin-top: 18px; max-width: 560px; font-size: 1.08rem; color: var(--lt-muted); }
+#servicios { overflow-x: clip; }
+h2, h3 { overflow-wrap: anywhere; }
+.filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; }
+.filters[hidden] { display: none; }
+.chip { padding: 10px 20px; border-radius: var(--r-pill); border: 1.5px solid var(--lt-a10); background: var(--lt-card); font-weight: 700; font-size: .88rem; cursor: pointer; transition: all .2s; }
+.chip:hover { border-color: var(--lt-fg); }
+.chip[aria-pressed="true"] { background: var(--solid); border-color: var(--solid); color: var(--solid-fg); }
+.props { display: grid; gap: 22px; grid-template-columns: 1fr; }
+.props:empty { display: none; }
+.prop { display: flex; flex-direction: column; overflow: hidden; background: var(--cl-bg); border: var(--cl-bw) solid var(--cl-line); border-radius: var(--r-lg); box-shadow: var(--cl-sh); transition: transform .3s, box-shadow .3s; }
+.prop:hover { transform: translateY(var(--cl-lift)); box-shadow: var(--cl-sh-h); }
+.prop-media { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: linear-gradient(135deg, var(--dk-3), var(--dk)); }
+.prop-media img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s; }
+.prop:hover .prop-media img { transform: scale(1.06); }
+.prop-fallback { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ac-a50); }
+.prop-fallback .icon { width: 56px; height: 56px; }
+.prop-badges { position: absolute; left: 14px; top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+.badge { padding: 5px 12px; border-radius: var(--r-pill); background: var(--ac); color: var(--ac-ink); font-family: var(--label-font); font-size: .72rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.prop-body { display: flex; flex-direction: column; gap: 10px; padding: 22px 22px 24px; flex: 1; }
+.prop h3, .prop-price, .prop-loc { overflow-wrap: anywhere; }
+.prop-price { font-family: var(--display); font-weight: var(--d-weight); font-size: 1.7rem; letter-spacing: var(--d-track); line-height: 1.1; }
+.prop h3 { font-family: var(--body); font-size: 1rem; font-weight: 700; letter-spacing: 0; text-transform: none; line-height: 1.35; }
+.prop-loc { display: flex; align-items: center; gap: 7px; color: var(--lt-muted); font-size: .9rem; }
+.prop-loc .icon { color: var(--ac-on-lt); }
+.prop-feats { display: flex; flex-wrap: wrap; gap: 8px 18px; padding-top: 14px; margin-top: auto; border-top: 1px solid var(--lt-a10); color: var(--lt-muted); font-size: .86rem; font-weight: 600; }
+.prop-feats li { display: inline-flex; align-items: center; gap: 7px; }
+.prop-cta { margin-top: 6px; align-self: flex-start; padding: 11px 20px; font-size: .9rem; }
+.ig-empty { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; align-items: center; padding: clamp(26px, 5vw, 56px); border-radius: var(--r-xl); color: var(--dk-fg); background: radial-gradient(500px 300px at 90% 0%, var(--ac-a20), transparent 60%), linear-gradient(150deg, var(--dk-3), var(--dk) 65%); }
+.ig-empty[hidden] { display: none; }
+.ig-card { display: block; text-decoration: none; justify-self: center; width: min(100%, 330px); padding: 22px; border-radius: var(--r-lg); background: var(--dk-a10); border: 1px solid var(--dk-a18); backdrop-filter: blur(14px); transform: rotate(-3deg); box-shadow: 0 40px 80px -30px rgba(0,0,0,.6); }
+.ig-top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.ig-av { display: grid; place-items: center; width: 58px; height: 58px; border-radius: var(--r-circle); font-family: var(--display); font-weight: var(--d-weight); font-size: 1.1rem; color: var(--ac-ink); background: var(--ac); box-shadow: 0 0 0 3px var(--dk), 0 0 0 5px var(--ac); }
+.ig-top strong { display: block; font-size: 1rem; }
+.ig-top small { display: block; font-size: .8rem; color: var(--dk-muted); }
+.ig-card p { font-size: .9rem; color: var(--dk-t80); }
+.ig-card:hover .ig-follow { background: var(--ac-hi); }
+.ig-follow { display: block; margin-top: 18px; padding: 10px; border-radius: var(--r-pill); text-align: center; font-weight: 800; font-size: .9rem; background: var(--ac); color: var(--ac-ink); }
+.ig-copy h3 { font-size: calc(clamp(1.8rem, 3.6vw, 2.6rem) * var(--d-scale)); line-height: 1.02; margin-bottom: 14px; }
+.ig-copy p { color: var(--dk-muted); max-width: 460px; }
+.ig-copy, .ig-copy h3 { min-width: 0; overflow-wrap: anywhere; }
+.ig-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { transition-duration: .01ms !important; }
+}
+@media (min-width: 640px) {
+  .props { grid-template-columns: repeat(2, 1fr); }
+  .ig-empty { grid-template-columns: 330px 1fr; }
+}
+@media (min-width: 64em) {
+  .props { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 63.99em) {
+  .btn { white-space: normal; }
+}
+@media (max-width: 359px) {
+  .ig-empty { padding: 22px; }
+}
+html[data-secciones="slant"] .stack { margin-top: -5vw; padding-top: calc(var(--sec) + 5vw); border-radius: 0; box-shadow: none; clip-path: polygon(0 5vw, 100% 0, 100% 100%, 0 100%); }
+html[data-tarjetas="soft"] { --cl-bg: var(--lt-card); --cl-line: transparent; --cl-bw: 0px; --cl-sh: 0 18px 40px -24px color-mix(in srgb, var(--lt-fg) 35%, transparent); --cl-sh-h: 0 34px 60px -28px color-mix(in srgb, var(--lt-fg) 45%, transparent); --cl-lift: -4px; --cd-bg: var(--dk-a07); --cd-line: transparent; --cd-bw: 0px; --cd-sh: 0 24px 50px -28px rgba(0,0,0,.6); }
+/* --- Ajustes para Google Sites --- */
+:root { --parte-anterior: #f3f2ff; }   /* color de la parte que va justo ARRIBA (para que la diagonal encaje) */
+body { background: var(--parte-anterior); }
+html, body { margin: 0; }
+form { margin: 0; }
+[hidden] { display: none !important; }
+a:not([href]) { pointer-events: none; cursor: default; }
+html[data-secciones] .stack, .stack { margin-top: 0 !important; }
+.parte > section, .parte > footer { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+
+</style>
+
+<div class="parte">
+<section class="section white stack on-light" id="propiedades" aria-labelledby="props-title">
+    <div class="container">
+      <header class="head">
+        <p class="tag">Propiedades</p>
+        <h2 id="props-title">Propiedades <span class="grad-dark">disponibles.</span></h2>
+        <p>Casas y apartamentos en Colombia. ¿No ves lo que buscas? Escríbeme y lo buscamos juntos.</p>
+      </header>
+
+      <div class="filters" id="prop-filters" role="group" aria-label="Filtrar propiedades" hidden></div>
+      <div class="props" id="prop-list" aria-live="polite"></div>
+
+      <!-- Se muestra mientras no haya propiedades en los DATOS (arriba, en el código de esta parte) -->
+      <div class="ig-empty" id="prop-empty">
+        <a class="ig-card" href="https://www.instagram.com/inmobiliariabosch/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+          <div class="ig-top"><span class="ig-av">IB</span><div><strong>inmobiliariabosch</strong><small>Ejecutivo inmobiliario</small></div></div>
+          <p>Compra, venta y financiamiento de propiedades en Colombia.</p>
+          <span class="ig-follow">Seguir</span>
+        </a>
+        <div class="ig-copy">
+          <h3>Mira las propiedades en Instagram</h3>
+          <p>Estoy actualizando esta sección. Mientras tanto, encuentra las propiedades disponibles y las novedades en nuestro perfil de Instagram.</p>
+          <div class="ig-actions">
+            <a class="btn btn-lime" href="https://www.instagram.com/inmobiliariabosch/" target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-instagram"/></svg> @inmobiliariabosch</a>
+            <a data-ir="contacto" class="btn btn-ghost" href="https://wa.me/573023104354?text=Hola%2C%20me%20interesa%3A%20ver%20propiedades%20disponibles." target="_blank" rel="noopener">Pedir opciones <svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<symbol id="i-instagram" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5.2"/><circle cx="12" cy="12" r="4.1"/></g><circle cx="17.3" cy="6.7" r="1.2" fill="currentColor"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+</svg>
+
+<script>
+/* ==========================================================
+   DATOS EDITABLES
+   ----------------------------------------------------------
+   PROPIEDADES: agrega tus propiedades y aparecerán solas (con filtros).
+   Mientras la lista esté vacía, la sección invita a ver las propiedades
+   en Instagram.
+   Campos (solo "titulo" es obligatorio):
+     titulo, operacion ("Venta" | "Alquiler"),
+     tipo, ubicacion, precio (texto libre), habitaciones, banos,
+     area, imagen (dirección COMPLETA de la foto: "https://...")
+   Ejemplo (quita los // para activarlo):
+     // { titulo: "Casa de 3 habitaciones con patio", operacion: "Venta", tipo: "Casa",
+     //   ubicacion: "Tu ciudad, barrio", precio: "$ 350.000.000", habitaciones: 3, banos: 2,
+     //   area: "120 m²", imagen: "https://..." },
+   Al agregar propiedades, la parte se hace más alta: en Google Sites
+   estira el borde inferior del bloque hasta que se vea completa.
+   ========================================================== */
+window.PROPIEDADES = [
+];
+
+(function () {
+  "use strict";
+  /* Tu número de WhatsApp (con el 57 de Colombia, sin + ni espacios). */
+  var WHATSAPP = "573023104354";
+  var $ = function (sel, root) { return (root || document).querySelector(sel); };
+  var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+  function waUrl(text) { return "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(text); }
+  function svgIcon(id) {
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "icon");
+    svg.setAttribute("aria-hidden", "true");
+    var use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    use.setAttribute("href", "#" + id);
+    svg.appendChild(use);
+    return svg;
+  }
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  /* ---------- Propiedades ---------- */
+  var list = $("#prop-list");
+  var filtersBox = $("#prop-filters");
+  var emptyBox = $("#prop-empty");
+  var items = Array.isArray(window.PROPIEDADES) ? window.PROPIEDADES.filter(function (p) { return p && p.titulo; }) : [];
+
+  function feat(icon, label) {
+    var li = el("li");
+    li.appendChild(svgIcon(icon));
+    li.appendChild(document.createTextNode(label));
+    return li;
+  }
+
+  function card(p) {
+    var art = el("article", "prop");
+
+    var media = el("div", "prop-media");
+    var fallback = el("div", "prop-fallback");
+    fallback.appendChild(svgIcon("i-key"));
+    media.appendChild(fallback);
+    if (p.imagen) {
+      var img = document.createElement("img");
+      img.src = p.imagen;
+      img.alt = p.titulo;
+      img.loading = "lazy";
+      img.onerror = function () { img.remove(); };
+      media.appendChild(img);
+    }
+    var badges = el("div", "prop-badges");
+    if (p.operacion) badges.appendChild(el("span", "badge", p.operacion));
+    media.appendChild(badges);
+    art.appendChild(media);
+
+    var body = el("div", "prop-body");
+    if (p.precio) body.appendChild(el("p", "prop-price", p.precio));
+    body.appendChild(el("h3", null, p.titulo));
+    if (p.ubicacion) {
+      var loc = el("p", "prop-loc");
+      loc.appendChild(svgIcon("i-pin"));
+      loc.appendChild(document.createTextNode(p.ubicacion));
+      body.appendChild(loc);
+    }
+
+    var feats = el("ul", "prop-feats");
+    if (p.tipo) feats.appendChild(feat("i-key", p.tipo));
+    if (p.habitaciones != null) feats.appendChild(feat("i-bed", p.habitaciones + " hab."));
+    if (p.banos != null) feats.appendChild(feat("i-bath", p.banos + (Number(p.banos) === 1 ? " baño" : " baños")));
+    if (p.area) feats.appendChild(feat("i-area", p.area));
+    if (feats.children.length) body.appendChild(feats);
+
+    var cta = el("a", "btn btn-dark prop-cta");
+    cta.href = waUrl("Hola, me interesa esta propiedad: " + p.titulo + (p.ubicacion ? " (" + p.ubicacion + ")" : "") + ". ¿Me das más información?");
+    cta.target = "_blank";
+    cta.rel = "noopener";
+    cta.appendChild(svgIcon("i-whatsapp"));
+    cta.appendChild(document.createTextNode(" Consultar"));
+    cta.setAttribute("aria-label", "Consultar: " + p.titulo);
+    body.appendChild(cta);
+
+    art.appendChild(body);
+    return art;
+  }
+
+  function render(filter) {
+    list.textContent = "";
+    items
+      .filter(function (p) {
+        if (filter === "Todas") return true;
+        return p.operacion === filter;
+      })
+      .forEach(function (p) { list.appendChild(card(p)); });
+  }
+
+  if (items.length) {
+    emptyBox.hidden = true;
+    var filters = ["Todas"];
+    ["Venta", "Alquiler"].forEach(function (op) {
+      if (items.some(function (p) { return p.operacion === op; })) filters.push(op);
+    });
+
+    if (filters.length > 2) {
+      filtersBox.hidden = false;
+      filters.forEach(function (name, i) {
+        var chip = el("button", "chip", name);
+        chip.type = "button";
+        chip.setAttribute("aria-pressed", String(i === 0));
+        chip.addEventListener("click", function () {
+          $$(".chip", filtersBox).forEach(function (c) { c.setAttribute("aria-pressed", String(c === chip)); });
+          render(name);
+        });
+        filtersBox.appendChild(chip);
+      });
+    }
+    render("Todas");
+  }
+
+  /* ENLACES a otras partes de tu sitio (opcional). Pega la dirección de la página de Google Sites que corresponda;
+     si dejas "" el botón usa WhatsApp (o se oculta si no tiene sentido sin el enlace). */
+  var ENLACES = { inicio: "", servicios: "", simulador: "", comoFunciona: "", tuEjecutivo: "", propiedades: "", preguntas: "", contacto: "" };
+  var ABRIR_EN = "_top";   // "_top" = en la misma pestaña · "_blank" = en una pestaña nueva
+  $$("[data-ir]").forEach(function (a) {
+    var url = ENLACES[a.getAttribute("data-ir")];
+    if (url) {
+      a.setAttribute("href", url); a.setAttribute("target", ABRIR_EN); a.removeAttribute("rel");
+      var txt = a.getAttribute("data-ir-texto");
+      if (txt && a.firstChild && a.firstChild.nodeType === 3) a.firstChild.nodeValue = txt + " ";
+      var lab = a.getAttribute("data-ir-etiqueta"); if (lab) a.setAttribute("aria-label", lab);
+      a.hidden = false;
+      var li = a.closest("li"); if (li) li.hidden = false;
+    } else if (a.hasAttribute("data-ir-ocultar")) {
+      a.hidden = true; var p = a.closest("li"); if (p) p.hidden = true;
+    } else if (a.hasAttribute("data-ir-sin-enlace")) {
+      a.removeAttribute("href"); a.removeAttribute("target"); a.removeAttribute("rel");
+    }
+  });
+})();
+</script>

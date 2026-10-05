@@ -13,6 +13,14 @@ servicios (lista) · **simulador de cuota con las 3 mejores tasas de banco** · 
 propiedades · testimonios (opcional) · preguntas frecuentes · contacto (formulario → WhatsApp) · pie (con botón
 «Pausar animaciones»).
 
+## Para Google Sites
+
+Google Sites solo permite pegar código dentro de bloques (*Insertar → Incorporar → Código para insertar*), así que el sitio
+también está separado **por partes** en la carpeta [`google-sites/`](google-sites/): un archivo por parte (inicio, servicios,
+simulador, cómo funciona, tu ejecutivo, propiedades, preguntas, contacto, pie…), cada uno con su diseño, código y datos.
+Las instrucciones paso a paso, los altos de cada bloque y qué se puede editar están en
+[`google-sites/LEEME.md`](google-sites/LEEME.md). Si publicas en otro lado (tu dominio, Netlify, GitHub Pages…), usa `index.html`.
+
 ## Ver el sitio
 
 Abre `index.html` con doble clic. O desde una terminal:
@@ -88,6 +96,7 @@ En `index.html`, cambia `og:image` por la URL completa de la imagen
 ## Estructura
 
 ```
+google-sites/          El sitio separado por partes para pegar en Google Sites (ver LEEME.md)
 index.html              Sitio final (estilo Nebulosa: diseño, código, tipografías, tasas y datos editables)
 estilos.html            51 estilos para probar (versión anterior, selector «Estilos»)
 assets/og-image.jpg     Imagen al compartir el enlace

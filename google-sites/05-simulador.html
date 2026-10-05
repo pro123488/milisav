@@ -1,0 +1,604 @@
+<!--
+  INMOBILIARIA BOSCH · Parte 05 · Simulador y tasas de banco
+  Cómo usarla en Google Sites: Insertar → Incorporar → pestaña "Código para insertar" → pega TODO este archivo → Siguiente → Insertar.
+  Alto recomendado del bloque: 2940 px en celular · 1830 px en computador (usa el mayor para que no se corte nada).
+  Color de fondo de esta parte: #101338 (si ves franjas a los lados, pon ese color de fondo a la sección en Google Sites).
+-->
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&family=Syne:wght@500..800&display=swap">
+
+<script>(function () { var d = document.documentElement; d.setAttribute("data-tema", "nebulosa"); d.setAttribute("data-nav", "ghost"); d.setAttribute("data-tarjetas", "soft"); d.setAttribute("data-secciones", "slant"); d.setAttribute("data-fondo", "aurora"); })();</script>
+
+<style>
+:root { --dk: #101338; --dk-2: #080a24; --dk-3: #201b55; --dk-foot: #04051a; --dk-fg: #f2f0ff; --dk-muted: #d3d1f7; --lt: #f3f2ff; --lt-card: #ffffff; --lt-fg: #12123a; --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2312123a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); --lt-muted: #54558a; --ac: #ff7ddd; --ac-hi: #ffb4ef; --ac-2: #2fe3d2; --ac-ink: #1a0828; --ac-on-dk: #ff7ddd; --ac-on-lt: #b0179a; --g1: #ffb4ef; --g2: #ff7ddd; --g3: #2fe3d2; --ac-deep-1: #901687; --ac-deep-2: #1c887e; --solid: #201b55; --solid-fg: #ff8ae6; --solid-ink: #ffffff; --solid-hover: #484474; --mesh-1: #7f33a8; --mesh-2: #1fb0aa; --mesh-3: #5546f0; --dk-a05: color-mix(in srgb, var(--dk-fg) 5%, transparent); --dk-a07: color-mix(in srgb, var(--dk-fg) 7%, transparent); --dk-a10: color-mix(in srgb, var(--dk-fg) 10%, transparent); --dk-a13: color-mix(in srgb, var(--dk-fg) 13%, transparent); --dk-a18: color-mix(in srgb, var(--dk-fg) 18%, transparent); --dk-t80: color-mix(in srgb, var(--dk-fg) 80%, transparent); --lt-a06: color-mix(in srgb, var(--lt-fg) 6%, transparent); --lt-a10: color-mix(in srgb, var(--lt-fg) 10%, transparent); --lt-a20: color-mix(in srgb, var(--lt-fg) 20%, transparent); --ac-a14: color-mix(in srgb, var(--ac) 14%, transparent); --ac-a20: color-mix(in srgb, var(--ac) 20%, transparent); --ac-a50: color-mix(in srgb, var(--ac) 50%, transparent); --ac-a70: color-mix(in srgb, var(--ac) 70%, transparent); --nav-bg: color-mix(in srgb, var(--dk) 55%, transparent); --nav-bg-s: color-mix(in srgb, var(--dk-2) 85%, transparent); --nav-bg-m: color-mix(in srgb, var(--dk-2) 96%, transparent); --display: "Syne", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; --body: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; --label-font: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; --d-weight: 700; --d-track: -0.03em; --d-case: none; --d-scale: 0.9; --d-ws: .06em; --d-lh: 1; --r-xl: 40px; --r-lg: 28px; --r-md: 20px; --r-pill: 999px; --r-field: 16px; --r-icon: 16px; --r-circle: 50%; --cl-bg: var(--lt-card); --cl-line: var(--lt-a10); --cl-bw: 1px; --cl-sh: none; --cl-sh-h: 0 40px 70px -40px color-mix(in srgb, var(--lt-fg) 50%, transparent); --cl-lift: -6px; --cd-bg: linear-gradient(160deg, var(--dk-a07), var(--dk-a05)); --cd-line: var(--dk-a13); --cd-bw: 1px; --cd-sh: none; --cd-lift: -5px; --tint-bg: #ff7ddd; --tint-fg: #1a0828; --mq-bg: var(--ac); --mq-fg: var(--ac-ink); --art-filter: hue-rotate(120deg) saturate(1); --sec: clamp(88px, 11vw, 140px); --container: 1200px; --noise-op: .07; --mesh-k: 0.8; --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 96px; -webkit-text-size-adjust: 100%; }
+body { margin: 0; font-family: var(--body); font-size: 1rem; line-height: 1.65; color: var(--lt-fg); background: var(--dk-2); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; word-spacing: .04em; overflow-x: clip; }
+svg { display: block; max-width: 100%; }
+a { color: inherit; }
+h2, h3, p, ul, ol, dl, dd { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+button, input { font: inherit; color: inherit; }
+h2, h3 { font-family: var(--display); font-weight: var(--d-weight); letter-spacing: var(--d-track); text-transform: var(--d-case); word-spacing: var(--d-ws); text-wrap: balance; }
+:focus-visible { outline: 3px solid var(--ac-on-dk); outline-offset: 3px; border-radius: 8px; }
+section[id] { scroll-margin-top: -76px; }
+.container { width: min(100% - 40px, var(--container)); margin-inline: auto; }
+.icon { width: 1.25em; height: 1.25em; flex: none; }
+.grad { background: linear-gradient(95deg, var(--g1), var(--g2) 45%, var(--g3)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 26px; border-radius: var(--r-pill); border: 1.5px solid transparent; font-weight: 700; font-size: .97rem; line-height: 1.2; text-decoration: none; text-align: center; max-width: 100%; cursor: pointer; transition: transform .25s cubic-bezier(.2,.8,.2,1), background-color .2s, color .2s, border-color .2s, box-shadow .25s; }
+.btn:hover { transform: translateY(-2px); }
+.btn:active { transform: translateY(0) scale(.98); }
+.btn .icon { width: 1.15em; height: 1.15em; transition: transform .25s; }
+.btn-block { width: 100%; white-space: normal; text-align: center; }
+.btn-white { background: var(--dk-fg); color: var(--dk); }
+.btn-white:hover { background: var(--ac-hi); color: var(--ac-ink); }
+.tag { display: inline-flex; align-items: center; gap: 10px; padding: 7px 16px; border-radius: var(--r-pill); font-family: var(--label-font); font-size: .8rem; font-weight: 700; letter-spacing: .01em; background: var(--lt-a06); color: var(--lt-fg); }
+.tag-d { background: var(--dk-a07); color: color-mix(in srgb, var(--ac-on-dk) 75%, var(--dk-fg)); border: 1px solid var(--dk-a13); backdrop-filter: blur(8px); }
+.seg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; padding: 6px; border-radius: calc(var(--r-field) * 1.6); background: var(--dk-a07); border: 1px solid var(--dk-a13); backdrop-filter: blur(10px); }
+.seg label { position: relative; cursor: pointer; }
+.seg input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.seg span { display: flex; align-items: center; justify-content: center; padding: 12px 10px; border-radius: calc(var(--r-field) * 1.25); font-weight: 700; font-size: .93rem; color: var(--dk-t80); transition: background-color .25s, color .25s; }
+.seg input:checked + span { background: var(--ac); color: var(--ac-ink); box-shadow: 0 6px 24px -6px var(--ac-a70); }
+.seg input:focus-visible + span { outline: 3px solid var(--dk-fg); outline-offset: 2px; }
+.seg label:hover input:not(:checked) + span { background: var(--dk-a07); }
+.sim { position: relative; z-index: 1; padding: clamp(22px, 3vw, 30px); border-radius: calc(var(--r-xl) * .8); color: var(--dk-fg); background: linear-gradient(160deg, var(--dk-a10), var(--dk-a05)); border: 1px solid var(--dk-a18); -webkit-backdrop-filter: blur(22px) saturate(160%); backdrop-filter: blur(22px) saturate(160%); box-shadow: 0 50px 100px -40px rgba(0,0,0,.8), inset 0 1px 0 var(--dk-a18); }
+.sim-badge { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: var(--r-pill); background: var(--tint-bg); color: var(--tint-fg); font-family: var(--label-font); font-size: .72rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.sim-head h3 { margin-top: 12px; font-size: 1.55rem; line-height: 1.15; }
+.sim-head p { color: var(--dk-muted); font-size: .9rem; margin-top: 2px; }
+.sim-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 18px; }
+.sim-field { min-width: 0; }
+.sim-field label { display: block; font-size: .82rem; font-weight: 700; color: var(--dk-t80); margin-bottom: 7px; }
+.sim-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.sim-row label { margin-bottom: 0; }
+.sim-row output { font-weight: 800; font-size: .92rem; color: var(--ac-on-dk); }
+.sim-row + input[type="range"] { margin-top: 12px; }
+.sim-inline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.sim-inline label { margin-bottom: 0; }
+.money, .rate { display: flex; align-items: center; gap: 8px; padding: 0 16px; border-radius: var(--r-field); background: var(--dk-a07); border: 1.5px solid color-mix(in srgb, var(--dk-fg) 50%, transparent); transition: border-color .2s, background-color .2s, box-shadow .2s; }
+.money:focus-within, .rate:focus-within { border-color: var(--ac-on-dk); background: var(--dk-a10); box-shadow: 0 0 0 4px var(--ac-a20); }
+.money span, .rate span { color: var(--dk-muted); font-weight: 700; }
+.money input, .rate input { flex: 1; min-width: 0; padding: 13px 0; border: 0; outline: 0; background: transparent; color: var(--dk-fg); font-family: var(--display); font-weight: 700; font-size: 1.2rem; letter-spacing: var(--d-track); }
+.rate { width: auto; gap: 6px; flex: none; }
+.rate span { white-space: nowrap; }
+.rate input { flex: none; width: 5ch; max-width: none; text-align: right; padding: 10px 0; font-size: 1.05rem; }
+input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; border-radius: var(--r-pill); background: linear-gradient(to right, var(--ac) var(--fill, 50%), var(--dk-a18) var(--fill, 50%)); outline: none; cursor: pointer; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: var(--dk-fg); border: 5px solid var(--ac); box-shadow: 0 4px 14px rgba(0,0,0,.4); }
+input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--dk-fg); border: 5px solid var(--ac); box-shadow: 0 4px 14px rgba(0,0,0,.4); }
+input[type="range"]:focus-visible { outline: 3px solid var(--dk-fg); outline-offset: 6px; }
+.sim-result { margin: 20px 0 14px; padding: 20px 22px; border-radius: calc(var(--r-lg) * .8); color: var(--ac-ink); background: linear-gradient(135deg, var(--ac-hi), var(--ac) 55%, var(--ac-2)); box-shadow: 0 20px 50px -20px var(--ac-a70); }
+.sim-result-label { display: block; font-size: .8rem; font-weight: 700; color: color-mix(in srgb, var(--ac-ink) 92%, transparent); }
+.sim-result strong { display: block; overflow-wrap: anywhere; font-family: var(--display); font-size: calc(clamp(2.1rem, 5.4vw, 2.8rem) * var(--d-scale)); font-weight: var(--d-weight); letter-spacing: var(--d-track); line-height: 1.1; }
+.sim-result dl { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; padding-top: 14px; border-top: 1px solid color-mix(in srgb, var(--ac-ink) 18%, transparent); }
+.sim-result dt { font-size: .8rem; font-weight: 600; color: color-mix(in srgb, var(--ac-ink) 92%, transparent); }
+.sim-result dd { font-weight: 800; font-size: .96rem; }
+.sim-note { margin-top: 14px; font-size: .78rem; line-height: 1.5; color: var(--dk-muted); }
+.sim-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 44px; align-items: center; }
+.sim-intro h2 { margin-top: 18px; font-size: calc(clamp(2.1rem, 5.6vw, 3.9rem) * var(--d-scale)); line-height: var(--d-lh); }
+.sim-intro > p:not(.tag) { margin-top: 18px; max-width: 480px; font-size: 1.08rem; color: var(--dk-muted); }
+.sim-points { display: grid; gap: 14px; margin-top: 28px; }
+.sim-points li { display: flex; align-items: flex-start; gap: 12px; font-weight: 600; color: var(--dk-t80); text-wrap: pretty; }
+.sim-points .icon { flex: none; margin-top: 1px; width: 24px; height: 24px; padding: 4px; border-radius: var(--r-circle); background: var(--ac-a14); color: var(--ac-on-dk); }
+.sim-grid .sim, .sim-grid .banks { width: min(100%, 640px); justify-self: center; }
+.field-hint { margin-top: 8px; font-size: .8rem; line-height: 1.4; color: var(--dk-muted); }
+.rate-src { margin-top: 8px; font-size: .78rem; line-height: 1.4; color: var(--dk-muted); text-align: right; }
+.banks { position: relative; padding: clamp(20px, 3vw, 28px); border-radius: calc(var(--r-xl) * .8); color: var(--dk-fg); background: linear-gradient(160deg, var(--dk-a10), var(--dk-a05)); border: 1px solid var(--dk-a18); }
+.banks[hidden] { display: none; }
+.banks h3 { font-size: 1.4rem; line-height: 1.15; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.sim-result strong.is-long { font-size: calc(clamp(1.5rem, 4.2vw, 2rem) * var(--d-scale)); overflow-wrap: anywhere; }
+.banks-sub { margin-top: 6px; color: var(--dk-muted); font-size: .92rem; }
+.banks-opts { margin: 18px 0 0; padding: 0; border: 0; min-width: 0; }
+.banks-opts legend { padding: 0; margin-bottom: 8px; font-size: .82rem; font-weight: 700; color: var(--dk-t80); }
+.banks-hint { font-weight: 500; color: var(--dk-muted); }
+.banks .seg { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.banks .seg span { white-space: normal; overflow-wrap: anywhere; text-align: center; padding: 10px 6px; font-size: .88rem; }
+.banks-list { display: grid; gap: 10px; margin-top: 18px; }
+.banks-list > li { container-type: inline-size; }
+.bank { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 14px; align-items: center; text-align: left; padding: 14px 16px; border-radius: calc(var(--r-lg) * .8); border: 1.5px solid var(--dk-a18); background: var(--dk-a07); color: var(--dk-fg); font: inherit; cursor: pointer; transition: border-color .2s, background-color .2s, box-shadow .2s; }
+.bank:hover { border-color: var(--ac-on-dk); }
+.bank:focus-visible { outline: 3px solid var(--dk-fg); outline-offset: 3px; }
+.bank[aria-pressed="true"] { border-color: var(--ac); background: color-mix(in srgb, var(--ac) 16%, transparent); box-shadow: 0 0 0 3px var(--ac-a20); }
+.bank-rank { grid-row: 1 / span 5; align-self: start; display: grid; place-items: center; width: 2.2em; height: 2.2em; font-size: .95rem; line-height: 1; border-radius: var(--r-circle); background: var(--ac); color: var(--ac-ink); font-family: var(--display); font-weight: var(--d-weight); }
+.bank-name, .bank-rate, .bank-meta, .bank-pay, .bank-use { grid-column: 2; }
+.bank-name { font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+.bank-rate { justify-self: start; font-family: var(--display); font-weight: var(--d-weight); font-size: 1.3rem; letter-spacing: var(--d-track); line-height: 1.1; color: var(--ac-on-dk); white-space: normal; overflow-wrap: anywhere; }
+.bank-rate small { margin-right: 8px; font-family: var(--body); font-weight: 600; font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; color: var(--dk-muted); }
+.bank-meta { font-size: .8rem; color: var(--dk-muted); overflow-wrap: anywhere; }
+.bank-meta .nw { display: inline-block; max-width: 100%; }
+.bank-pay { margin-top: 4px; font-size: .86rem; font-weight: 600; color: var(--dk-t80); overflow-wrap: anywhere; }
+.bank-use { justify-self: start; margin-top: 6px; padding: 4px 12px; border-radius: var(--r-pill); font-size: .78rem; font-weight: 800; background: var(--dk-a10); color: var(--dk-fg); }
+.bank[aria-pressed="true"] .bank-use { background: var(--ac); color: var(--ac-ink); }
+@container (min-width: 26rem) {
+  .bank { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .bank-rank { grid-row: 1 / span 3; }
+  .bank-rate { grid-column: 3; grid-row: 1; justify-self: end; text-align: right; white-space: nowrap; }
+  .bank-rate small { display: block; margin-right: 0; }
+  .bank-meta { grid-column: 2 / -1; }
+  .bank-use { grid-column: 3; justify-self: end; margin-top: 4px; }
+}
+.bank-empty { padding: 14px 4px; color: var(--dk-muted); font-size: .92rem; }
+.banks-note { margin-top: 14px; font-size: .78rem; line-height: 1.5; color: var(--dk-muted); }
+@media (min-width: 64em) {
+  .sim-grid { grid-template-areas: "intro card" "banks banks"; align-items: start; }
+  .sim-intro { grid-area: intro; align-self: center; }
+  .sim-grid .sim { grid-area: card; width: min(100%, 520px); }
+  .sim-grid .banks { grid-area: banks; width: 100%; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); column-gap: 32px; }
+  .banks > h3, .banks > .banks-sub, .banks > .banks-list, .banks > .banks-note { grid-column: 1 / -1; }
+  .banks .seg-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .banks-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+}
+.section { position: relative; padding: var(--sec) 0; }
+.dark { background: var(--dk); color: var(--dk-fg); overflow: hidden; }
+.stack { margin-top: -44px; padding-top: calc(var(--sec) + 24px); border-radius: var(--r-xl) var(--r-xl) 0 0; box-shadow: 0 -30px 60px -40px rgba(0,0,0,.35); }
+.glow { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(80px); z-index: 0; opacity: var(--mesh-k); }
+.dark > .container { position: relative; z-index: 1; }
+.b { --b-bg: var(--cl-bg); --b-fg: var(--lt-fg); --b-muted: var(--lt-muted); --b-line: var(--cl-line); --b-ico-bg: var(--solid); --b-ico-fg: var(--solid-fg); --b-tag-bg: var(--lt-a06); --b-tag-fg: var(--b-fg); --b-chip-bg: color-mix(in srgb, var(--lt-card) 60%, transparent); --b-chip-line: var(--lt-a10); --b-go-bg: var(--solid); --b-go-fg: var(--solid-fg); position: relative; overflow: hidden; display: flex; flex-direction: column; padding: 28px; border-radius: var(--r-lg); border: var(--cl-bw) solid var(--b-line); background: var(--b-bg); color: var(--b-fg); box-shadow: var(--cl-sh); isolation: isolate; transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s; }
+.b:hover { transform: translateY(var(--cl-lift)); box-shadow: var(--cl-sh-h); }
+.b::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), var(--ac-a20), transparent 45%); opacity: 0; transition: opacity .3s; pointer-events: none; }
+.b:hover::after { opacity: 1; }
+.b h3 { font-size: 1.55rem; line-height: 1.08; margin-bottom: 10px; }
+.b p { color: var(--b-muted); font-size: .95rem; max-width: 380px; }
+h2, h3 { overflow-wrap: anywhere; }
+.b > * { position: relative; z-index: 1; }
+.step { display: grid; grid-template-columns: minmax(64px, auto) minmax(0, 1fr); gap: 6px 22px; align-items: baseline; padding: 26px 0 28px; border-bottom: 1px solid var(--lt-a10); transition: padding .3s; }
+.step:hover { padding-left: 10px; }
+.step h3, .step p { overflow-wrap: anywhere; hyphens: auto; }
+.step h3 { font-size: calc(1.5rem * var(--d-scale) / .9); line-height: 1.15; margin-bottom: 6px; }
+.step p { color: var(--lt-muted); font-size: 1rem; max-width: 460px; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { transition-duration: .01ms !important; }
+}
+@media (min-width: 640px) {
+  .seg span { white-space: nowrap; }
+}
+@media (min-width: 64em) {
+  .sim-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 520px); gap: 90px; }
+}
+@media (max-width: 63.99em) {
+  .btn { white-space: normal; }
+}
+@media (max-width: 420px) {
+  .sim-result dl { grid-template-columns: 1fr; }
+}
+html[data-secciones="slant"] .stack { margin-top: -5vw; padding-top: calc(var(--sec) + 5vw); border-radius: 0; box-shadow: none; clip-path: polygon(0 5vw, 100% 0, 100% 100%, 0 100%); }
+html[data-tarjetas="soft"] { --cl-bg: var(--lt-card); --cl-line: transparent; --cl-bw: 0px; --cl-sh: 0 18px 40px -24px color-mix(in srgb, var(--lt-fg) 35%, transparent); --cl-sh-h: 0 34px 60px -28px color-mix(in srgb, var(--lt-fg) 45%, transparent); --cl-lift: -4px; --cd-bg: var(--dk-a07); --cd-line: transparent; --cd-bw: 0px; --cd-sh: 0 24px 50px -28px rgba(0,0,0,.6); }
+html[data-tarjetas="soft"] .b { border-width: 0; box-shadow: var(--cl-sh); }
+html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
+@media (forced-colors: active) {
+  .seg input:checked + span { forced-color-adjust: none; background: Highlight; color: HighlightText; box-shadow: none; }
+  .seg input:focus-visible + span { outline-color: CanvasText; }
+  input[type="range"] { forced-color-adjust: none; background: linear-gradient(to right, Highlight var(--fill, 50%), Canvas var(--fill, 50%)); border: 1px solid CanvasText; }
+  input[type="range"]::-webkit-slider-thumb { background: ButtonText; border-color: Highlight; }
+  input[type="range"]::-moz-range-thumb { background: ButtonText; border-color: Highlight; }
+  input[type="range"]:focus-visible { outline-color: Highlight; }
+}
+/* --- Ajustes para Google Sites --- */
+:root { --parte-anterior: #f3f2ff; }   /* color de la parte que va justo ARRIBA (para que la diagonal encaje) */
+body { background: var(--parte-anterior); }
+html, body { margin: 0; }
+form { margin: 0; }
+[hidden] { display: none !important; }
+a:not([href]) { pointer-events: none; cursor: default; }
+html[data-secciones] .stack, .stack { margin-top: 0 !important; }
+.parte > section, .parte > footer { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+
+</style>
+
+<div class="parte">
+<section class="section dark stack" id="simulador" aria-labelledby="sim-sec-title">
+    <div class="glow" style="width:520px;height:520px;right:-180px;top:-140px;background:radial-gradient(circle,var(--mesh-1),transparent 65%)" aria-hidden="true"></div>
+    <div class="glow" style="width:480px;height:480px;left:-200px;bottom:-200px;background:radial-gradient(circle,var(--mesh-2),transparent 65%)" aria-hidden="true"></div>
+    <div class="container sim-grid">
+      <header class="sim-intro">
+        <p class="tag tag-d">Financiamiento</p>
+        <h2 id="sim-sec-title">Haz tus números, <span class="grad">sin afanes.</span></h2>
+        <p>Escribe el valor del inmueble y cuánto quieres financiar. Elige una de las 3 mejores tasas de banco o escribe la tuya, y mira tu cuota estimada.</p>
+        <ul class="sim-points">
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Tasas de referencia de varios bancos</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Cálculo indicativo, sin compromiso</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Si quieres, revisamos tus números con un ejecutivo por WhatsApp</li>
+        </ul>
+      </header>
+
+      <div class="sim" id="sim-card" role="region" aria-labelledby="sim-title">
+        <div class="sim-head">
+          <span class="sim-badge"><svg class="icon" aria-hidden="true" style="width:14px;height:14px"><use href="#i-bank"/></svg> Simulador</span>
+          <h3 id="sim-title">Calcula tu cuota mensual</h3>
+          <p>Revisa tus opciones antes de decidir, con cifras claras.</p>
+        </div>
+
+        <div class="sim-fields">
+          <div class="sim-field">
+            <label for="s-value">Valor del inmueble</label>
+            <div class="money"><span aria-hidden="true">$</span><input id="s-value" type="text" inputmode="numeric" autocomplete="off" value="320.000.000"></div>
+          </div>
+          <div class="sim-field">
+            <label for="s-loan-in">Valor exacto a financiar</label>
+            <div class="money"><span aria-hidden="true">$</span><input id="s-loan-in" type="text" inputmode="numeric" autocomplete="off" aria-describedby="s-pct-out" value="224.000.000"></div>
+            <p class="field-hint" id="s-pct-out">Escribe el monto exacto que necesitas. Equivale al 70 % del inmueble.</p>
+          </div>
+          <div class="sim-field">
+            <div class="sim-row"><label for="s-term">Plazo</label><output id="s-term-out" for="s-term" aria-live="off">20 años (240 meses)</output></div>
+            <input id="s-term" type="range" min="5" max="30" step="1" value="20" autocomplete="off">
+          </div>
+          <div class="sim-field">
+            <div class="sim-inline">
+              <label for="s-rate">Tasa</label>
+              <div class="rate"><input id="s-rate" type="text" inputmode="decimal" autocomplete="off" maxlength="6" value="12" aria-describedby="rate-unit rate-src"><span id="rate-unit"><abbr title="efectivo anual" style="text-decoration:none">% E.A.</abbr></span></div>
+            </div>
+            <p class="rate-src" id="rate-src">Tasa personalizada</p>
+          </div>
+        </div>
+
+        <div class="sim-result" aria-live="polite">
+          <span class="sim-result-label">Cuota mensual estimada</span>
+          <strong id="s-payment">$ 2.371.316</strong>
+          <dl>
+            <div><dt>Valor a financiar</dt><dd id="s-loan">$ 224.000.000</dd></div>
+            <div><dt>Cuota inicial</dt><dd id="s-down">$ 96.000.000</dd></div>
+          </dl>
+        </div>
+
+        <a class="btn btn-white btn-block" id="sim-cta" href="https://wa.me/573023104354?text=Hola%2C%20vi%20la%20p%C3%A1gina%20de%20Inmobiliaria%20Bosch%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Quiero asesoría con esta simulación</a>
+        <p class="sim-note">Simulación indicativa: no es una oferta ni aprobación de crédito. Las tasas de banco son de referencia («desde») y dependen de tu perfil y del estudio de crédito de cada entidad; también puedes escribir otra tasa. La cuota no incluye seguros ni otros costos del crédito.</p>
+      </div>
+
+      <section class="banks" id="bancos" aria-labelledby="banks-title">
+        <h3 id="banks-title">Las 3 mejores tasas de banco</h3>
+        <p class="banks-sub" id="banks-sub">Elige una para usarla en tu simulación.</p>
+        <fieldset class="banks-opts">
+          <legend>Tipo de crédito</legend>
+          <div class="seg seg-4">
+              <label><input type="radio" name="b-tipo" value="hipotecario" checked autocomplete="off"><span>Hipotecario</span></label>
+              <label><input type="radio" name="b-tipo" value="cartera" autocomplete="off"><span>Compra de cartera</span></label>
+              <label><input type="radio" name="b-tipo" value="leasing" autocomplete="off"><span>Leasing</span></label>
+              <label><input type="radio" name="b-tipo" value="remodelacion" autocomplete="off"><span>Remodelación</span></label>
+          </div>
+        </fieldset>
+        <fieldset class="banks-opts">
+          <legend>Vivienda <span class="banks-hint">(VIS: de interés social)</span></legend>
+          <div class="seg">
+            <label><input type="radio" name="b-vis" value="novis" checked autocomplete="off"><span>No VIS</span></label>
+            <label><input type="radio" name="b-vis" value="vis" autocomplete="off"><span>VIS</span></label>
+          </div>
+        </fieldset>
+        <ol class="banks-list" id="banks-list"></ol>
+        <p class="sr-only" id="banks-status" role="status"></p>
+        <p class="banks-note" id="banks-note">Tasas de referencia. Sujeto a estudio crediticio y aplican términos y condiciones.</p>
+      </section>
+    </div>
+  </section>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<symbol id="i-whatsapp" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M3.2 20.8 4.6 16A8.9 8.9 0 1 1 8 19.4z"/><path fill="currentColor" d="M9.1 7.9c.3-.3.7-.3.9.1l.7 1.6c.1.3 0 .5-.2.7l-.5.6c.6 1.2 1.6 2.2 2.8 2.8l.6-.6c.2-.2.5-.3.7-.2l1.5.7c.4.2.4.6.2.9-.4.8-1.2 1.3-2.1 1.2-3-.3-5.4-2.7-5.8-5.6-.1-.9.4-1.7 1.2-2.2z"/></symbol>
+<symbol id="i-bank" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h18M6 18v-7M10 18v-7M14 18v-7M18 18v-7M12 2 3.5 7h17z"/></g></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M20 6 9 17l-5-5"/></symbol>
+</svg>
+
+<script>
+/* ==========================================================
+   DATOS EDITABLES
+   ----------------------------------------------------------
+   1) SIM: valores iniciales del simulador (valor del inmueble, porcentaje
+      inicial a financiar —el cliente luego escribe el monto exacto—, plazo).
+      "rate" solo se usa si no hay datos de BANCOS.
+
+   2) BANCOS: tasas de referencia de todos los bancos, por tipo de crédito
+      (hipotecario, cartera = compra de cartera, leasing, remodelacion),
+      en pesos (% E.A.) y en UVR (margen: UVR + x %), para VIS y No VIS.
+      Cada tasa es [desde, hasta]; null = el banco no ofrece esa modalidad.
+      La página muestra solo las 3 con la tasa "desde" más baja. Para
+      actualizarlas cada mes, cambia los números y la "fecha" y la "fuente".
+   ========================================================== */
+window.SIM = { locale: "es-CO", currency: "COP", value: 320000000, pct: 70, years: 20, rate: 12 };
+
+window.BANCOS = {
+  fecha: "septiembre de 2026",
+  fuente: "Consolidado de tasas, septiembre de 2026",
+  nota: "Tasas de referencia. Sujeto a estudio crediticio y aplican términos y condiciones.",
+  // Cada tasa es [desde, hasta] en % E.A. (efectivo anual). En UVR es el margen: UVR + x %. null = el banco no ofrece esa modalidad.
+  bancos: [
+    { banco: "Banco Caja Social",
+      hipotecario:  { pesos: { vis: [13.95, 16.30], novis: [14.95, 17.80] }, uvr: { vis: [7.80, 10.00], novis: [8.75, 10.35] } },
+      cartera:      { pesos: { vis: [13.75, 16.30], novis: [14.75, 17.80] }, uvr: { vis: [7.80, 10.00], novis: [8.75, 10.15] } },
+      leasing:      { pesos: { vis: null, novis: null }, uvr: { vis: null, novis: null } },
+      remodelacion: { pesos: { vis: [14.95, 16.30], novis: [16.00, 17.80] }, uvr: { vis: [6.85, 10.10], novis: [7.45, 9.40] } },
+    },
+    { banco: "Banco AV Villas",
+      hipotecario:  { pesos: { vis: [12.40, 14.35], novis: [12.90, 15.40] }, uvr: { vis: [7.20, 8.50], novis: [7.40, 8.80] } },
+      cartera:      { pesos: { vis: [12.40, 14.70], novis: [12.90, 15.40] }, uvr: { vis: [7.20, 9.20], novis: [7.40, 9.20] } },
+      leasing:      { pesos: { vis: null, novis: [12.40, 13.50] }, uvr: { vis: null, novis: null } },
+      remodelacion: { pesos: { vis: [13.32, 13.32], novis: [13.32, 13.32] }, uvr: { vis: null, novis: null } },
+    },
+    { banco: "BBVA",
+      hipotecario:  { pesos: { vis: [11.40, 15.46], novis: [12.74, 17.49] }, uvr: { vis: [5.71, 8.84], novis: [6.90, 11.30] } },
+      cartera:      { pesos: { vis: [13.50, 14.50], novis: [13.50, 14.50] }, uvr: { vis: [7.11, 7.11], novis: [6.21, 7.21] } },
+      leasing:      { pesos: { vis: [12.07, 13.00], novis: [12.07, 17.02] }, uvr: { vis: null, novis: null } },
+      remodelacion: { pesos: { vis: [13.30, 16.06], novis: [14.44, 17.79] }, uvr: { vis: [7.10, 8.10], novis: [7.67, 8.67] } },
+    },
+    { banco: "Banco de Bogotá",
+      hipotecario:  { pesos: { vis: [14.16, 16.21], novis: [13.35, 17.60] }, uvr: { vis: [7.96, 9.12], novis: [8.86, 10.30] } },
+      cartera:      { pesos: { vis: [14.98, 16.35], novis: [14.44, 17.18] }, uvr: { vis: null, novis: null } },
+      leasing:      { pesos: { vis: null, novis: [13.22, 16.77] }, uvr: { vis: null, novis: null } },
+      remodelacion: { pesos: { vis: [14.98, 15.53], novis: [15.63, 17.32] }, uvr: { vis: null, novis: null } },
+    },
+    { banco: "Banco de Occidente",
+      hipotecario:  { pesos: { vis: [14.67, 17.69], novis: [14.67, 17.69] }, uvr: { vis: [7.17, 11.33], novis: [7.17, 11.33] } },
+      cartera:      { pesos: { vis: [14.92, 18.29], novis: [14.92, 18.29] }, uvr: { vis: null, novis: null } },
+      leasing:      { pesos: { vis: [14.30, 17.69], novis: [14.30, 17.69] }, uvr: { vis: [7.17, 11.33], novis: [7.17, 11.33] } },
+      remodelacion: { pesos: { vis: [14.77, 18.05], novis: [14.77, 18.05] }, uvr: { vis: null, novis: null } },
+    },
+    { banco: "Credifamilia",
+      hipotecario:  { pesos: { vis: [16.80, 16.80], novis: [16.80, 16.80] }, uvr: { vis: [9.90, 9.90], novis: [10.70, 10.70] } },
+      cartera:      { pesos: { vis: null, novis: null }, uvr: { vis: null, novis: null } },
+      leasing:      { pesos: { vis: null, novis: null }, uvr: { vis: null, novis: null } },
+      remodelacion: { pesos: { vis: [22.40, 23.95], novis: [22.40, 23.95] }, uvr: { vis: null, novis: null } },
+    },
+    { banco: "Bancolombia",
+      hipotecario:  { pesos: { vis: [14.90, 14.90], novis: [15.20, 15.60] }, uvr: { vis: [8.60, 8.60], novis: [9.00, 9.40] } },
+      cartera:      { pesos: { vis: null, novis: null }, uvr: { vis: null, novis: null } },
+      leasing:      { pesos: { vis: null, novis: [15.20, 15.60] }, uvr: { vis: null, novis: null } },
+      remodelacion: { pesos: { vis: null, novis: null }, uvr: { vis: null, novis: null } },
+    },
+  ],
+};
+
+(function () {
+  "use strict";
+  /* Tu número de WhatsApp (con el 57 de Colombia, sin + ni espacios). */
+  var WHATSAPP = "573023104354";
+  var $ = function (sel, root) { return (root || document).querySelector(sel); };
+  var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+  function waUrl(text) { return "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(text); }
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  var SIM = window.SIM || { locale: "es-CO", currency: "COP", value: 320000000, pct: 70, years: 20, rate: 12 };
+  /* ---------- Simulador de cuota ---------- */
+  var elValue = $("#s-value"), elLoan = $("#s-loan-in"), elTerm = $("#s-term"), elRate = $("#s-rate");
+  var outPct = $("#s-pct-out"), outTerm = $("#s-term-out"), outPay = $("#s-payment"), outLoan = $("#s-loan"), outDown = $("#s-down");
+  var outRateSrc = $("#rate-src");
+  var simCta = $("#sim-cta");
+
+  var fmtMoney = new Intl.NumberFormat(SIM.locale, { style: "currency", currency: SIM.currency, maximumFractionDigits: 0 });
+  var fmtNumber = new Intl.NumberFormat(SIM.locale, { maximumFractionDigits: 0 });
+  var fmtRate = new Intl.NumberFormat(SIM.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  var fmtPct = new Intl.NumberFormat(SIM.locale, { maximumFractionDigits: 1 });
+  var MAX_DIGITS = 12;
+  var simCtaDefault = simCta.getAttribute("href");
+  var pct = SIM.pct;       // porcentaje a financiar (exacto); solo se muestra como referencia
+  var mode = "pct";        // "pct": mientras no escriba un monto, se financia el % inicial · "abs": la persona escribió el monto exacto
+  var loanAbs = Math.round(SIM.value * SIM.pct / 100);
+  var chosenBank = null;   // { banco, desde } cuando la tasa viene de un banco
+
+  // Cuota fija mensual (sistema francés) con tasa efectiva anual convertida a mensual.
+  function monthlyPayment(principal, years, effectiveAnnualPct) {
+    var n = years * 12;
+    var i = Math.pow(1 + effectiveAnnualPct / 100, 1 / 12) - 1;
+    if (i <= 0) return principal / n;
+    return (principal * i) / (1 - Math.pow(1 + i, -n));
+  }
+  function paintRange(input) {
+    var min = Number(input.min), max = Number(input.max);
+    input.style.setProperty("--fill", ((Number(input.value) - min) / (max - min)) * 100 + "%");
+  }
+  function readMoney(input) { return Number((input.value || "").replace(/\D/g, "")) || 0; }
+  // La tasa se puede escribir con coma o con punto ("12,74" o "12.74").
+  function parseRate(text) {
+    var s = String(text == null ? "" : text).trim().replace(",", ".");
+    if (!/^\d*\.?\d*$/.test(s) || s === "" || s === ".") return null;
+    var n = parseFloat(s);
+    return isFinite(n) && n >= 0 ? n : null;
+  }
+  function rateText(n) { return String(n).replace(".", ","); }
+  // Números de la tabla de bancos: acepta 12.74, "12.74" o "12,74"; cualquier otra cosa se ignora.
+  function num(v) {
+    if (v == null || v === "") return null;
+    var n = Number(String(v).replace(",", "."));
+    return isFinite(n) ? n : null;
+  }
+
+  function updateSim(source) {
+    var value = readMoney(elValue);
+    var years = Number(elTerm.value);
+    var rate = parseRate(elRate.value);
+    var rateOk = rate !== null;
+    if (rateOk && rate > 60) { rate = 60; elRate.value = "60"; }
+
+    var typedLoan = readMoney(elLoan);
+    if (source === "loan" && typedLoan > 0) { loanAbs = value > 0 ? Math.min(typedLoan, value) : typedLoan; mode = "abs"; }
+    var loan = mode === "abs" ? (value > 0 ? Math.min(loanAbs, value) : loanAbs) : (value > 0 ? Math.round(value * pct / 100) : readMoney(elLoan));
+    if (value > 0 && mode === "abs") pct = loan / value * 100;
+    // el campo "Valor a financiar" no se reescribe mientras la persona lo teclea (o lo deja vacío); al salir del campo sí
+    var typing = source === "loan" && typedLoan > 0 && loan === typedLoan;
+    if (value > 0 && !typing && !(source === "loan" && typedLoan === 0)) elLoan.value = fmtNumber.format(loan);
+
+    outPct.textContent = value > 0 ? "Escribe el monto exacto que necesitas. Equivale al " + fmtPct.format(pct) + " % del inmueble." : "Escribe el monto exacto que necesitas.";
+    outTerm.textContent = years + " años (" + years * 12 + " meses)";
+    elTerm.setAttribute("aria-valuetext", years + " años");
+    paintRange(elTerm);
+    outRateSrc.textContent = chosenBank
+      ? "Tasa de referencia de " + chosenBank.banco + " (desde)"
+      : "Tasa personalizada";
+
+    if (!value) {
+      outPay.textContent = "—"; outLoan.textContent = "—"; outDown.textContent = "—";
+      outPay.classList.remove("is-long");
+      simCta.setAttribute("href", simCtaDefault);
+      refreshBankPayments(0, years, "valor");
+      return;
+    }
+
+    var down = value - loan;
+    outLoan.textContent = fmtMoney.format(loan);
+    outDown.textContent = fmtMoney.format(down);
+    refreshBankPayments(loan, years, loan > 0 ? "" : "financiar");
+    if (!rateOk || loan <= 0) {
+      outPay.textContent = loan <= 0 && rateOk ? fmtMoney.format(0) : "—";
+      outPay.classList.remove("is-long");
+      simCta.setAttribute("href", simCtaDefault);
+      return;
+    }
+    var pay = Math.round(monthlyPayment(loan, years, rate));
+    outPay.textContent = fmtMoney.format(pay);
+    outPay.classList.toggle("is-long", outPay.textContent.length > 13);
+
+    var tasaTxt = chosenBank
+      ? "tasa de referencia de " + chosenBank.banco + " (" + fmtRate.format(rate) + "% E.A.)"
+      : "tasa de " + rate.toLocaleString(SIM.locale) + "% efectivo anual";
+    simCta.setAttribute("href", waUrl(
+      "Hola, hice una simulación en la página de Inmobiliaria Bosch: inmueble de " + fmtMoney.format(value) +
+      ", financiando " + fmtMoney.format(loan) + " (" + fmtPct.format(pct) + "%) a " + years + " años (" + years * 12 +
+      " meses), " + tasaTxt + ". Cuota estimada: " + fmtMoney.format(pay) + ". Quiero asesoría."
+    ));
+  }
+
+  // Extrae solo los dígitos de un texto pegado o tecleado. Un decimal final (",50" o ".50" en un monto completo) se descarta.
+  function moneyDigits(raw) {
+    var s = String(raw).trim();
+    if (/^\d{4,}[.,]\d{1,2}$/.test(s) || /^\d{1,3}(,\d{3})+\.\d{1,2}$/.test(s) || /^\d{1,3}(\.\d{3})+,\d{1,2}$/.test(s) || /,\d{1,2}$/.test(s)) {
+      s = s.replace(/[.,]\d{1,2}$/, "");
+    }
+    return s.replace(/\D/g, "");
+  }
+  // Da formato de miles mientras se escribe, sin mover el cursor y sin tomar centavos como parte del número.
+  function bindMoney(input, source) {
+    var last = input.value;
+    input.addEventListener("input", function () {
+      var raw = input.value;
+      var caret = input.selectionStart == null ? raw.length : input.selectionStart;
+      var digitsBefore = raw.slice(0, caret).replace(/\D/g, "").length;
+      var digits = moneyDigits(raw);
+      if (digits.length > MAX_DIGITS) { input.value = last; return; }   // más de 12 cifras: se ignora lo escrito
+      var formatted = digits ? fmtNumber.format(Number(digits)) : "";
+      input.value = last = formatted;
+      var pos = 0, seen = 0;
+      while (pos < formatted.length && seen < digitsBefore) { if (/\d/.test(formatted.charAt(pos))) seen++; pos++; }
+      try { input.setSelectionRange(pos, pos); } catch (e) {}
+      updateSim(source);
+    });
+    input.addEventListener("blur", function () { last = input.value; updateSim(); });
+  }
+
+  /* ---------- Las 3 mejores tasas de banco ---------- */
+  var BANCOS = window.BANCOS && Array.isArray(window.BANCOS.bancos) && window.BANCOS.bancos.length ? window.BANCOS : null;
+  var banksBox = $("#bancos"), bankList = $("#banks-list"), bankNote = $("#banks-note"), bankSub = $("#banks-sub"), bankStatus = $("#banks-status");
+  var bankSubDefault = bankSub ? bankSub.textContent : "";
+  var bankRows = [], bankPayEls = [], bankBtns = [];
+
+  function selectedBankOpts() {
+    var tipo = $('input[name="b-tipo"]:checked', banksBox), vis = $('input[name="b-vis"]:checked', banksBox);
+    return { tipo: tipo ? tipo.value : "hipotecario", vis: vis ? vis.value : "novis" };
+  }
+  // Las 3 con la tasa "desde" más baja (en pesos) para el tipo de crédito y la vivienda elegidos.
+  function topBanks() {
+    var o = selectedBankOpts(), rows = [];
+    BANCOS.bancos.forEach(function (b) {
+      var t = b[o.tipo], r = t && t.pesos && t.pesos[o.vis];
+      var desde = r ? num(r[0]) : null;
+      if (desde === null) return;
+      var u = t.uvr && t.uvr[o.vis], uvr = u ? num(u[0]) : null;
+      rows.push({ banco: b.banco, desde: desde, hasta: num(r[1]), uvr: uvr });
+    });
+    rows.sort(function (a, b) { return a.desde - b.desde || (a.hasta || 0) - (b.hasta || 0) || a.banco.localeCompare(b.banco, "es"); });
+    return rows.slice(0, 3);
+  }
+  function markChosenBank() {
+    var current = parseRate(elRate.value);
+    bankBtns.forEach(function (btn, i) {
+      var on = !!chosenBank && current !== null && bankRows[i].banco === chosenBank.banco && Math.abs(bankRows[i].desde - current) < 0.005;
+      btn.setAttribute("aria-pressed", String(on));
+      $(".bank-use", btn).textContent = on ? "En uso" : "Usar esta tasa";
+    });
+  }
+  function pickBank(row) {
+    chosenBank = { banco: row.banco, desde: row.desde };
+    elRate.value = rateText(row.desde);
+    updateSim("bank");
+    markChosenBank();
+  }
+  function refreshBankPayments(loan, years, why) {
+    bankRows.forEach(function (row, i) {
+      var payText = loan > 0 ? fmtMoney.format(Math.round(monthlyPayment(loan, years, row.desde))) : "";
+      bankPayEls[i].textContent = loan > 0
+        ? "Cuota estimada con la tasa «desde»: " + payText + " al mes"
+        : (why === "financiar" ? "Escribe el valor a financiar para ver la cuota" : "Escribe el valor del inmueble para ver la cuota");
+      bankBtns[i].setAttribute("aria-label", row.banco + ", desde " + fmtRate.format(row.desde) + " % efectivo anual" + (loan > 0 ? ", cuota estimada " + payText + " al mes" : ""));
+    });
+  }
+  // fresh: primera vez que se pinta (o cambia la lista) — si la tasa es personalizada, se respeta y no se cambia por la del banco.
+  function renderBanks(fresh) {
+    var o = selectedBankOpts();
+    bankList.textContent = ""; bankRows = topBanks(); bankPayEls = []; bankBtns = [];
+    var label = (o.tipo === "cartera" ? "compra de cartera" : o.tipo) + ", " + (o.vis === "vis" ? "VIS" : "No VIS");
+    if (!bankRows.length) {
+      bankList.appendChild(el("li", "bank-empty", "No hay tasas de referencia para esta combinación."));
+      if (bankSub) bankSub.textContent = bankSubDefault;
+      if (bankStatus) bankStatus.textContent = "No hay tasas de referencia para " + label + ".";
+      chosenBank = null; updateSim();
+      return;
+    }
+    if (bankSub) bankSub.textContent = bankRows.length < 3
+      ? (bankRows.length === 1 ? "Solo 1 banco ofrece" : "Solo " + bankRows.length + " bancos ofrecen") + " esta modalidad en el consolidado. " + bankSubDefault
+      : bankSubDefault;
+    bankRows.forEach(function (row, i) {
+      var li = document.createElement("li");
+      var btn = el("button", "bank"); btn.type = "button"; btn.setAttribute("aria-pressed", "false");
+      var rank = el("span", "bank-rank", String(i + 1)); rank.setAttribute("aria-hidden", "true"); btn.appendChild(rank);
+      btn.appendChild(el("span", "bank-name", row.banco));
+      var rate = el("span", "bank-rate"); rate.appendChild(el("small", null, "Desde")); rate.appendChild(document.createTextNode(fmtRate.format(row.desde) + " % E.A."));
+      btn.appendChild(rate);
+      var meta = el("span", "bank-meta", row.hasta !== null && row.hasta > row.desde ? "Hasta " + fmtRate.format(row.hasta) + " % E.A." : "Tasa única de referencia");
+      if (row.uvr !== null) {
+        meta.appendChild(document.createTextNode(" · "));
+        meta.appendChild(el("span", "nw", "En UVR, desde UVR + " + fmtRate.format(row.uvr) + " %"));
+      }
+      btn.appendChild(meta);
+      var pay = el("span", "bank-pay"); btn.appendChild(pay); bankPayEls.push(pay);
+      var use = el("span", "bank-use", "Usar esta tasa"); use.setAttribute("aria-hidden", "true"); btn.appendChild(use);
+      btn.addEventListener("click", function () { pickBank(row); });
+      bankBtns.push(btn); li.appendChild(btn); bankList.appendChild(li);
+    });
+    if (bankStatus) bankStatus.textContent = "Mejores tasas para " + label + ": " + bankRows.map(function (r) { return r.banco + " " + fmtRate.format(r.desde) + " %"; }).join(", ") + ".";
+    if (fresh || chosenBank) pickBank(bankRows[0]);   // por defecto se usa la tasa más baja
+    else { updateSim(); markChosenBank(); }           // tasa personalizada: se respeta
+  }
+
+  elValue.value = fmtNumber.format(SIM.value);
+  elTerm.value = SIM.years;
+  elRate.value = rateText(SIM.rate);
+
+  bindMoney(elValue, "value");
+  bindMoney(elLoan, "loan");
+  elTerm.addEventListener("input", function () { updateSim("term"); });
+  elRate.addEventListener("input", function () {
+    var clean = elRate.value.replace(/[^\d.,]/g, "");
+    if (clean !== elRate.value) elRate.value = clean;
+    chosenBank = null; markChosenBank(); updateSim("rate");
+  });
+  elRate.addEventListener("blur", function () {
+    var r = parseRate(elRate.value);
+    if (r === null) { elRate.value = rateText(SIM.rate); chosenBank = null; markChosenBank(); updateSim("rate"); }
+  });
+
+  if (BANCOS && banksBox) {
+    var src = BANCOS.fuente || (BANCOS.fecha ? "Tasas de " + BANCOS.fecha : "");
+    var notePrefix = src ? src.replace(/[.\s]*$/, ". ") : "";
+    bankNote.textContent = notePrefix + "Se muestra la tasa «desde» en pesos de cada banco, ordenadas de menor a mayor. " + (BANCOS.nota || "Tasas de referencia. Sujeto a estudio crediticio y aplican términos y condiciones.");
+    $$('input[name="b-tipo"], input[name="b-vis"]', banksBox).forEach(function (input) { input.addEventListener("change", function () { renderBanks(false); }); });
+    renderBanks(true);
+  } else {
+    if (banksBox) banksBox.hidden = true;
+    updateSim();
+  }
+})();
+</script>

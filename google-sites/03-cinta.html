@@ -1,0 +1,70 @@
+<!--
+  INMOBILIARIA BOSCH · Parte 03 · Cinta animada
+  Cómo usarla en Google Sites: Insertar → Incorporar → pestaña "Código para insertar" → pega TODO este archivo → Siguiente → Insertar.
+  Alto recomendado del bloque: 80 px en celular · 100 px en computador (usa el mayor para que no se corte nada).
+  Color de fondo de esta parte: #ff7ddd (si ves franjas a los lados, pon ese color de fondo a la sección en Google Sites).
+-->
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&family=Syne:wght@500..800&display=swap">
+
+<script>(function () { var d = document.documentElement; d.setAttribute("data-tema", "nebulosa"); d.setAttribute("data-nav", "ghost"); d.setAttribute("data-tarjetas", "soft"); d.setAttribute("data-secciones", "slant"); d.setAttribute("data-fondo", "aurora"); })();</script>
+
+<style>
+:root { --dk: #101338; --dk-2: #080a24; --dk-3: #201b55; --dk-foot: #04051a; --dk-fg: #f2f0ff; --dk-muted: #d3d1f7; --lt: #f3f2ff; --lt-card: #ffffff; --lt-fg: #12123a; --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2312123a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); --lt-muted: #54558a; --ac: #ff7ddd; --ac-hi: #ffb4ef; --ac-2: #2fe3d2; --ac-ink: #1a0828; --ac-on-dk: #ff7ddd; --ac-on-lt: #b0179a; --g1: #ffb4ef; --g2: #ff7ddd; --g3: #2fe3d2; --ac-deep-1: #901687; --ac-deep-2: #1c887e; --solid: #201b55; --solid-fg: #ff8ae6; --solid-ink: #ffffff; --solid-hover: #484474; --mesh-1: #7f33a8; --mesh-2: #1fb0aa; --mesh-3: #5546f0; --dk-a05: color-mix(in srgb, var(--dk-fg) 5%, transparent); --dk-a07: color-mix(in srgb, var(--dk-fg) 7%, transparent); --dk-a10: color-mix(in srgb, var(--dk-fg) 10%, transparent); --dk-a13: color-mix(in srgb, var(--dk-fg) 13%, transparent); --dk-a18: color-mix(in srgb, var(--dk-fg) 18%, transparent); --dk-t80: color-mix(in srgb, var(--dk-fg) 80%, transparent); --lt-a06: color-mix(in srgb, var(--lt-fg) 6%, transparent); --lt-a10: color-mix(in srgb, var(--lt-fg) 10%, transparent); --lt-a20: color-mix(in srgb, var(--lt-fg) 20%, transparent); --ac-a14: color-mix(in srgb, var(--ac) 14%, transparent); --ac-a20: color-mix(in srgb, var(--ac) 20%, transparent); --ac-a50: color-mix(in srgb, var(--ac) 50%, transparent); --ac-a70: color-mix(in srgb, var(--ac) 70%, transparent); --nav-bg: color-mix(in srgb, var(--dk) 55%, transparent); --nav-bg-s: color-mix(in srgb, var(--dk-2) 85%, transparent); --nav-bg-m: color-mix(in srgb, var(--dk-2) 96%, transparent); --display: "Syne", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; --body: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; --label-font: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; --d-weight: 700; --d-track: -0.03em; --d-case: none; --d-scale: 0.9; --d-ws: .06em; --d-lh: 1; --r-xl: 40px; --r-lg: 28px; --r-md: 20px; --r-pill: 999px; --r-field: 16px; --r-icon: 16px; --r-circle: 50%; --cl-bg: var(--lt-card); --cl-line: var(--lt-a10); --cl-bw: 1px; --cl-sh: none; --cl-sh-h: 0 40px 70px -40px color-mix(in srgb, var(--lt-fg) 50%, transparent); --cl-lift: -6px; --cd-bg: linear-gradient(160deg, var(--dk-a07), var(--dk-a05)); --cd-line: var(--dk-a13); --cd-bw: 1px; --cd-sh: none; --cd-lift: -5px; --tint-bg: #ff7ddd; --tint-fg: #1a0828; --mq-bg: var(--ac); --mq-fg: var(--ac-ink); --art-filter: hue-rotate(120deg) saturate(1); --sec: clamp(88px, 11vw, 140px); --container: 1200px; --noise-op: .07; --mesh-k: 0.8; --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 96px; -webkit-text-size-adjust: 100%; }
+body { margin: 0; font-family: var(--body); font-size: 1rem; line-height: 1.65; color: var(--lt-fg); background: var(--dk-2); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; word-spacing: .04em; overflow-x: clip; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--ac-on-dk); outline-offset: 3px; border-radius: 8px; }
+.marquee { background: var(--mq-bg); color: var(--mq-fg); overflow: hidden; border-block: 1px solid color-mix(in srgb, var(--mq-fg) 15%, transparent); }
+.marquee-track { display: flex; width: max-content; animation: scroll 38s linear infinite; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+.marquee-set { display: flex; align-items: center; flex: none; }
+.marquee-set span { padding: 16px 0; font-family: var(--display); font-weight: var(--d-weight); font-size: calc(clamp(1.4rem, 3.4vw, 2.2rem) * var(--d-scale)); letter-spacing: var(--d-track); text-transform: var(--d-case); white-space: nowrap; }
+.marquee-set span.out { color: transparent; -webkit-text-stroke: 1.5px var(--mq-fg); }
+.marquee-set i { display: block; width: 12px; height: 12px; margin: 0 clamp(22px, 3vw, 40px); background: var(--mq-fg); transform: rotate(45deg); border-radius: 2px; flex: none; }
+@keyframes scroll { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .marquee-track { animation: none; }
+  * { transition-duration: .01ms !important; }
+}
+html[data-movimiento="still"] .marquee-track { animation: none; }
+html[data-tarjetas="soft"] { --cl-bg: var(--lt-card); --cl-line: transparent; --cl-bw: 0px; --cl-sh: 0 18px 40px -24px color-mix(in srgb, var(--lt-fg) 35%, transparent); --cl-sh-h: 0 34px 60px -28px color-mix(in srgb, var(--lt-fg) 45%, transparent); --cl-lift: -4px; --cd-bg: var(--dk-a07); --cd-line: transparent; --cd-bw: 0px; --cd-sh: 0 24px 50px -28px rgba(0,0,0,.6); }
+/* --- Ajustes para Google Sites --- */
+body { background: #ff7ddd; }
+html, body { margin: 0; }
+form { margin: 0; }
+[hidden] { display: none !important; }
+a:not([href]) { pointer-events: none; cursor: default; }
+html[data-secciones] .stack, .stack { margin-top: 0 !important; }
+.parte > section, .parte > footer { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+
+</style>
+
+<div class="parte">
+<div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <div class="marquee-set"><span>Tómate tu tiempo</span><i></i><span class="out">Compra</span><i></i><span>Venta</span><i></i><span class="out">Financiamiento</span><i></i><span>Propiedades en Colombia</span><i></i></div>
+      <div class="marquee-set"><span>Tómate tu tiempo</span><i></i><span class="out">Compra</span><i></i><span>Venta</span><i></i><span class="out">Financiamiento</span><i></i><span>Propiedades en Colombia</span><i></i></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // "Pausar animaciones" (botón del pie): avisa a todas las partes de la página.
+  window.addEventListener("message", function (e) {
+    var d = e.data;
+    if (d && d.bosch === "movimiento") {
+      if (d.pausar) document.documentElement.setAttribute("data-movimiento", "still");
+      else document.documentElement.removeAttribute("data-movimiento");
+    }
+  });
+})();
+</script>
