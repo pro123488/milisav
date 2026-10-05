@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Inmobiliaria Bosch · Compra, venta y financiamiento de propiedades</title>
-  <meta name="description" content="Mily Bosch, agente inmobiliario. Calcula tu cuota y recibe asesoría para comprar, vender y financiar propiedades nacionales e internacionales.">
+  <meta name="description" content="Inmobiliaria Bosch: asesoría cercana para comprar, vender y financiar propiedades en Colombia. Calcula tu cuota.">
   <meta name="theme-color" content="#060e1b">
 
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='13' fill='%2388f061'/%3E%3Cpath d='M9 21 24 9l15 12' fill='none' stroke='%230a1628' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M19 25v17M19 25h6a4 4 0 0 1 0 8h-6M19 33h7a4.5 4.5 0 0 1 0 9h-7' fill='none' stroke='%230a1628' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
@@ -14,7 +14,7 @@
   <meta property="og:type" content="website">
   <meta property="og:locale" content="es_LA">
   <meta property="og:title" content="Inmobiliaria Bosch · Compra, venta y financiamiento de propiedades">
-  <meta property="og:description" content="Mily Bosch, agente inmobiliario. Calcula tu cuota y recibe asesoría de principio a fin.">
+  <meta property="og:description" content="Inmobiliaria Bosch: asesoría de principio a fin para comprar, vender y financiar propiedades en Colombia.">
   <meta property="og:image" content="assets/og-image.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <script>/* arranque: activa animaciones y evita el parpadeo del estilo guardado */
@@ -26,8 +26,8 @@
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
     "name": "Inmobiliaria Bosch",
-    "description": "Compra, venta y financiamiento de propiedades nacionales e internacionales.",
-    "employee": { "@type": "Person", "name": "Mily Bosch", "jobTitle": "Agente inmobiliario" },
+    "description": "Compra, venta y financiamiento de propiedades en Colombia.",
+    "areaServed": { "@type": "Country", "name": "Colombia" },
     "telephone": "+573023104354",
     "sameAs": ["https://www.instagram.com/inmobiliariabosch/"]
   }
@@ -391,7 +391,6 @@ input[type="range"]:focus-visible { outline: 3px solid var(--dk-fg); outline-off
 .b-sell .b-art { right: -26px; bottom: -34px; width: 150px; color: var(--lt-a06); }
 .b-sell .b-art svg { width: 100%; height: auto; }
 .b-nat .b-art { right: -20px; bottom: -20px; width: 150px; color: var(--lt-a06); }
-.b-int .b-art { right: -40px; bottom: -40px; width: 190px; color: var(--ac-on-dk); }
 
 /* ---------- Proceso ---------- */
 .steps { display: grid; gap: 14px; grid-template-columns: 1fr; counter-reset: s; }
@@ -556,6 +555,7 @@ input[type="range"]:focus-visible { outline: 3px solid var(--dk-fg); outline-off
   .bento { grid-template-columns: repeat(2, 1fr); }
   .b-buy { grid-column: 1 / -1; }
   .b-buy .b-art { height: 260px; }
+  .b-nat { grid-column: 1 / -1; }
   .steps { grid-template-columns: repeat(2, 1fr); }
   .props { grid-template-columns: repeat(2, 1fr); }
   .testis { grid-template-columns: repeat(2, 1fr); }
@@ -565,7 +565,7 @@ input[type="range"]:focus-visible { outline: 3px solid var(--dk-fg); outline-off
   .footer-inner { grid-template-columns: 1.4fr 1fr 1fr; }
   .footer-inner > .footer-col:last-child { grid-column: 1 / -1; }
   .footer-bottom { flex-direction: row; justify-content: space-between; align-items: center; }
-  .seg { grid-template-columns: repeat(4, 1fr); }
+  .seg { grid-template-columns: repeat(3, 1fr); }
   .seg span { white-space: nowrap; }
 }
 
@@ -582,7 +582,8 @@ input[type="range"]:focus-visible { outline: 3px solid var(--dk-fg); outline-off
   .b-buy .b-art { position: absolute; left: 0; right: 0; bottom: 0; height: 56%; margin: 0; }
   html:not([data-tema="lima-noche"]) .b-buy .b-art { height: 52%; }
   html:not([data-tema="lima-noche"]) .b-buy .b-link { margin-top: 22px; }
-  .b-sell, .b-fin, .b-nat, .b-int { grid-column: span 3; }
+  .b-sell, .b-fin { grid-column: span 3; }
+  .b-nat { grid-column: span 6; }
   .b-wide .wide-in { flex-direction: row; align-items: center; justify-content: space-between; gap: 40px; }
   .steps { grid-template-columns: repeat(5, 1fr); }
   .props { grid-template-columns: repeat(3, 1fr); }
@@ -819,7 +820,6 @@ html.tema-pend body { visibility: hidden; }
     <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7.5"/><path d="m21 21-4.6-4.6"/></g></symbol>
     <symbol id="i-tag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z"/><circle cx="7.5" cy="7.5" r=".6" fill="currentColor"/></g></symbol>
     <symbol id="i-bank" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h18M6 18v-7M10 18v-7M14 18v-7M18 18v-7M12 2 3.5 7h17z"/></g></symbol>
-    <symbol id="i-globe" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a14.5 14.5 0 0 1 0 20 14.5 14.5 0 0 1 0-20z"/></g></symbol>
     <symbol id="i-shield" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></g></symbol>
     <symbol id="i-heart" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7z"/></symbol>
     <symbol id="i-eye" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2.1 12.1a1 1 0 0 1 0-.2C3.4 8 7.3 5 12 5s8.6 3 9.9 6.9a1 1 0 0 1 0 .2C20.6 16 16.7 19 12 19s-8.6-3-9.9-6.9z"/><circle cx="12" cy="12" r="3"/></g></symbol>
@@ -870,7 +870,7 @@ html.tema-pend body { visibility: hidden; }
         <li><a href="#contacto">Contacto</a></li>
       </ul>
       <div class="nav-actions">
-        <a class="btn btn-ghost btn-sm nav-wa" href="https://wa.me/573023104354?text=Hola%20Mily%2C%20vi%20tu%20p%C3%A1gina%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> WhatsApp</a>
+        <a class="btn btn-ghost btn-sm nav-wa" href="https://wa.me/573023104354?text=Hola%2C%20vi%20la%20p%C3%A1gina%20de%20Inmobiliaria%20Bosch%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> WhatsApp</a>
         <a class="btn btn-lime btn-sm" href="#simulador">Calcular mi cuota</a>
       </div>
     </nav>
@@ -888,30 +888,29 @@ html.tema-pend body { visibility: hidden; }
 
     <div class="container hero-grid">
       <div class="hero-copy">
-        <p class="tag tag-d"><span class="dot" aria-hidden="true"></span>Mily Bosch · Agente inmobiliario</p>
+        <p class="tag tag-d"><span class="dot" aria-hidden="true"></span>Tu ejecutivo inmobiliario</p>
         <h1 id="hero-title">Encuentra, vende y financia tu <span class="grad">próximo hogar.</span></h1>
-        <p class="lead">Propiedades nacionales e internacionales, con asesoría cercana y un simulador para que conozcas tus números antes de decidir.</p>
+        <p class="lead">Propiedades en Colombia, con asesoría cercana y un simulador para que conozcas tus números antes de decidir.</p>
 
         <form class="intent" id="intent" aria-label="¿Qué quieres hacer?">
           <div class="seg" role="radiogroup" aria-label="Quiero…">
             <label><input type="radio" name="intent" value="Quiero comprar una propiedad" checked><span>Comprar</span></label>
             <label><input type="radio" name="intent" value="Quiero vender mi propiedad"><span>Vender</span></label>
             <label><input type="radio" name="intent" value="Quiero información sobre financiamiento"><span>Financiar</span></label>
-            <label><input type="radio" name="intent" value="Me interesa una propiedad en el exterior"><span>En el exterior</span></label>
           </div>
-          <button class="btn btn-lime btn-lg" type="submit"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Hablar con Mily <svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+          <button class="btn btn-lime btn-lg" type="submit"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Hablar con un ejecutivo <svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></button>
         </form>
 
         <ul class="hero-sub">
           <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Atención personalizada</li>
-          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Nacional e internacional</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Propiedades en Colombia</li>
           <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Respuesta por WhatsApp</li>
         </ul>
       </div>
 
       <div class="hero-visual">
         <div class="hero-art" aria-hidden="true"><svg viewBox="0 0 560 540"><use href="#art-scene"/></svg></div>
-        <div class="chip-float chip-a" aria-hidden="true"><span class="ci"><svg class="icon"><use href="#i-globe"/></svg></span><span>Nacional e internacional<small>Propiedades en el exterior</small></span></div>
+        <div class="chip-float chip-a" aria-hidden="true"><span class="ci"><svg class="icon"><use href="#i-home"/></svg></span><span>Propiedades en Colombia<small>Compra, venta y financiamiento</small></span></div>
 
         <!-- Simulador -->
         <div class="sim" id="simulador" role="region" aria-labelledby="sim-title">
@@ -949,7 +948,7 @@ html.tema-pend body { visibility: hidden; }
             </dl>
           </div>
 
-          <a class="btn btn-white btn-block" id="sim-cta" href="https://wa.me/573023104354?text=Hola%20Mily%2C%20vi%20tu%20p%C3%A1gina%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Quiero asesoría con esta simulación</a>
+          <a class="btn btn-white btn-block" id="sim-cta" href="https://wa.me/573023104354?text=Hola%2C%20vi%20la%20p%C3%A1gina%20de%20Inmobiliaria%20Bosch%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Quiero asesoría con esta simulación</a>
           <p class="sim-note">Simulación indicativa: no es una oferta ni aprobación de crédito. La tasa, el plazo y las condiciones reales dependen de la entidad financiera y de tu perfil. Puedes cambiar la tasa para comparar escenarios.</p>
         </div>
       </div>
@@ -959,8 +958,8 @@ html.tema-pend body { visibility: hidden; }
   <!-- ============ Cinta ============ -->
   <div class="marquee" aria-hidden="true">
     <div class="marquee-track">
-      <div class="marquee-set"><span>Compra</span><i></i><span class="out">Venta</span><i></i><span>Financiamiento</span><i></i><span class="out">Propiedades nacionales</span><i></i><span>Propiedades internacionales</span><i></i><span class="out">Asesoría personal</span><i></i></div>
-      <div class="marquee-set"><span>Compra</span><i></i><span class="out">Venta</span><i></i><span>Financiamiento</span><i></i><span class="out">Propiedades nacionales</span><i></i><span>Propiedades internacionales</span><i></i><span class="out">Asesoría personal</span><i></i></div>
+      <div class="marquee-set"><span>Compra</span><i></i><span class="out">Venta</span><i></i><span>Financiamiento</span><i></i><span>Propiedades en Colombia</span><i></i><span class="out">Asesoría personal</span><i></i></div>
+      <div class="marquee-set"><span>Compra</span><i></i><span class="out">Venta</span><i></i><span>Financiamiento</span><i></i><span>Propiedades en Colombia</span><i></i><span class="out">Asesoría personal</span><i></i></div>
     </div>
   </div>
 
@@ -969,8 +968,8 @@ html.tema-pend body { visibility: hidden; }
     <div class="container">
       <header class="head reveal">
         <p class="tag">Servicios</p>
-        <h2 id="servicios-title">Todo lo que necesitas, con <span class="grad-dark">una sola asesora.</span></h2>
-        <p>Compra, venta y financiamiento de propiedades en el país y en el exterior.</p>
+        <h2 id="servicios-title">Todo lo que necesitas, con <span class="grad-dark">un solo ejecutivo.</span></h2>
+        <p>Compra, venta y financiamiento de propiedades en Colombia.</p>
       </header>
 
       <div class="bento">
@@ -986,36 +985,28 @@ html.tema-pend body { visibility: hidden; }
         <article class="b b-light b-sell spot reveal">
           <div class="b-top"><span class="b-ico"><svg class="icon" aria-hidden="true"><use href="#i-tag"/></svg></span><span class="b-tag">Venta</span></div>
           <h3>Vender tu propiedad</h3>
-          <p>Preséntala a los compradores indicados y ten claridad en cada paso.</p>
-          <ul class="chips"><li>Precio</li><li>Presentación</li><li>Seguimiento</li></ul>
+          <p>Conectamos con los compradores indicados.</p>
+          <ul class="chips"><li>Claridad en cada paso</li><li>Visibilidad</li><li>Experiencia</li><li>Respaldo</li></ul>
           <a class="b-link" href="#contacto" data-interest="Vender mi propiedad">Consultar <span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
           <div class="b-art" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-big-tag"/></svg></div>
         </article>
 
         <article class="b b-lime b-fin spot reveal">
           <div class="b-top"><span class="b-ico"><svg class="icon" aria-hidden="true"><use href="#i-bank"/></svg></span><span class="b-tag">Financiamiento</span></div>
-          <h3>Financiar tu compra</h3>
-          <p>Entiende tus opciones antes de decidir, con cifras claras.</p>
-          <ul class="chips"><li>Alternativas</li><li>Simulación</li><li>Trámite</li></ul>
+          <h3>Financiamiento de vivienda</h3>
+          <p>Simula tu cuota y conoce tus opciones antes de decidir.</p>
+          <ul class="chips"><li>Hipotecario</li><li>Compra de cartera</li><li>Leasing</li><li>Remodelación</li></ul>
           <a class="b-link" href="#simulador">Simular <span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
           <svg class="b-art" viewBox="0 0 140 96" aria-hidden="true"><g fill="url(#g-bar)"><rect x="0" y="62" width="20" height="34" rx="6"/><rect x="30" y="44" width="20" height="52" rx="6"/><rect x="60" y="26" width="20" height="70" rx="6"/><rect x="90" y="8" width="20" height="88" rx="6"/></g><circle cx="125" cy="12" r="6" style="fill:var(--ac-ink)"/></svg>
         </article>
 
         <article class="b b-light b-nat spot reveal">
-          <div class="b-top"><span class="b-ico"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg></span><span class="b-tag">En el país</span></div>
-          <h3>Propiedades nacionales</h3>
-          <p>Casas, apartamentos y más, según lo que busques.</p>
+          <div class="b-top"><span class="b-ico"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg></span><span class="b-tag">Colombia</span></div>
+          <h3>Propiedades en Colombia</h3>
+          <p>Casas, apartamentos y más. Mira las propiedades disponibles y las novedades en nuestro Instagram.</p>
           <ul class="chips"><li>Opciones a tu medida</li><li>Atención directa</li></ul>
-          <a class="b-link" href="#contacto" data-interest="Propiedades en el país">Consultar <span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
+          <a class="b-link" href="https://www.instagram.com/inmobiliariabosch/" target="_blank" rel="noopener" aria-label="Ver en Instagram: propiedades en Colombia (se abre en una pestaña nueva)">Ver en Instagram <span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
           <div class="b-art" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-big-home"/></svg></div>
-        </article>
-
-        <article class="b b-dark b-int spot reveal">
-          <div class="b-top"><span class="b-ico"><svg class="icon" aria-hidden="true"><use href="#i-globe"/></svg></span><span class="b-tag">Internacional</span></div>
-          <h3>Propiedades en el exterior</h3>
-          <p>Explora propiedades fuera de tu país con acompañamiento desde el inicio.</p>
-          <a class="b-link" href="#contacto" data-interest="Propiedades en el exterior">Consultar <span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
-          <svg class="b-art" viewBox="0 0 200 200" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-opacity=".35" stroke-width="1.5"><circle cx="100" cy="100" r="90"/><ellipse cx="100" cy="100" rx="38" ry="90"/><ellipse cx="100" cy="100" rx="70" ry="90"/><path d="M10 100h180M22 60h156M22 140h156"/></g></svg>
         </article>
       </div>
 
@@ -1025,7 +1016,7 @@ html.tema-pend body { visibility: hidden; }
               <h3>¿Tu caso es especial? Cuéntamelo.</h3>
               <p>Si lo que buscas no encaja en una categoría, escríbeme y armamos juntos una ruta a tu medida.</p>
             </div>
-            <a class="btn btn-lime btn-lg" href="https://wa.me/573023104354?text=Hola%20Mily%2C%20quiero%20contarte%20mi%20caso." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Escribir por WhatsApp</a>
+            <a class="btn btn-lime btn-lg" href="https://wa.me/573023104354?text=Hola%2C%20quiero%20contarte%20mi%20caso." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Escribir por WhatsApp</a>
           </div>
         </article>
 
@@ -1058,27 +1049,27 @@ html.tema-pend body { visibility: hidden; }
       <div class="about-visual reveal">
         <div class="arch">
           <svg class="scene" viewBox="0 -160 560 700" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><rect x="0" y="-160" width="560" height="161" fill="#0b1f3a"/><use href="#art-scene" x="0" y="0" width="560" height="540"/></svg>
-          <!-- Para usar tu foto: guárdala como images/mily.jpg (se mostrará automáticamente) -->
-          <img src="images/mily.jpg" alt="Mily Bosch, agente inmobiliario" width="440" height="550" loading="lazy" onerror="this.remove()">
+          <!-- Para usar tu foto: guárdala como images/ejecutivo.jpg (se mostrará automáticamente) -->
+          <img src="images/ejecutivo.jpg" alt="Tu ejecutivo inmobiliario" width="440" height="550" loading="lazy" onerror="this.remove()">
         </div>
         <div class="spin" aria-hidden="true">
           <span class="disc"></span>
-          <span class="ring"><svg viewBox="0 0 100 100"><defs><path id="circ" d="M50,50 m-37,0 a37,37 0 1,1 74,0 a37,37 0 1,1 -74,0"/></defs><text><textPath href="#circ">Mily Bosch · Agente inmobiliario · </textPath></text></svg></span>
+          <span class="ring"><svg viewBox="0 0 100 100"><defs><path id="circ" d="M50,50 m-37,0 a37,37 0 1,1 74,0 a37,37 0 1,1 -74,0"/></defs><text><textPath href="#circ">Tu ejecutivo inmobiliario · Bosch · </textPath></text></svg></span>
           <span class="mid"><svg class="icon"><use href="#i-up-right"/></svg></span>
         </div>
       </div>
 
       <div class="about-copy reveal">
         <p class="tag">Sobre mí</p>
-        <h2 id="about-title">Una asesora que te acompaña <span class="grad-dark">de principio a fin.</span></h2>
-        <p>Soy Mily Bosch, agente inmobiliario. Acompaño a personas y familias a comprar, vender y financiar propiedades, tanto en el país como en el exterior.</p>
+        <h2 id="about-title">Un ejecutivo que te acompaña <span class="grad-dark">de principio a fin.</span></h2>
+        <p>Soy tu ejecutivo inmobiliario en Inmobiliaria Bosch. Acompaño a personas y familias a comprar, vender y financiar propiedades en Colombia.</p>
         <p style="margin-top:14px">Creo que una operación inmobiliaria debe sentirse clara y humana: por eso te explico cada paso, resuelvo tus dudas y estoy a tu lado hasta el final.</p>
 
         <ul class="perks">
           <li><span><svg class="icon" aria-hidden="true"><use href="#i-heart"/></svg></span><div>Asesoría personal<small>Hablas siempre con la misma persona.</small></div></li>
           <li><span><svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg></span><div>Información clara<small>Te explico cada paso.</small></div></li>
           <li><span><svg class="icon" aria-hidden="true"><use href="#i-bank"/></svg></span><div>Financiamiento<small>Te oriento sobre alternativas.</small></div></li>
-          <li><span><svg class="icon" aria-hidden="true"><use href="#i-globe"/></svg></span><div>Nacional e internacional<small>Dentro y fuera del país.</small></div></li>
+          <li><span><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg></span><div>Propiedades en Colombia<small>Compra, venta y financiamiento.</small></div></li>
         </ul>
 
         <div class="about-actions">
@@ -1104,8 +1095,8 @@ html.tema-pend body { visibility: hidden; }
       <!-- Se muestra mientras no haya propiedades cargadas en DATOS (arriba, en la parte editable del script) -->
       <div class="ig-empty reveal" id="prop-empty">
         <div class="ig-card" aria-hidden="true">
-          <div class="ig-top"><span class="ig-av">MB</span><div><strong>inmobiliariabosch</strong><small>Mily Bosch · Agente inmobiliario</small></div></div>
-          <p>Compra, venta y financiamiento de propiedades nacionales e internacionales.</p>
+          <div class="ig-top"><span class="ig-av">MB</span><div><strong>inmobiliariabosch</strong><small>Ejecutivo inmobiliario</small></div></div>
+          <p>Compra, venta y financiamiento de propiedades en Colombia.</p>
           <span class="ig-follow">Seguir</span>
         </div>
         <div class="ig-copy">
@@ -1138,17 +1129,13 @@ html.tema-pend body { visibility: hidden; }
         <p class="tag">Preguntas frecuentes</p>
         <h2 id="faq-title">Resolvamos tus <span class="grad-dark">dudas.</span></h2>
         <p>Si no encuentras tu pregunta aquí, escríbeme y te respondo personalmente.</p>
-        <a class="btn btn-dark" href="https://wa.me/573023104354?text=Hola%20Mily%2C%20tengo%20una%20duda." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Preguntar por WhatsApp</a>
+        <a class="btn btn-dark" href="https://wa.me/573023104354?text=Hola%2C%20tengo%20una%20duda." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Preguntar por WhatsApp</a>
       </header>
 
       <div class="faq reveal">
         <details>
           <summary>¿La simulación es una aprobación de crédito? <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
           <p>No. Es un cálculo indicativo para que tengas una idea de tu cuota. La tasa, el plazo y las condiciones reales dependen de la entidad financiera y de tu perfil. Por eso puedes cambiar la tasa en el simulador y comparar escenarios.</p>
-        </details>
-        <details>
-          <summary>¿Puedo comprar una propiedad fuera de mi país? <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
-          <p>Sí. Trabajo con propiedades nacionales e internacionales. Cuéntame qué destino tienes en mente y evaluamos tu caso para orientarte sobre los pasos a seguir.</p>
         </details>
         <details>
           <summary>¿Me ayudas con el financiamiento? <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
@@ -1164,7 +1151,7 @@ html.tema-pend body { visibility: hidden; }
         </details>
         <details>
           <summary>¿Cuál es la mejor forma de contactarte? <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
-          <p>Por WhatsApp al <a href="https://wa.me/573023104354?text=Hola%20Mily%2C%20tengo%20una%20duda." target="_blank" rel="noopener">302 310 4354</a> o por mensaje directo en Instagram. También puedes usar el formulario de esta página.</p>
+          <p>Por WhatsApp al <a href="https://wa.me/573023104354?text=Hola%2C%20tengo%20una%20duda." target="_blank" rel="noopener">302 310 4354</a> o por mensaje directo en Instagram. También puedes usar el formulario de esta página.</p>
         </details>
       </div>
     </div>
@@ -1181,7 +1168,7 @@ html.tema-pend body { visibility: hidden; }
         <p>Cuéntame qué estás buscando y te respondo lo antes posible. La primera conversación es para conocerte y orientarte.</p>
 
         <ul class="contact-list">
-          <li><a href="https://wa.me/573023104354?text=Hola%20Mily%2C%20vi%20tu%20p%C3%A1gina%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener"><span class="contact-ico"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg></span><span><small>WhatsApp</small><strong>302 310 4354</strong></span></a></li>
+          <li><a href="https://wa.me/573023104354?text=Hola%2C%20vi%20la%20p%C3%A1gina%20de%20Inmobiliaria%20Bosch%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener"><span class="contact-ico"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg></span><span><small>WhatsApp</small><strong>302 310 4354</strong></span></a></li>
           <li><a href="tel:+573023104354"><span class="contact-ico"><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg></span><span><small>Llamar</small><strong>302 310 4354</strong></span></a></li>
           <li><a href="https://www.instagram.com/inmobiliariabosch/" target="_blank" rel="noopener"><span class="contact-ico"><svg class="icon" aria-hidden="true"><use href="#i-instagram"/></svg></span><span><small>Instagram</small><strong>@inmobiliariabosch</strong></span></a></li>
         </ul>
@@ -1205,9 +1192,7 @@ html.tema-pend body { visibility: hidden; }
           <select id="f-interest" name="interest">
             <option>Comprar una vivienda</option>
             <option>Vender mi propiedad</option>
-            <option>Financiar mi compra</option>
-            <option>Propiedades en el país</option>
-            <option>Propiedades en el exterior</option>
+            <option>Financiamiento de vivienda</option>
             <option>Ver propiedades disponibles</option>
             <option>Otra consulta</option>
           </select>
@@ -1230,10 +1215,10 @@ html.tema-pend body { visibility: hidden; }
         <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="13" fill="#88f061"/><path d="M9 21 24 9l15 12" fill="none" stroke="#0a1628" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 25v17M19 25h6a4 4 0 0 1 0 8h-6M19 33h7a4.5 4.5 0 0 1 0 9h-7" fill="none" stroke="#0a1628" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="brand-name">Inmobiliaria Bosch</span>
       </a>
-      <p>Compra, venta y financiamiento de propiedades nacionales e internacionales, con acompañamiento de principio a fin.</p>
+      <p>Compra, venta y financiamiento de propiedades en Colombia, con acompañamiento de principio a fin.</p>
       <p class="footer-contact"><a href="tel:+573023104354">302 310 4354</a> · <a href="https://www.instagram.com/inmobiliariabosch/" target="_blank" rel="noopener">@inmobiliariabosch</a></p>
     </div>
-    <nav class="footer-col" aria-label="Servicios"><h2>Servicios</h2><a href="#servicios">Comprar</a><a href="#servicios">Vender</a><a href="#servicios">Financiamiento</a><a href="#servicios">Propiedades internacionales</a></nav>
+    <nav class="footer-col" aria-label="Servicios"><h2>Servicios</h2><a href="#servicios">Comprar</a><a href="#servicios">Vender</a><a href="#servicios">Financiamiento</a><a href="#servicios">Propiedades en Colombia</a></nav>
     <nav class="footer-col" aria-label="Para clientes"><h2>Para clientes</h2><a href="#simulador">Simulador de cuota</a><a href="#propiedades">Propiedades</a><a href="#como-funciona">Cómo funciona</a><a href="#preguntas">Preguntas frecuentes</a><a href="#contacto">Contacto</a></nav>
     <div class="footer-col"><h2>Síguenos</h2>
       <div class="footer-social">
@@ -1250,7 +1235,7 @@ html.tema-pend body { visibility: hidden; }
   <div class="wordmark" aria-hidden="true">Inmobiliaria Bosch</div>
 </footer>
 
-<a class="wa-float" href="https://wa.me/573023104354?text=Hola%20Mily%2C%20vi%20tu%20p%C3%A1gina%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg></a>
+<a class="wa-float" href="https://wa.me/573023104354?text=Hola%2C%20vi%20la%20p%C3%A1gina%20de%20Inmobiliaria%20Bosch%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg></a>
 
 <script>
 /* ==========================================================
@@ -1260,7 +1245,7 @@ html.tema-pend body { visibility: hidden; }
       sección "Propiedades" (con filtros). Mientras esté vacía, la
       página invita a ver las propiedades en Instagram.
       Campos (solo "titulo" es obligatorio):
-        titulo, operacion ("Venta" | "Alquiler"), internacional (true),
+        titulo, operacion ("Venta" | "Alquiler"),
         tipo, ubicacion, precio (texto libre), habitaciones, banos,
         area, imagen ("images/casa-1.jpg")
       Ejemplo (quita los // para activarlo):
@@ -1270,7 +1255,7 @@ html.tema-pend body { visibility: hidden; }
 
    2) TESTIMONIOS: agrega testimonios REALES (con permiso). Mientras
       esté vacío, la sección no se muestra.
-        // { texto: "Mily nos acompañó con mucha claridad.", nombre: "Nombre Apellido", detalle: "Compra · Ciudad" },
+        // { texto: "Nos acompañó con mucha claridad.", nombre: "Nombre Apellido", detalle: "Compra · Ciudad" },
 
    3) SIM: valores iniciales del simulador. "rate" es la tasa de
       referencia en % efectivo anual: solo un punto de partida
@@ -1349,7 +1334,7 @@ window.TEMAS = [{"id":"lima-noche","nombre":"Lima Noche","grupo":"Oscuros","desc
     intent.addEventListener("submit", function (e) {
       e.preventDefault();
       var picked = $('input[name="intent"]:checked', intent);
-      openWa(waUrl("Hola Mily, " + (picked ? picked.value.charAt(0).toLowerCase() + picked.value.slice(1) : "quiero más información") + "."));
+      openWa(waUrl("Hola, " + (picked ? picked.value.charAt(0).toLowerCase() + picked.value.slice(1) : "quiero más información") + "."));
     });
   }
 
@@ -1418,7 +1403,7 @@ window.TEMAS = [{"id":"lima-noche","nombre":"Lima Noche","grupo":"Oscuros","desc
     outPay.textContent = fmtMoney.format(pay);
 
     simCta.setAttribute("href", waUrl(
-      "Hola Mily, hice una simulación en tu página: inmueble de " + fmtMoney.format(value) +
+      "Hola, hice una simulación en la página de Inmobiliaria Bosch: inmueble de " + fmtMoney.format(value) +
       ", financiando el " + pct + "% (" + fmtMoney.format(loan) + ") a " + years + " años (" + years * 12 +
       " meses), tasa simulada de " + rate.toLocaleString(SIM.locale) + "% E.A. Cuota estimada: " + fmtMoney.format(pay) +
       ". Quiero asesoría."
@@ -1518,7 +1503,7 @@ window.TEMAS = [{"id":"lima-noche","nombre":"Lima Noche","grupo":"Oscuros","desc
     var city = cityInput.value.trim();
     var phone = phoneInput.value.trim();
     var pick = interest.value;
-    var text = "Hola Mily, soy " + name + (city ? " de " + city : "") + ". Me interesa: " + pick.charAt(0).toLowerCase() + pick.slice(1) + ".";
+    var text = "Hola, soy " + name + (city ? " de " + city : "") + ". Me interesa: " + pick.charAt(0).toLowerCase() + pick.slice(1) + ".";
     var extra = message.value.trim();
     if (extra) text += "\n\n" + extra;
     if (phone) text += "\n\nMi teléfono: " + phone;
@@ -1575,7 +1560,6 @@ window.TEMAS = [{"id":"lima-noche","nombre":"Lima Noche","grupo":"Oscuros","desc
     }
     var badges = el("div", "prop-badges");
     if (p.operacion) badges.appendChild(el("span", "badge", p.operacion));
-    if (p.internacional) badges.appendChild(el("span", "badge badge-dark", "Internacional"));
     media.appendChild(badges);
     art.appendChild(media);
 
@@ -1597,7 +1581,7 @@ window.TEMAS = [{"id":"lima-noche","nombre":"Lima Noche","grupo":"Oscuros","desc
     if (feats.children.length) body.appendChild(feats);
 
     var cta = el("a", "btn btn-dark prop-cta");
-    cta.href = waUrl("Hola Mily, me interesa esta propiedad: " + p.titulo + (p.ubicacion ? " (" + p.ubicacion + ")" : "") + ". ¿Me das más información?");
+    cta.href = waUrl("Hola, me interesa esta propiedad: " + p.titulo + (p.ubicacion ? " (" + p.ubicacion + ")" : "") + ". ¿Me das más información?");
     cta.target = "_blank";
     cta.rel = "noopener";
     cta.appendChild(svgIcon("i-whatsapp"));
@@ -1614,7 +1598,6 @@ window.TEMAS = [{"id":"lima-noche","nombre":"Lima Noche","grupo":"Oscuros","desc
     items
       .filter(function (p) {
         if (filter === "Todas") return true;
-        if (filter === "Internacional") return !!p.internacional;
         return p.operacion === filter;
       })
       .forEach(function (p) { list.appendChild(card(p)); });
@@ -1626,7 +1609,6 @@ window.TEMAS = [{"id":"lima-noche","nombre":"Lima Noche","grupo":"Oscuros","desc
     ["Venta", "Alquiler"].forEach(function (op) {
       if (items.some(function (p) { return p.operacion === op; })) filters.push(op);
     });
-    if (items.some(function (p) { return p.internacional; })) filters.push("Internacional");
 
     if (filters.length > 2) {
       filtersBox.hidden = false;

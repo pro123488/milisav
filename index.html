@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Inmobiliaria Bosch · Tómate tu tiempo</title>
-  <meta name="description" content="Tómate tu tiempo. Mily Bosch, agente inmobiliario: asesoría cercana para comprar, vender y financiar propiedades nacionales e internacionales.">
+  <meta name="description" content="Tómate tu tiempo. Inmobiliaria Bosch: asesoría cercana para comprar, vender y financiar propiedades en Colombia, con simulador de cuota y tasas de bancos.">
   <meta name="theme-color" content="#080a24">
 
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2048%2048'%3E%3Crect%20width%3D'48'%20height%3D'48'%20rx%3D'13'%20fill%3D'%23ff7ddd'%2F%3E%3Cpath%20d%3D'M9%2021%2024%209l15%2012'%20fill%3D'none'%20stroke%3D'%231a0828'%20stroke-width%3D'3.2'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%2F%3E%3Cpath%20d%3D'M19%2025v17M19%2025h6a4%204%200%200%201%200%208h-6M19%2033h7a4.5%204.5%200%200%201%200%209h-7'%20fill%3D'none'%20stroke%3D'%231a0828'%20stroke-width%3D'3.2'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%2F%3E%3C%2Fsvg%3E">
@@ -14,7 +14,7 @@
   <meta property="og:type" content="website">
   <meta property="og:locale" content="es_LA">
   <meta property="og:title" content="Inmobiliaria Bosch · Tómate tu tiempo">
-  <meta property="og:description" content="Mily Bosch, agente inmobiliario. Asesoría cercana para comprar, vender y financiar, sin afanes.">
+  <meta property="og:description" content="Inmobiliaria Bosch. Asesoría cercana para comprar, vender y financiar propiedades en Colombia, sin afanes.">
   <meta property="og:image" content="assets/og-image.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <script>document.documentElement.classList.add('js');</script>
@@ -25,8 +25,8 @@
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
     "name": "Inmobiliaria Bosch",
-    "description": "Compra, venta y financiamiento de propiedades nacionales e internacionales.",
-    "employee": { "@type": "Person", "name": "Mily Bosch", "jobTitle": "Agente inmobiliario" },
+    "description": "Compra, venta y financiamiento de propiedades en Colombia.",
+    "areaServed": { "@type": "Country", "name": "Colombia" },
     "telephone": "+573023104354",
     "sameAs": ["https://www.instagram.com/inmobiliariabosch/"]
   }
@@ -182,7 +182,7 @@ section[id] { scroll-margin-top: -76px; }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
   padding: 14px 26px; border-radius: var(--r-pill); border: 1.5px solid transparent;
-  font-weight: 700; font-size: .97rem; line-height: 1.2; text-decoration: none; text-align: center; white-space: nowrap;
+  font-weight: 700; font-size: .97rem; line-height: 1.2; text-decoration: none; text-align: center; max-width: 100%;
   cursor: pointer; transition: transform .25s cubic-bezier(.2,.8,.2,1), background-color .2s, color .2s, border-color .2s, box-shadow .25s;
 }
 .btn:hover { transform: translateY(-2px); }
@@ -301,7 +301,7 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
 input[type="range"]:focus-visible { outline: 3px solid var(--dk-fg); outline-offset: 6px; }
 .sim-result { margin: 20px 0 14px; padding: 20px 22px; border-radius: calc(var(--r-lg) * .8); color: var(--ac-ink); background: linear-gradient(135deg, var(--ac-hi), var(--ac) 55%, var(--ac-2)); box-shadow: 0 20px 50px -20px var(--ac-a70); }
 .sim-result-label { display: block; font-size: .8rem; font-weight: 700; color: color-mix(in srgb, var(--ac-ink) 92%, transparent); }
-.sim-result strong { display: block; font-family: var(--display); font-size: calc(clamp(2.1rem, 5.4vw, 2.8rem) * var(--d-scale)); font-weight: var(--d-weight); letter-spacing: var(--d-track); line-height: 1.1; }
+.sim-result strong { display: block; overflow-wrap: anywhere; font-family: var(--display); font-size: calc(clamp(2.1rem, 5.4vw, 2.8rem) * var(--d-scale)); font-weight: var(--d-weight); letter-spacing: var(--d-track); line-height: 1.1; }
 .sim-result dl { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; padding-top: 14px; border-top: 1px solid color-mix(in srgb, var(--ac-ink) 18%, transparent); }
 .sim-result dt { font-size: .8rem; font-weight: 600; color: color-mix(in srgb, var(--ac-ink) 92%, transparent); }
 .sim-result dd { font-weight: 800; font-size: .96rem; }
@@ -319,9 +319,59 @@ input[type="range"]:focus-visible { outline: 3px solid var(--dk-fg); outline-off
 .sim-intro h2 { margin-top: 18px; font-size: calc(clamp(2.1rem, 5.6vw, 3.9rem) * var(--d-scale)); line-height: var(--d-lh); }
 .sim-intro > p:not(.tag) { margin-top: 18px; max-width: 480px; font-size: 1.08rem; color: var(--dk-muted); }
 .sim-points { display: grid; gap: 14px; margin-top: 28px; }
-.sim-points li { display: flex; align-items: center; gap: 12px; font-weight: 600; color: var(--dk-t80); }
-.sim-points .icon { flex: none; width: 24px; height: 24px; padding: 4px; border-radius: var(--r-circle); background: var(--ac-a14); color: var(--ac-on-dk); }
-.sim-grid .sim { width: min(100%, 520px); justify-self: center; }
+.sim-points li { display: flex; align-items: flex-start; gap: 12px; font-weight: 600; color: var(--dk-t80); text-wrap: pretty; }
+.sim-points .icon { flex: none; margin-top: 1px; width: 24px; height: 24px; padding: 4px; border-radius: var(--r-circle); background: var(--ac-a14); color: var(--ac-on-dk); }
+.sim-grid .sim, .sim-grid .banks { width: min(100%, 640px); justify-self: center; }
+
+/* ---------- Mejores tasas de banco ---------- */
+.intent .seg { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rate-src { margin-top: 8px; font-size: .78rem; line-height: 1.4; color: var(--dk-muted); text-align: right; }
+.banks { position: relative; padding: clamp(20px, 3vw, 28px); border-radius: calc(var(--r-xl) * .8); color: var(--dk-fg); background: linear-gradient(160deg, var(--dk-a10), var(--dk-a05)); border: 1px solid var(--dk-a18); }
+.banks[hidden] { display: none; }
+.banks h3 { font-size: 1.4rem; line-height: 1.15; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.sim-result strong.is-long { font-size: calc(clamp(1.5rem, 4.2vw, 2rem) * var(--d-scale)); overflow-wrap: anywhere; }
+.banks-sub { margin-top: 6px; color: var(--dk-muted); font-size: .92rem; }
+.banks-opts { margin: 18px 0 0; padding: 0; border: 0; min-width: 0; }
+.banks-opts legend { padding: 0; margin-bottom: 8px; font-size: .82rem; font-weight: 700; color: var(--dk-t80); }
+.banks-hint { font-weight: 500; color: var(--dk-muted); }
+.banks .seg { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.banks .seg span { white-space: normal; overflow-wrap: anywhere; text-align: center; padding: 10px 6px; font-size: .88rem; }
+.banks-list { display: grid; gap: 10px; margin-top: 18px; }
+.banks-list > li { container-type: inline-size; }
+.bank { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 14px; align-items: center; text-align: left; padding: 14px 16px; border-radius: calc(var(--r-lg) * .8); border: 1.5px solid var(--dk-a18); background: var(--dk-a07); color: var(--dk-fg); font: inherit; cursor: pointer; transition: border-color .2s, background-color .2s, box-shadow .2s; }
+.bank:hover { border-color: var(--ac-on-dk); }
+.bank:focus-visible { outline: 3px solid var(--dk-fg); outline-offset: 3px; }
+.bank[aria-pressed="true"] { border-color: var(--ac); background: color-mix(in srgb, var(--ac) 16%, transparent); box-shadow: 0 0 0 3px var(--ac-a20); }
+.bank-rank { grid-row: 1 / span 5; align-self: start; display: grid; place-items: center; width: 2.2em; height: 2.2em; font-size: .95rem; line-height: 1; border-radius: var(--r-circle); background: var(--ac); color: var(--ac-ink); font-family: var(--display); font-weight: var(--d-weight); }
+.bank-name, .bank-rate, .bank-meta, .bank-pay, .bank-use { grid-column: 2; }
+.bank-name { font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+.bank-rate { justify-self: start; font-family: var(--display); font-weight: var(--d-weight); font-size: 1.3rem; letter-spacing: var(--d-track); line-height: 1.1; color: var(--ac-on-dk); white-space: normal; overflow-wrap: anywhere; }
+.bank-rate small { margin-right: 8px; font-family: var(--body); font-weight: 600; font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; color: var(--dk-muted); }
+.bank-meta { font-size: .8rem; color: var(--dk-muted); overflow-wrap: anywhere; }
+.bank-meta .nw { display: inline-block; max-width: 100%; }
+.bank-pay { margin-top: 4px; font-size: .86rem; font-weight: 600; color: var(--dk-t80); overflow-wrap: anywhere; }
+.bank-use { justify-self: start; margin-top: 6px; padding: 4px 12px; border-radius: var(--r-pill); font-size: .78rem; font-weight: 800; background: var(--dk-a10); color: var(--dk-fg); }
+.bank[aria-pressed="true"] .bank-use { background: var(--ac); color: var(--ac-ink); }
+@container (min-width: 26rem) {
+  .bank { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .bank-rank { grid-row: 1 / span 3; }
+  .bank-rate { grid-column: 3; grid-row: 1; justify-self: end; text-align: right; white-space: nowrap; }
+  .bank-rate small { display: block; margin-right: 0; }
+  .bank-meta { grid-column: 2 / -1; }
+  .bank-use { grid-column: 3; justify-self: end; margin-top: 4px; }
+}
+.bank-empty { padding: 14px 4px; color: var(--dk-muted); font-size: .92rem; }
+.banks-note { margin-top: 14px; font-size: .78rem; line-height: 1.5; color: var(--dk-muted); }
+@media (min-width: 64em) {
+  .sim-grid { grid-template-areas: "intro card" "banks banks"; align-items: start; }
+  .sim-intro { grid-area: intro; align-self: center; }
+  .sim-grid .sim { grid-area: card; width: min(100%, 520px); }
+  .sim-grid .banks { grid-area: banks; width: 100%; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); column-gap: 32px; }
+  .banks > h3, .banks > .banks-sub, .banks > .banks-list, .banks > .banks-note { grid-column: 1 / -1; }
+  .banks .seg-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .banks-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+}
 
 /* ---------- Cinta ---------- */
 .marquee { background: var(--mq-bg); color: var(--mq-fg); overflow: hidden; border-block: 1px solid color-mix(in srgb, var(--mq-fg) 15%, transparent); }
@@ -383,6 +433,10 @@ input[type="range"]:focus-visible { outline: 3px solid var(--dk-fg); outline-off
 .svc-ico .icon { width: 26px; height: 26px; }
 .svc-tag { display: inline-block; margin-bottom: 8px; font-family: var(--label-font); font-size: .74rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ac-on-lt); }
 .svc-tag::before { content: counter(svc, decimal-leading-zero) " · "; color: var(--lt-muted); }
+.svc-main { min-width: 0; overflow-wrap: anywhere; }
+#servicios { overflow-x: clip; }
+h1, h2, h3 { overflow-wrap: anywhere; }
+.site-footer { overflow-x: clip; }
 .svc-main h3 { font-size: calc(clamp(1.45rem, 3vw, 2rem) * var(--d-scale) / .9); line-height: 1.08; margin-bottom: 8px; }
 .svc-main p { color: var(--lt-muted); font-size: .98rem; max-width: 460px; }
 .svc-row .chips { grid-column: 2; margin-top: 0; }
@@ -409,7 +463,8 @@ input[type="range"]:focus-visible { outline: 3px solid var(--dk-fg); outline-off
 .step p { color: var(--lt-muted); font-size: 1rem; max-width: 460px; }
 
 /* ---------- Sobre mí ---------- */
-.about { display: grid; gap: 56px; align-items: center; }
+.about { display: grid; grid-template-columns: minmax(0, 1fr); gap: 56px; align-items: center; }
+.about-copy h2 { overflow-wrap: anywhere; }
 .about-visual { position: relative; width: min(100%, 440px); margin-inline: auto; }
 .arch { position: relative; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 220px 220px var(--r-lg) var(--r-lg); background: var(--dk); box-shadow: 0 50px 90px -40px color-mix(in srgb, var(--lt-fg) 60%, transparent); }
 .arch svg.scene { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -473,6 +528,7 @@ input[type="range"]:focus-visible { outline: 3px solid var(--dk-fg); outline-off
 .ig-follow { display: block; margin-top: 18px; padding: 10px; border-radius: var(--r-pill); text-align: center; font-weight: 800; font-size: .9rem; background: var(--ac); color: var(--ac-ink); }
 .ig-copy h3 { font-size: calc(clamp(1.8rem, 3.6vw, 2.6rem) * var(--d-scale)); line-height: 1.02; margin-bottom: 14px; }
 .ig-copy p { color: var(--dk-muted); max-width: 460px; }
+.ig-copy, .ig-copy h3 { min-width: 0; overflow-wrap: anywhere; }
 .ig-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
 
 /* ---------- Testimonios ---------- */
@@ -486,21 +542,23 @@ input[type="range"]:focus-visible { outline: 3px solid var(--dk-fg); outline-off
 .testi-who small { color: var(--dk-muted); font-size: .85rem; }
 
 /* ---------- Preguntas ---------- */
-.faq-grid { display: grid; gap: 40px; }
+.faq-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; }
 .faq-aside h2 { margin-top: 18px; font-size: calc(clamp(2.1rem, 5vw, 3.5rem) * var(--d-scale)); line-height: var(--d-lh); }
 .faq-aside p:not(.tag) { margin: 18px 0 26px; color: var(--lt-muted); max-width: 380px; }
-.faq { display: grid; gap: 12px; }
+.faq { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .faq details { background: var(--cl-bg); border: var(--cl-bw) solid var(--cl-line); border-radius: calc(var(--r-lg) * .8); box-shadow: var(--cl-sh); transition: border-color .25s, box-shadow .25s; }
 .faq details[open] { border-color: var(--ac-on-lt); box-shadow: 0 24px 50px -34px color-mix(in srgb, var(--lt-fg) 50%, transparent); }
 .faq summary { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 22px 24px; font-family: var(--display); font-weight: var(--d-weight); font-size: 1.12rem; letter-spacing: var(--d-track); text-transform: var(--d-case); line-height: 1.3; cursor: pointer; list-style: none; }
 .faq summary::-webkit-details-marker { display: none; }
 .faq summary .icon { width: 32px; height: 32px; padding: 7px; border-radius: var(--r-circle); background: var(--solid); color: var(--solid-fg); transition: transform .3s; }
 .faq details[open] summary .icon { transform: rotate(135deg); }
-.faq details p { padding: 0 24px 24px; color: var(--lt-muted); }
+.faq details p { padding: 0 24px 24px; color: var(--lt-muted); overflow-wrap: anywhere; }
 .faq details p a { color: var(--ac-on-lt); font-weight: 700; }
 
 /* ---------- Contacto ---------- */
-.contact-grid { display: grid; gap: 48px; align-items: start; }
+.contact-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 48px; align-items: start; }
+.contact-copy h2, .contact-list strong { overflow-wrap: anywhere; }
+.contact-list a > span:not(.contact-ico) { min-width: 0; }
 .contact-copy h2 { margin-top: 18px; font-size: calc(clamp(2.3rem, 6vw, 4.3rem) * var(--d-scale)); line-height: var(--d-lh); }
 .contact-copy > p:not(.tag) { margin-top: 20px; color: var(--dk-muted); font-size: 1.08rem; max-width: 480px; }
 .contact-list { display: grid; gap: 12px; margin-top: 32px; max-width: 460px; }
@@ -534,7 +592,7 @@ input[type="range"]:focus-visible { outline: 3px solid var(--dk-fg); outline-off
 .footer-brand .footer-contact a:hover { color: var(--ac-on-dk); }
 .footer-col { display: flex; flex-direction: column; gap: 10px; font-size: .94rem; }
 .footer-col h2 { margin-bottom: 6px; font-family: var(--label-font); font-size: .78rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--dk-fg); }
-.footer-col a { text-decoration: none; width: fit-content; transition: color .2s; }
+.footer-col a { text-decoration: none; width: fit-content; max-width: 100%; overflow-wrap: anywhere; transition: color .2s; }
 .footer-col a:hover { color: var(--ac-on-dk); }
 .footer-col { gap: 0; }
 .footer-col > a { display: inline-flex; align-items: center; min-height: 40px; }
@@ -577,7 +635,6 @@ input[type="range"]:focus-visible { outline: 3px solid var(--dk-fg); outline-off
   .footer-inner { grid-template-columns: 1.4fr 1fr 1fr; }
   .footer-inner > .footer-col:last-child { grid-column: 1 / -1; }
   .footer-bottom { flex-direction: row; justify-content: space-between; align-items: center; }
-  .seg { grid-template-columns: repeat(4, 1fr); }
   .seg span { white-space: nowrap; }
 }
 
@@ -589,7 +646,7 @@ input[type="range"]:focus-visible { outline: 3px solid var(--dk-fg); outline-off
   .chip-float { display: flex; }
   .hero-visual { width: min(100%, 440px); }
   .b-wide .wide-in { flex-direction: row; align-items: center; justify-content: space-between; gap: 40px; }
-  .svc-row { grid-template-columns: 54px minmax(0, 1.1fr) minmax(0, 1fr) 128px; gap: 8px 36px; align-items: center; padding: 36px 14px; }
+  .svc-row { grid-template-columns: 54px minmax(0, 1.1fr) minmax(0, 1fr) 176px; gap: 8px 36px; align-items: center; padding: 36px 14px; }
   .svc-row:hover { padding-left: 26px; }
   .svc-row .chips { grid-column: 3; align-self: center; }
   .svc-row .b-link { grid-column: 4; grid-row: auto; justify-self: end; }
@@ -797,7 +854,6 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
     <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7.5"/><path d="m21 21-4.6-4.6"/></g></symbol>
     <symbol id="i-tag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z"/><circle cx="7.5" cy="7.5" r=".6" fill="currentColor"/></g></symbol>
     <symbol id="i-bank" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h18M6 18v-7M10 18v-7M14 18v-7M18 18v-7M12 2 3.5 7h17z"/></g></symbol>
-    <symbol id="i-globe" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a14.5 14.5 0 0 1 0 20 14.5 14.5 0 0 1 0-20z"/></g></symbol>
     <symbol id="i-shield" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></g></symbol>
     <symbol id="i-heart" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7z"/></symbol>
     <symbol id="i-eye" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2.1 12.1a1 1 0 0 1 0-.2C3.4 8 7.3 5 12 5s8.6 3 9.9 6.9a1 1 0 0 1 0 .2C20.6 16 16.7 19 12 19s-8.6-3-9.9-6.9z"/><circle cx="12" cy="12" r="3"/></g></symbol>
@@ -843,12 +899,12 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
         <li><a href="#servicios">Servicios</a></li>
         <li><a href="#simulador">Simulador</a></li>
         <li><a href="#como-funciona">Cómo funciona</a></li>
-        <li><a href="#sobre-mi">Sobre mí</a></li>
+        <li><a href="#sobre-mi">Tu ejecutivo</a></li>
         <li><a href="#propiedades">Propiedades</a></li>
         <li><a href="#contacto">Contacto</a></li>
       </ul>
       <div class="nav-actions">
-        <a class="btn btn-ghost btn-sm nav-wa" href="https://wa.me/573023104354?text=Hola%20Mily%2C%20vi%20tu%20p%C3%A1gina%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> WhatsApp</a>
+        <a class="btn btn-ghost btn-sm nav-wa" href="https://wa.me/573023104354?text=Hola%2C%20vi%20la%20p%C3%A1gina%20de%20Inmobiliaria%20Bosch%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> WhatsApp</a>
         <a class="btn btn-lime btn-sm" href="#simulador">Calcular mi cuota</a>
       </div>
     </nav>
@@ -866,18 +922,17 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
 
     <div class="container hero-grid">
       <div class="hero-copy">
-        <p class="tag tag-d"><span class="dot" aria-hidden="true"></span>Mily Bosch · Agente inmobiliario</p>
+        <p class="tag tag-d"><span class="dot" aria-hidden="true"></span>Tu ejecutivo inmobiliario</p>
         <h1 id="hero-title">Tómate tu tiempo para encontrar tu <span class="grad">próximo hogar.</span></h1>
-        <p class="lead">Compra, venta y financiamiento de propiedades en el país y en el exterior, con mi asesoría cercana. Aquí no hay prisa: tú marcas el ritmo.</p>
+        <p class="lead">Compra, venta y financiamiento de propiedades en Colombia, con mi asesoría cercana. Aquí no hay prisa: tú marcas el ritmo.</p>
 
         <form class="intent" id="intent" aria-label="¿Qué quieres hacer?">
           <div class="seg" role="radiogroup" aria-label="Quiero…">
             <label><input type="radio" name="intent" value="Quiero comprar una propiedad" checked><span>Comprar</span></label>
             <label><input type="radio" name="intent" value="Quiero vender mi propiedad"><span>Vender</span></label>
             <label><input type="radio" name="intent" value="Quiero información sobre financiamiento"><span>Financiar</span></label>
-            <label><input type="radio" name="intent" value="Me interesa una propiedad en el exterior"><span>En el exterior</span></label>
           </div>
-          <button class="btn btn-lime btn-lg" type="submit"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Hablar con Mily <svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+          <button class="btn btn-lime btn-lg" type="submit"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Hablar con un ejecutivo <svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></button>
         </form>
 
         <ul class="hero-sub">
@@ -890,7 +945,7 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
         <div class="arch hero-arch" aria-hidden="true">
           <svg class="scene" viewBox="0 -160 560 700" preserveAspectRatio="xMidYMax slice"><rect x="0" y="-160" width="560" height="161" fill="#0b1f3a"/><use href="#art-scene" x="0" y="0" width="560" height="540"/></svg>
         </div>
-        <div class="chip-float chip-a" aria-hidden="true"><span class="ci"><svg class="icon"><use href="#i-globe"/></svg></span><span>Nacional e internacional<small>Propiedades en el exterior</small></span></div>
+        <div class="chip-float chip-a" aria-hidden="true"><span class="ci"><svg class="icon"><use href="#i-pin"/></svg></span><span>Propiedades en Colombia<small>Compra, venta y financiamiento</small></span></div>
         <div class="chip-float chip-b" aria-hidden="true"><span class="ci"><svg class="icon"><use href="#i-heart"/></svg></span><span>Sin afanes<small>Te explico cada paso</small></span></div>
       </div>
     </div>
@@ -899,8 +954,8 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
   <!-- ============ Cinta ============ -->
   <div class="marquee" aria-hidden="true">
     <div class="marquee-track">
-      <div class="marquee-set"><span>Tómate tu tiempo</span><i></i><span class="out">Compra</span><i></i><span>Venta</span><i></i><span class="out">Financiamiento</span><i></i><span>Propiedades nacionales</span><i></i><span class="out">Propiedades internacionales</span><i></i></div>
-      <div class="marquee-set"><span>Tómate tu tiempo</span><i></i><span class="out">Compra</span><i></i><span>Venta</span><i></i><span class="out">Financiamiento</span><i></i><span>Propiedades nacionales</span><i></i><span class="out">Propiedades internacionales</span><i></i></div>
+      <div class="marquee-set"><span>Tómate tu tiempo</span><i></i><span class="out">Compra</span><i></i><span>Venta</span><i></i><span class="out">Financiamiento</span><i></i><span>Propiedades en Colombia</span><i></i></div>
+      <div class="marquee-set"><span>Tómate tu tiempo</span><i></i><span class="out">Compra</span><i></i><span>Venta</span><i></i><span class="out">Financiamiento</span><i></i><span>Propiedades en Colombia</span><i></i></div>
     </div>
   </div>
 
@@ -922,26 +977,21 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
         </article>
         <article class="svc-row spot reveal">
           <span class="svc-ico"><svg class="icon" aria-hidden="true"><use href="#i-tag"/></svg></span>
-          <div class="svc-main"><span class="svc-tag">Venta</span><h3>Vender tu propiedad</h3><p>Preséntala a los compradores indicados y ten claridad en cada paso.</p></div>
-          <ul class="chips"><li>Precio</li><li>Presentación</li><li>Seguimiento</li></ul>
+          <div class="svc-main"><span class="svc-tag">Venta</span><h3>Vender tu propiedad</h3><p>Conectamos con los compradores indicados.</p></div>
+          <ul class="chips"><li>Claridad en cada paso</li><li>Visibilidad</li><li>Experiencia</li><li>Respaldo</li></ul>
           <a class="b-link" href="#contacto" data-interest="Vender mi propiedad" aria-label="Consultar: Vender tu propiedad">Consultar <span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
         </article>
         <article class="svc-row spot reveal">
           <span class="svc-ico"><svg class="icon" aria-hidden="true"><use href="#i-bank"/></svg></span>
-          <div class="svc-main"><span class="svc-tag">Financiamiento</span><h3>Financiar tu compra</h3><p>Entiende tus opciones antes de decidir, con cifras claras.</p></div>
-          <ul class="chips"><li>Alternativas</li><li>Simulación</li><li>Orientación</li></ul>
-          <a class="b-link" href="#simulador" aria-label="Simular: Financiar tu compra">Simular <span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
+          <div class="svc-main"><span class="svc-tag">Financiamiento</span><h3>Financiamiento de vivienda</h3><p>Compara las 3 mejores tasas de banco y simula tu cuota.</p></div>
+          <ul class="chips"><li>Hipotecario</li><li>Compra de cartera</li><li>Leasing</li><li>Remodelación</li></ul>
+          <a class="b-link" href="#simulador" aria-label="Simular: Financiamiento de vivienda">Simular <span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
         </article>
         <article class="svc-row spot reveal">
           <span class="svc-ico"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg></span>
-          <div class="svc-main"><span class="svc-tag">En el país</span><h3>Propiedades nacionales</h3><p>Casas, apartamentos y más, según lo que busques.</p></div>
+          <div class="svc-main"><span class="svc-tag">Colombia</span><h3>Propiedades en Colombia</h3><p>Casas, apartamentos y más. Mira las propiedades disponibles y las novedades en nuestro Instagram.</p></div>
           <ul class="chips"><li>Opciones a tu medida</li><li>Atención directa</li></ul>
-          <a class="b-link" href="#contacto" data-interest="Propiedades en el país" aria-label="Consultar: Propiedades nacionales">Consultar <span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
-        </article>
-        <article class="svc-row spot reveal">
-          <span class="svc-ico"><svg class="icon" aria-hidden="true"><use href="#i-globe"/></svg></span>
-          <div class="svc-main"><span class="svc-tag">Internacional</span><h3>Propiedades en el exterior</h3><p>Explora propiedades fuera de tu país con acompañamiento desde el inicio.</p></div>
-          <a class="b-link" href="#contacto" data-interest="Propiedades en el exterior" aria-label="Consultar: Propiedades en el exterior">Consultar <span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
+          <a class="b-link" href="https://www.instagram.com/inmobiliariabosch/" target="_blank" rel="noopener" aria-label="Ver en Instagram: propiedades en Colombia (se abre en una pestaña nueva)">Ver en Instagram <span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
         </article>
       </div>
 
@@ -951,7 +1001,7 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
               <h3>¿Algo que no ves aquí? Escríbeme.</h3>
               <p>Cuéntame qué tienes en mente y armamos juntos una ruta a tu medida.</p>
             </div>
-            <a class="btn btn-lime btn-lg" href="https://wa.me/573023104354?text=Hola%20Mily%2C%20quiero%20contarte%20mi%20caso." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Escribir por WhatsApp</a>
+            <a class="btn btn-lime btn-lg" href="https://wa.me/573023104354?text=Hola%2C%20quiero%20contarte%20mi%20caso." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Escribir por WhatsApp</a>
           </div>
         </article>
 
@@ -966,51 +1016,83 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
       <header class="sim-intro reveal">
         <p class="tag tag-d">Financiamiento</p>
         <h2 id="sim-sec-title">Haz tus números, <span class="grad">sin afanes.</span></h2>
-        <p>Antes de decidir, mira cuánto podría ser tu cuota. Cambia el valor, el plazo y la tasa las veces que quieras: es una guía para empezar la conversación.</p>
+        <p>Escribe el valor del inmueble y cuánto quieres financiar. Elige una de las 3 mejores tasas de banco o escribe la tuya, y mira tu cuota estimada.</p>
         <ul class="sim-points">
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Tasas de referencia de varios bancos</li>
           <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Cálculo indicativo, sin compromiso</li>
-          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Compara escenarios cambiando la tasa</li>
-          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Si quieres, revisamos tus números juntos por WhatsApp</li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Si quieres, revisamos tus números con un ejecutivo por WhatsApp</li>
         </ul>
       </header>
-        <div class="sim reveal" id="sim-card" role="region" aria-labelledby="sim-title">
-          <div class="sim-head">
-            <span class="sim-badge"><svg class="icon" aria-hidden="true" style="width:14px;height:14px"><use href="#i-bank"/></svg> Simulador</span>
-            <h3 id="sim-title">Calcula tu cuota mensual</h3>
-            <p>Ajusta los valores y mira tu cuota estimada.</p>
-          </div>
 
-          <div class="sim-fields">
-            <div class="sim-field">
-              <label for="s-value">Valor del inmueble</label>
-              <div class="money"><span aria-hidden="true">$</span><input id="s-value" type="text" inputmode="numeric" autocomplete="off" value="320.000.000"></div>
-            </div>
-            <div class="sim-field">
-              <div class="sim-row"><label for="s-pct">Porcentaje a financiar</label><output id="s-pct-out" for="s-pct" aria-live="off">70%</output></div>
-              <input id="s-pct" type="range" min="30" max="90" step="5" value="70">
-            </div>
-            <div class="sim-field">
-              <div class="sim-row"><label for="s-term">Plazo</label><output id="s-term-out" for="s-term" aria-live="off">20 años (240 meses)</output></div>
-              <input id="s-term" type="range" min="5" max="30" step="1" value="20">
-            </div>
-            <div class="sim-field sim-inline">
-              <label for="s-rate">Tasa de ejemplo</label>
-              <div class="rate"><input id="s-rate" type="number" inputmode="decimal" min="0" max="60" step="0.1" value="12" aria-describedby="rate-unit"><span id="rate-unit"><abbr title="efectivo anual" style="text-decoration:none">% E.A.</abbr></span></div>
-            </div>
-          </div>
-
-          <div class="sim-result" aria-live="polite">
-            <span class="sim-result-label">Cuota mensual estimada</span>
-            <strong id="s-payment">$ 2.371.316</strong>
-            <dl>
-              <div><dt>Monto a financiar</dt><dd id="s-loan">$ 224.000.000</dd></div>
-              <div><dt>Cuota inicial</dt><dd id="s-down">$ 96.000.000</dd></div>
-            </dl>
-          </div>
-
-          <a class="btn btn-white btn-block" id="sim-cta" href="https://wa.me/573023104354?text=Hola%20Mily%2C%20vi%20tu%20p%C3%A1gina%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Quiero asesoría con esta simulación</a>
-          <p class="sim-note">Simulación indicativa: no es una oferta ni aprobación de crédito. El 12 % E.A. (efectivo anual) es solo un valor de ejemplo, no una tasa ofrecida: cámbialo para comparar escenarios. La cuota no incluye seguros ni otros costos del crédito. La tasa, el plazo y las condiciones reales dependen de la entidad financiera y de tu perfil.</p>
+      <div class="sim reveal" id="sim-card" role="region" aria-labelledby="sim-title">
+        <div class="sim-head">
+          <span class="sim-badge"><svg class="icon" aria-hidden="true" style="width:14px;height:14px"><use href="#i-bank"/></svg> Simulador</span>
+          <h3 id="sim-title">Calcula tu cuota mensual</h3>
+          <p>Ajusta los valores y mira tu cuota estimada.</p>
         </div>
+
+        <div class="sim-fields">
+          <div class="sim-field">
+            <label for="s-value">Valor del inmueble</label>
+            <div class="money"><span aria-hidden="true">$</span><input id="s-value" type="text" inputmode="numeric" autocomplete="off" value="320.000.000"></div>
+          </div>
+          <div class="sim-field">
+            <label for="s-loan-in">Valor a financiar</label>
+            <div class="money"><span aria-hidden="true">$</span><input id="s-loan-in" type="text" inputmode="numeric" autocomplete="off" value="224.000.000"></div>
+          </div>
+          <div class="sim-field">
+            <div class="sim-row"><label for="s-pct">Porcentaje a financiar</label><output id="s-pct-out" for="s-pct" aria-live="off">70%</output></div>
+            <input id="s-pct" type="range" min="10" max="90" step="1" value="70" autocomplete="off">
+          </div>
+          <div class="sim-field">
+            <div class="sim-row"><label for="s-term">Plazo</label><output id="s-term-out" for="s-term" aria-live="off">20 años (240 meses)</output></div>
+            <input id="s-term" type="range" min="5" max="30" step="1" value="20" autocomplete="off">
+          </div>
+          <div class="sim-field">
+            <div class="sim-inline">
+              <label for="s-rate">Tasa</label>
+              <div class="rate"><input id="s-rate" type="text" inputmode="decimal" autocomplete="off" maxlength="6" value="12" aria-describedby="rate-unit rate-src"><span id="rate-unit"><abbr title="efectivo anual" style="text-decoration:none">% E.A.</abbr></span></div>
+            </div>
+            <p class="rate-src" id="rate-src">Tasa personalizada</p>
+          </div>
+        </div>
+
+        <div class="sim-result" aria-live="polite">
+          <span class="sim-result-label">Cuota mensual estimada</span>
+          <strong id="s-payment">$ 2.371.316</strong>
+          <dl>
+            <div><dt>Valor a financiar</dt><dd id="s-loan">$ 224.000.000</dd></div>
+            <div><dt>Cuota inicial</dt><dd id="s-down">$ 96.000.000</dd></div>
+          </dl>
+        </div>
+
+        <a class="btn btn-white btn-block" id="sim-cta" href="https://wa.me/573023104354?text=Hola%2C%20vi%20la%20p%C3%A1gina%20de%20Inmobiliaria%20Bosch%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Quiero asesoría con esta simulación</a>
+        <p class="sim-note">Simulación indicativa: no es una oferta ni aprobación de crédito. Las tasas de banco son de referencia («desde») y dependen de tu perfil y del estudio de crédito de cada entidad; también puedes escribir otra tasa. La cuota no incluye seguros ni otros costos del crédito.</p>
+      </div>
+
+      <section class="banks reveal" id="bancos" aria-labelledby="banks-title">
+        <h3 id="banks-title">Las 3 mejores tasas de banco</h3>
+        <p class="banks-sub" id="banks-sub">Elige una para usarla en tu simulación.</p>
+        <fieldset class="banks-opts">
+          <legend>Tipo de crédito</legend>
+          <div class="seg seg-4">
+              <label><input type="radio" name="b-tipo" value="hipotecario" checked autocomplete="off"><span>Hipotecario</span></label>
+              <label><input type="radio" name="b-tipo" value="cartera" autocomplete="off"><span>Compra de cartera</span></label>
+              <label><input type="radio" name="b-tipo" value="leasing" autocomplete="off"><span>Leasing</span></label>
+              <label><input type="radio" name="b-tipo" value="remodelacion" autocomplete="off"><span>Remodelación</span></label>
+          </div>
+        </fieldset>
+        <fieldset class="banks-opts">
+          <legend>Vivienda <span class="banks-hint">(VIS: de interés social)</span></legend>
+          <div class="seg">
+            <label><input type="radio" name="b-vis" value="novis" checked autocomplete="off"><span>No VIS</span></label>
+            <label><input type="radio" name="b-vis" value="vis" autocomplete="off"><span>VIS</span></label>
+          </div>
+        </fieldset>
+        <ol class="banks-list" id="banks-list"></ol>
+        <p class="sr-only" id="banks-status" role="status"></p>
+        <p class="banks-note" id="banks-note">Tasas de referencia. Sujeto a estudio crediticio y aplican términos y condiciones.</p>
+      </section>
     </div>
   </section>
 
@@ -1039,27 +1121,27 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
       <div class="about-visual reveal">
         <div class="arch">
           <svg class="scene" viewBox="0 -160 560 700" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><rect x="0" y="-160" width="560" height="161" fill="#0b1f3a"/><use href="#art-scene" x="0" y="0" width="560" height="540"/></svg>
-          <!-- Para usar tu foto: guárdala como images/mily.jpg (se mostrará automáticamente) -->
-          <img src="images/mily.jpg" alt="Mily Bosch, agente inmobiliario" width="440" height="550" loading="lazy" onerror="this.remove()">
+          <!-- Para usar la foto del ejecutivo: guárdala como images/ejecutivo.jpg (se mostrará automáticamente) -->
+          <img src="images/ejecutivo.jpg" alt="Ejecutivo inmobiliario de Inmobiliaria Bosch" width="440" height="550" loading="lazy" onerror="this.remove()">
         </div>
         <div class="spin" aria-hidden="true">
           <span class="disc"></span>
-          <span class="ring"><svg viewBox="0 0 100 100"><defs><path id="circ" d="M50,50 m-37,0 a37,37 0 1,1 74,0 a37,37 0 1,1 -74,0"/></defs><text><textPath href="#circ">Mily Bosch · Agente inmobiliario · </textPath></text></svg></span>
+          <span class="ring"><svg viewBox="0 0 100 100"><defs><path id="circ" d="M50,50 m-37,0 a37,37 0 1,1 74,0 a37,37 0 1,1 -74,0"/></defs><text><textPath href="#circ">Tu ejecutivo inmobiliario · Bosch · </textPath></text></svg></span>
           <span class="mid"><svg class="icon"><use href="#i-up-right"/></svg></span>
         </div>
       </div>
 
       <div class="about-copy reveal">
-        <p class="tag">Sobre mí</p>
-        <h2 id="about-title">Asesoría que te acompaña <span class="grad-dark">de principio a fin.</span></h2>
-        <p>Soy Mily Bosch, agente inmobiliario. Acompaño a personas y familias a comprar, vender y financiar propiedades, tanto en el país como en el exterior.</p>
+        <p class="tag">Tu ejecutivo</p>
+        <h2 id="about-title">Un ejecutivo que te acompaña <span class="grad-dark">de principio a fin.</span></h2>
+        <p>Soy tu ejecutivo inmobiliario en Inmobiliaria Bosch. Acompaño a personas y familias a comprar, vender y financiar propiedades en Colombia.</p>
         <p style="margin-top:14px">Creo que una operación inmobiliaria debe sentirse clara y humana: por eso te explico cada paso, resuelvo tus dudas y estoy a tu lado hasta el final.</p>
 
         <ul class="perks">
           <li><span><svg class="icon" aria-hidden="true"><use href="#i-heart"/></svg></span><div>Asesoría personal<small>Hablas siempre con la misma persona.</small></div></li>
           <li><span><svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg></span><div>Información clara<small>En lenguaje sencillo, sin tecnicismos.</small></div></li>
           <li><span><svg class="icon" aria-hidden="true"><use href="#i-bank"/></svg></span><div>Financiamiento<small>Te oriento sobre alternativas.</small></div></li>
-          <li><span><svg class="icon" aria-hidden="true"><use href="#i-globe"/></svg></span><div>Nacional e internacional<small>Dentro y fuera del país.</small></div></li>
+          <li><span><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg></span><div>Propiedades en Colombia<small>Compra, venta y financiamiento.</small></div></li>
         </ul>
 
         <div class="about-actions">
@@ -1076,7 +1158,7 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
       <header class="head reveal">
         <p class="tag">Propiedades</p>
         <h2 id="props-title">Propiedades <span class="grad-dark">disponibles.</span></h2>
-        <p>Propiedades nacionales y del exterior. ¿No ves lo que buscas? Escríbeme y lo buscamos juntos.</p>
+        <p>Casas y apartamentos en Colombia. ¿No ves lo que buscas? Escríbeme y lo buscamos juntos.</p>
       </header>
 
       <div class="filters" id="prop-filters" role="group" aria-label="Filtrar propiedades" hidden></div>
@@ -1085,13 +1167,13 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
       <!-- Se muestra mientras no haya propiedades cargadas en DATOS (arriba, en la parte editable del script) -->
       <div class="ig-empty reveal" id="prop-empty">
         <a class="ig-card" href="https://www.instagram.com/inmobiliariabosch/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
-          <div class="ig-top"><span class="ig-av">MB</span><div><strong>inmobiliariabosch</strong><small>Mily Bosch · Agente inmobiliario</small></div></div>
-          <p>Compra, venta y financiamiento de propiedades nacionales e internacionales.</p>
+          <div class="ig-top"><span class="ig-av">IB</span><div><strong>inmobiliariabosch</strong><small>Ejecutivo inmobiliario</small></div></div>
+          <p>Compra, venta y financiamiento de propiedades en Colombia.</p>
           <span class="ig-follow">Seguir</span>
         </a>
         <div class="ig-copy">
           <h3>Mira las propiedades en Instagram</h3>
-          <p>Estoy actualizando esta sección. Mientras tanto, encuentra las propiedades disponibles y las novedades en mi perfil de Instagram.</p>
+          <p>Estoy actualizando esta sección. Mientras tanto, encuentra las propiedades disponibles y las novedades en nuestro perfil de Instagram.</p>
           <div class="ig-actions">
             <a class="btn btn-lime" href="https://www.instagram.com/inmobiliariabosch/" target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-instagram"/></svg> @inmobiliariabosch</a>
             <a class="btn btn-ghost" href="#contacto" data-interest="Ver propiedades disponibles">Pedir opciones <svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a>
@@ -1119,7 +1201,7 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
         <p class="tag">Preguntas frecuentes</p>
         <h2 id="faq-title">Resolvamos tus <span class="grad-dark">dudas.</span></h2>
         <p>Si no encuentras tu pregunta aquí, escríbeme y te respondo personalmente.</p>
-        <a class="btn btn-dark" href="https://wa.me/573023104354?text=Hola%20Mily%2C%20tengo%20una%20duda." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Preguntar por WhatsApp</a>
+        <a class="btn btn-dark" href="https://wa.me/573023104354?text=Hola%2C%20tengo%20una%20duda." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg> Preguntar por WhatsApp</a>
       </header>
 
       <div class="faq reveal">
@@ -1128,12 +1210,12 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
           <p>No. Es una guía para que veas tu cuota aproximada; la aprobación y las condiciones reales las define la entidad financiera. La cuota estimada no incluye seguros ni otros costos del crédito.</p>
         </details>
         <details>
-          <summary>¿Puedo comprar una propiedad fuera de mi país? <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
-          <p>Es posible en muchos casos, y depende del país de destino. Trabajo con propiedades nacionales e internacionales: cuéntame qué destino tienes en mente y evaluamos tu caso para orientarte sobre los pasos a seguir.</p>
+          <summary>¿De dónde salen las tasas de los bancos? <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <p>Son tasas de referencia de un consolidado de bancos, con la fecha indicada junto a ellas. Se muestra la más baja («desde») de cada banco para cada tipo de crédito. La tasa real depende de tu perfil y del estudio de crédito del banco, y aplican sus términos y condiciones.</p>
         </details>
         <details>
           <summary>¿Me ayudas con el financiamiento? <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
-          <p>Te oriento sobre las alternativas de financiamiento disponibles. Las condiciones dependen de cada caso, así que lo primero es conversar para conocer tu situación. El crédito lo aprueba y otorga la entidad financiera que tú elijas.</p>
+          <p>Te oriento sobre las alternativas de financiamiento disponibles (crédito hipotecario, compra de cartera, leasing y remodelación). Las condiciones dependen de cada caso, así que lo primero es conversar para conocer tu situación. El crédito lo aprueba y otorga la entidad financiera que tú elijas.</p>
         </details>
         <details>
           <summary>Quiero vender mi propiedad, ¿por dónde empiezo? <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
@@ -1145,7 +1227,7 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
         </details>
         <details>
           <summary>¿Cuál es la mejor forma de contactarte? <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary>
-          <p>Por WhatsApp al <a href="https://wa.me/573023104354?text=Hola%20Mily%2C%20tengo%20una%20duda." target="_blank" rel="noopener">302 310 4354</a> o por mensaje directo en Instagram. También puedes usar el formulario de esta página.</p>
+          <p>Por WhatsApp al <a href="https://wa.me/573023104354?text=Hola%2C%20tengo%20una%20duda." target="_blank" rel="noopener">302 310 4354</a> o por mensaje directo en Instagram. También puedes usar el formulario de esta página.</p>
         </details>
       </div>
     </div>
@@ -1162,7 +1244,7 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
         <p>Cuéntame qué estás buscando y te respondo lo antes posible. La primera conversación es para conocerte y orientarte.</p>
 
         <ul class="contact-list">
-          <li><a href="https://wa.me/573023104354?text=Hola%20Mily%2C%20vi%20tu%20p%C3%A1gina%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener"><span class="contact-ico"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg></span><span><small>WhatsApp</small><strong>302 310 4354</strong></span></a></li>
+          <li><a href="https://wa.me/573023104354?text=Hola%2C%20vi%20la%20p%C3%A1gina%20de%20Inmobiliaria%20Bosch%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener"><span class="contact-ico"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg></span><span><small>WhatsApp</small><strong>302 310 4354</strong></span></a></li>
           <li><a href="tel:+573023104354"><span class="contact-ico"><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg></span><span><small>Llamar</small><strong>302 310 4354</strong></span></a></li>
           <li><a href="https://www.instagram.com/inmobiliariabosch/" target="_blank" rel="noopener"><span class="contact-ico"><svg class="icon" aria-hidden="true"><use href="#i-instagram"/></svg></span><span><small>Instagram</small><strong>@inmobiliariabosch</strong></span></a></li>
         </ul>
@@ -1186,9 +1268,7 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
           <select id="f-interest" name="interest">
             <option>Comprar una vivienda</option>
             <option>Vender mi propiedad</option>
-            <option>Financiar mi compra</option>
-            <option>Propiedades en el país</option>
-            <option>Propiedades en el exterior</option>
+            <option>Financiamiento de vivienda</option>
             <option>Ver propiedades disponibles</option>
             <option>Otra consulta</option>
           </select>
@@ -1211,10 +1291,10 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
         <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="13" fill="#88f061"/><path d="M9 21 24 9l15 12" fill="none" stroke="#0a1628" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 25v17M19 25h6a4 4 0 0 1 0 8h-6M19 33h7a4.5 4.5 0 0 1 0 9h-7" fill="none" stroke="#0a1628" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="brand-name">Inmobiliaria Bosch</span>
       </a>
-      <p>Compra, venta y financiamiento de propiedades nacionales e internacionales, con acompañamiento de principio a fin.</p>
+      <p>Compra, venta y financiamiento de propiedades en Colombia, con acompañamiento de principio a fin.</p>
       <p class="footer-contact"><a href="tel:+573023104354">302 310 4354</a> · <a href="https://www.instagram.com/inmobiliariabosch/" target="_blank" rel="noopener">@inmobiliariabosch</a></p>
     </div>
-    <nav class="footer-col" aria-label="Servicios"><h2>Servicios</h2><a href="#servicios">Comprar</a><a href="#servicios">Vender</a><a href="#servicios">Financiamiento</a><a href="#servicios">Propiedades internacionales</a></nav>
+    <nav class="footer-col" aria-label="Servicios"><h2>Servicios</h2><a href="#servicios">Comprar</a><a href="#servicios">Vender</a><a href="#servicios">Financiamiento</a><a href="#servicios">Propiedades en Colombia</a></nav>
     <nav class="footer-col" aria-label="Explora"><h2>Explora</h2><a href="#simulador">Simulador de cuota</a><a href="#como-funciona">Cómo funciona</a><a href="#propiedades">Propiedades</a><a href="#preguntas">Preguntas frecuentes</a><a href="#contacto">Contacto</a></nav>
     <div class="footer-col"><h2>Síguenos</h2>
       <div class="footer-social">
@@ -1232,7 +1312,7 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
   <div class="wordmark" aria-hidden="true">Tómate tu tiempo.</div>
 </footer>
 
-<a class="wa-float" href="https://wa.me/573023104354?text=Hola%20Mily%2C%20vi%20tu%20p%C3%A1gina%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg></a>
+<a class="wa-float" href="https://wa.me/573023104354?text=Hola%2C%20vi%20la%20p%C3%A1gina%20de%20Inmobiliaria%20Bosch%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg></a>
 
 <script>
 /* ==========================================================
@@ -1242,7 +1322,7 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
       sección "Propiedades" (con filtros). Mientras esté vacía, la
       página invita a ver las propiedades en Instagram.
       Campos (solo "titulo" es obligatorio):
-        titulo, operacion ("Venta" | "Alquiler"), internacional (true),
+        titulo, operacion ("Venta" | "Alquiler"),
         tipo, ubicacion, precio (texto libre), habitaciones, banos,
         area, imagen ("images/casa-1.jpg")
       Ejemplo (quita los // para activarlo):
@@ -1252,17 +1332,74 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
 
    2) TESTIMONIOS: agrega testimonios REALES (con permiso). Mientras
       esté vacío, la sección no se muestra.
-        // { texto: "Mily nos acompañó con mucha claridad.", nombre: "Nombre Apellido", detalle: "Compra · Ciudad" },
+        // { texto: "Nos acompañaron con mucha claridad.", nombre: "Nombre Apellido", detalle: "Compra · Ciudad" },
 
-   3) SIM: valores iniciales del simulador. "rate" es la tasa de
-      referencia en % efectivo anual: solo un punto de partida
-      editable por quien usa el simulador, NO una tasa ofrecida.
+   3) SIM: valores iniciales del simulador (valor del inmueble, porcentaje
+      a financiar, plazo). "rate" solo se usa si no hay datos de BANCOS.
+
+   4) BANCOS: tasas de referencia de todos los bancos, por tipo de crédito
+      (hipotecario, cartera = compra de cartera, leasing, remodelacion),
+      en pesos (% E.A.) y en UVR (margen: UVR + x %), para VIS y No VIS.
+      Cada tasa es [desde, hasta]; null = el banco no ofrece esa modalidad.
+      La página muestra solo las 3 con la tasa "desde" más baja. Para
+      actualizarlas cada mes, cambia los números y la "fecha".
    ========================================================== */
 window.PROPIEDADES = [
 ];
 window.TESTIMONIOS = [
 ];
 window.SIM = { locale: "es-CO", currency: "COP", value: 320000000, pct: 70, years: 20, rate: 12 };
+
+window.BANCOS = {
+  fecha: "septiembre de 2026",
+  fuente: "Consolidado de tasas, septiembre de 2026",
+  nota: "Tasas de referencia. Sujeto a estudio crediticio y aplican términos y condiciones.",
+  // Cada tasa es [desde, hasta] en % E.A. (efectivo anual). En UVR es el margen: UVR + x %. null = el banco no ofrece esa modalidad.
+  bancos: [
+    { banco: "Banco Caja Social",
+      hipotecario:  { pesos: { vis: [13.95, 16.30], novis: [14.95, 17.80] }, uvr: { vis: [7.80, 10.00], novis: [8.75, 10.35] } },
+      cartera:      { pesos: { vis: [13.75, 16.30], novis: [14.75, 17.80] }, uvr: { vis: [7.80, 10.00], novis: [8.75, 10.15] } },
+      leasing:      { pesos: { vis: null, novis: null }, uvr: { vis: null, novis: null } },
+      remodelacion: { pesos: { vis: [14.95, 16.30], novis: [16.00, 17.80] }, uvr: { vis: [6.85, 10.10], novis: [7.45, 9.40] } },
+    },
+    { banco: "Banco AV Villas",
+      hipotecario:  { pesos: { vis: [12.40, 14.35], novis: [12.90, 15.40] }, uvr: { vis: [7.20, 8.50], novis: [7.40, 8.80] } },
+      cartera:      { pesos: { vis: [12.40, 14.70], novis: [12.90, 15.40] }, uvr: { vis: [7.20, 9.20], novis: [7.40, 9.20] } },
+      leasing:      { pesos: { vis: null, novis: [12.40, 13.50] }, uvr: { vis: null, novis: null } },
+      remodelacion: { pesos: { vis: [13.32, 13.32], novis: [13.32, 13.32] }, uvr: { vis: null, novis: null } },
+    },
+    { banco: "BBVA",
+      hipotecario:  { pesos: { vis: [11.40, 15.46], novis: [12.74, 17.49] }, uvr: { vis: [5.71, 8.84], novis: [6.90, 11.30] } },
+      cartera:      { pesos: { vis: [13.50, 14.50], novis: [13.50, 14.50] }, uvr: { vis: [7.11, 7.11], novis: [6.21, 7.21] } },
+      leasing:      { pesos: { vis: [12.07, 13.00], novis: [12.07, 17.02] }, uvr: { vis: null, novis: null } },
+      remodelacion: { pesos: { vis: [13.30, 16.06], novis: [14.44, 17.79] }, uvr: { vis: [7.10, 8.10], novis: [7.67, 8.67] } },
+    },
+    { banco: "Banco de Bogotá",
+      hipotecario:  { pesos: { vis: [14.16, 16.21], novis: [13.35, 17.60] }, uvr: { vis: [7.96, 9.12], novis: [8.86, 10.30] } },
+      cartera:      { pesos: { vis: [14.98, 16.35], novis: [14.44, 17.18] }, uvr: { vis: null, novis: null } },
+      leasing:      { pesos: { vis: null, novis: [13.22, 16.77] }, uvr: { vis: null, novis: null } },
+      remodelacion: { pesos: { vis: [14.98, 15.53], novis: [15.63, 17.32] }, uvr: { vis: null, novis: null } },
+    },
+    { banco: "Banco de Occidente",
+      hipotecario:  { pesos: { vis: [14.67, 17.69], novis: [14.67, 17.69] }, uvr: { vis: [7.17, 11.33], novis: [7.17, 11.33] } },
+      cartera:      { pesos: { vis: [14.92, 18.29], novis: [14.92, 18.29] }, uvr: { vis: null, novis: null } },
+      leasing:      { pesos: { vis: [14.30, 17.69], novis: [14.30, 17.69] }, uvr: { vis: [7.17, 11.33], novis: [7.17, 11.33] } },
+      remodelacion: { pesos: { vis: [14.77, 18.05], novis: [14.77, 18.05] }, uvr: { vis: null, novis: null } },
+    },
+    { banco: "Credifamilia",
+      hipotecario:  { pesos: { vis: [16.80, 16.80], novis: [16.80, 16.80] }, uvr: { vis: [9.90, 9.90], novis: [10.70, 10.70] } },
+      cartera:      { pesos: { vis: null, novis: null }, uvr: { vis: null, novis: null } },
+      leasing:      { pesos: { vis: null, novis: null }, uvr: { vis: null, novis: null } },
+      remodelacion: { pesos: { vis: [22.40, 23.95], novis: [22.40, 23.95] }, uvr: { vis: null, novis: null } },
+    },
+    { banco: "Bancolombia",
+      hipotecario:  { pesos: { vis: [14.90, 14.90], novis: [15.20, 15.60] }, uvr: { vis: [8.60, 8.60], novis: [9.00, 9.40] } },
+      cartera:      { pesos: { vis: null, novis: null }, uvr: { vis: null, novis: null } },
+      leasing:      { pesos: { vis: null, novis: [15.20, 15.60] }, uvr: { vis: null, novis: null } },
+      remodelacion: { pesos: { vis: null, novis: null }, uvr: { vis: null, novis: null } },
+    },
+  ],
+};
 
 </script>
 
@@ -1321,7 +1458,7 @@ window.SIM = { locale: "es-CO", currency: "COP", value: 320000000, pct: 70, year
     intent.addEventListener("submit", function (e) {
       e.preventDefault();
       var picked = $('input[name="intent"]:checked', intent);
-      openWa(waUrl("Hola Mily, " + (picked ? picked.value.charAt(0).toLowerCase() + picked.value.slice(1) : "quiero más información") + "."));
+      openWa(waUrl("Hola, " + (picked ? picked.value.charAt(0).toLowerCase() + picked.value.slice(1) : "quiero más información") + "."));
     });
   }
 
@@ -1335,13 +1472,21 @@ window.SIM = { locale: "es-CO", currency: "COP", value: 320000000, pct: 70, year
   });
 
   /* ---------- Simulador de cuota ---------- */
-  var elValue = $("#s-value"), elPct = $("#s-pct"), elTerm = $("#s-term"), elRate = $("#s-rate");
+  var elValue = $("#s-value"), elLoan = $("#s-loan-in"), elPct = $("#s-pct"), elTerm = $("#s-term"), elRate = $("#s-rate");
   var outPct = $("#s-pct-out"), outTerm = $("#s-term-out"), outPay = $("#s-payment"), outLoan = $("#s-loan"), outDown = $("#s-down");
+  var outRateSrc = $("#rate-src");
   var simCta = $("#sim-cta");
 
   var fmtMoney = new Intl.NumberFormat(SIM.locale, { style: "currency", currency: SIM.currency, maximumFractionDigits: 0 });
   var fmtNumber = new Intl.NumberFormat(SIM.locale, { maximumFractionDigits: 0 });
+  var fmtRate = new Intl.NumberFormat(SIM.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  var fmtPct = new Intl.NumberFormat(SIM.locale, { maximumFractionDigits: 1 });
+  var MAX_DIGITS = 12;
   var simCtaDefault = simCta.getAttribute("href");
+  var pct = SIM.pct;       // porcentaje a financiar (exacto); el deslizador solo lo muestra
+  var mode = "pct";        // "pct": el financiado sigue el porcentaje · "abs": la persona escribió un monto
+  var loanAbs = Math.round(SIM.value * SIM.pct / 100);
+  var chosenBank = null;   // { banco, desde } cuando la tasa viene de un banco
 
   // Cuota fija mensual (sistema francés) con tasa efectiva anual convertida a mensual.
   function monthlyPayment(principal, years, effectiveAnnualPct) {
@@ -1354,69 +1499,221 @@ window.SIM = { locale: "es-CO", currency: "COP", value: 320000000, pct: 70, year
     var min = Number(input.min), max = Number(input.max);
     input.style.setProperty("--fill", ((Number(input.value) - min) / (max - min)) * 100 + "%");
   }
-  function readValue() { return Number((elValue.value || "").replace(/\D/g, "")) || 0; }
+  function readMoney(input) { return Number((input.value || "").replace(/\D/g, "")) || 0; }
+  // La tasa se puede escribir con coma o con punto ("12,74" o "12.74").
+  function parseRate(text) {
+    var s = String(text == null ? "" : text).trim().replace(",", ".");
+    if (!/^\d*\.?\d*$/.test(s) || s === "" || s === ".") return null;
+    var n = parseFloat(s);
+    return isFinite(n) && n >= 0 ? n : null;
+  }
+  function rateText(n) { return String(n).replace(".", ","); }
+  // Números de la tabla de bancos: acepta 12.74, "12.74" o "12,74"; cualquier otra cosa se ignora.
+  function num(v) {
+    if (v == null || v === "") return null;
+    var n = Number(String(v).replace(",", "."));
+    return isFinite(n) ? n : null;
+  }
 
-  function updateSim() {
-    var value = readValue();
-    var pct = Number(elPct.value);
+  function updateSim(source) {
+    var value = readMoney(elValue);
     var years = Number(elTerm.value);
-    var rate = parseFloat(String(elRate.value).replace(",", "."));
-    var rateOk = isFinite(rate) && rate >= 0;
+    var rate = parseRate(elRate.value);
+    var rateOk = rate !== null;
     if (rateOk && rate > 60) { rate = 60; elRate.value = "60"; }
 
-    outPct.textContent = pct + "%";
+    var typedLoan = readMoney(elLoan);
+    if (source === "pct") { pct = Number(elPct.value); mode = "pct"; }
+    else if (source === "loan" && typedLoan > 0) { loanAbs = value > 0 ? Math.min(typedLoan, value) : typedLoan; mode = "abs"; }
+    var loan = mode === "abs" ? (value > 0 ? Math.min(loanAbs, value) : loanAbs) : (value > 0 ? Math.round(value * pct / 100) : readMoney(elLoan));
+    if (value > 0 && mode === "abs") pct = loan / value * 100;
+    // el campo "Valor a financiar" no se reescribe mientras la persona lo teclea (o lo deja vacío); al salir del campo sí
+    var typing = source === "loan" && typedLoan > 0 && loan === typedLoan;
+    if (value > 0 && !typing && !(source === "loan" && typedLoan === 0)) elLoan.value = fmtNumber.format(loan);
+    elPct.value = String(pct);
+
+    outPct.textContent = fmtPct.format(pct) + "%";
     outTerm.textContent = years + " años (" + years * 12 + " meses)";
-    elPct.setAttribute("aria-valuetext", pct + "% del valor del inmueble");
+    elPct.setAttribute("aria-valuetext", fmtPct.format(pct) + "% del valor del inmueble");
     elTerm.setAttribute("aria-valuetext", years + " años");
     paintRange(elPct);
     paintRange(elTerm);
+    outRateSrc.textContent = chosenBank
+      ? "Tasa de referencia de " + chosenBank.banco + " (desde)"
+      : "Tasa personalizada";
 
     if (!value) {
       outPay.textContent = "—"; outLoan.textContent = "—"; outDown.textContent = "—";
+      outPay.classList.remove("is-long");
       simCta.setAttribute("href", simCtaDefault);
+      refreshBankPayments(0, years, "valor");
       return;
     }
 
-    var loan = Math.round(value * pct / 100);
     var down = value - loan;
     outLoan.textContent = fmtMoney.format(loan);
     outDown.textContent = fmtMoney.format(down);
-    if (!rateOk) {
-      outPay.textContent = "—";
+    refreshBankPayments(loan, years, loan > 0 ? "" : "financiar");
+    if (!rateOk || loan <= 0) {
+      outPay.textContent = loan <= 0 && rateOk ? fmtMoney.format(0) : "—";
+      outPay.classList.remove("is-long");
       simCta.setAttribute("href", simCtaDefault);
       return;
     }
     var pay = Math.round(monthlyPayment(loan, years, rate));
     outPay.textContent = fmtMoney.format(pay);
+    outPay.classList.toggle("is-long", outPay.textContent.length > 13);
 
+    var tasaTxt = chosenBank
+      ? "tasa de referencia de " + chosenBank.banco + " (" + fmtRate.format(rate) + "% E.A.)"
+      : "tasa de " + rate.toLocaleString(SIM.locale) + "% efectivo anual";
     simCta.setAttribute("href", waUrl(
-      "Hola Mily, hice una simulación en tu página: inmueble de " + fmtMoney.format(value) +
-      ", financiando el " + pct + "% (" + fmtMoney.format(loan) + ") a " + years + " años (" + years * 12 +
-      " meses), tasa simulada de " + rate.toLocaleString(SIM.locale) + "% E.A. Cuota estimada: " + fmtMoney.format(pay) +
-      ". Quiero asesoría."
+      "Hola, hice una simulación en la página de Inmobiliaria Bosch: inmueble de " + fmtMoney.format(value) +
+      ", financiando " + fmtMoney.format(loan) + " (" + fmtPct.format(pct) + "%) a " + years + " años (" + years * 12 +
+      " meses), " + tasaTxt + ". Cuota estimada: " + fmtMoney.format(pay) + ". Quiero asesoría."
     ));
+  }
+
+  // Extrae solo los dígitos de un texto pegado o tecleado. Un decimal final (",50" o ".50" en un monto completo) se descarta.
+  function moneyDigits(raw) {
+    var s = String(raw).trim();
+    if (/^\d{4,}[.,]\d{1,2}$/.test(s) || /^\d{1,3}(,\d{3})+\.\d{1,2}$/.test(s) || /^\d{1,3}(\.\d{3})+,\d{1,2}$/.test(s) || /,\d{1,2}$/.test(s)) {
+      s = s.replace(/[.,]\d{1,2}$/, "");
+    }
+    return s.replace(/\D/g, "");
+  }
+  // Da formato de miles mientras se escribe, sin mover el cursor y sin tomar centavos como parte del número.
+  function bindMoney(input, source) {
+    var last = input.value;
+    input.addEventListener("input", function () {
+      var raw = input.value;
+      var caret = input.selectionStart == null ? raw.length : input.selectionStart;
+      var digitsBefore = raw.slice(0, caret).replace(/\D/g, "").length;
+      var digits = moneyDigits(raw);
+      if (digits.length > MAX_DIGITS) { input.value = last; return; }   // más de 12 cifras: se ignora lo escrito
+      var formatted = digits ? fmtNumber.format(Number(digits)) : "";
+      input.value = last = formatted;
+      var pos = 0, seen = 0;
+      while (pos < formatted.length && seen < digitsBefore) { if (/\d/.test(formatted.charAt(pos))) seen++; pos++; }
+      try { input.setSelectionRange(pos, pos); } catch (e) {}
+      updateSim(source);
+    });
+    input.addEventListener("blur", function () { last = input.value; updateSim(); });
+  }
+
+  /* ---------- Las 3 mejores tasas de banco ---------- */
+  var BANCOS = window.BANCOS && Array.isArray(window.BANCOS.bancos) && window.BANCOS.bancos.length ? window.BANCOS : null;
+  var banksBox = $("#bancos"), bankList = $("#banks-list"), bankNote = $("#banks-note"), bankSub = $("#banks-sub"), bankStatus = $("#banks-status");
+  var bankSubDefault = bankSub ? bankSub.textContent : "";
+  var bankRows = [], bankPayEls = [], bankBtns = [];
+
+  function selectedBankOpts() {
+    var tipo = $('input[name="b-tipo"]:checked', banksBox), vis = $('input[name="b-vis"]:checked', banksBox);
+    return { tipo: tipo ? tipo.value : "hipotecario", vis: vis ? vis.value : "novis" };
+  }
+  // Las 3 con la tasa "desde" más baja (en pesos) para el tipo de crédito y la vivienda elegidos.
+  function topBanks() {
+    var o = selectedBankOpts(), rows = [];
+    BANCOS.bancos.forEach(function (b) {
+      var t = b[o.tipo], r = t && t.pesos && t.pesos[o.vis];
+      var desde = r ? num(r[0]) : null;
+      if (desde === null) return;
+      var u = t.uvr && t.uvr[o.vis], uvr = u ? num(u[0]) : null;
+      rows.push({ banco: b.banco, desde: desde, hasta: num(r[1]), uvr: uvr });
+    });
+    rows.sort(function (a, b) { return a.desde - b.desde || (a.hasta || 0) - (b.hasta || 0) || a.banco.localeCompare(b.banco, "es"); });
+    return rows.slice(0, 3);
+  }
+  function markChosenBank() {
+    var current = parseRate(elRate.value);
+    bankBtns.forEach(function (btn, i) {
+      var on = !!chosenBank && current !== null && bankRows[i].banco === chosenBank.banco && Math.abs(bankRows[i].desde - current) < 0.005;
+      btn.setAttribute("aria-pressed", String(on));
+      $(".bank-use", btn).textContent = on ? "En uso" : "Usar esta tasa";
+    });
+  }
+  function pickBank(row) {
+    chosenBank = { banco: row.banco, desde: row.desde };
+    elRate.value = rateText(row.desde);
+    updateSim("bank");
+    markChosenBank();
+  }
+  function refreshBankPayments(loan, years, why) {
+    bankRows.forEach(function (row, i) {
+      var payText = loan > 0 ? fmtMoney.format(Math.round(monthlyPayment(loan, years, row.desde))) : "";
+      bankPayEls[i].textContent = loan > 0
+        ? "Cuota estimada con la tasa «desde»: " + payText + " al mes"
+        : (why === "financiar" ? "Escribe el valor a financiar para ver la cuota" : "Escribe el valor del inmueble para ver la cuota");
+      bankBtns[i].setAttribute("aria-label", row.banco + ", desde " + fmtRate.format(row.desde) + " % efectivo anual" + (loan > 0 ? ", cuota estimada " + payText + " al mes" : ""));
+    });
+  }
+  // fresh: primera vez que se pinta (o cambia la lista) — si la tasa es personalizada, se respeta y no se cambia por la del banco.
+  function renderBanks(fresh) {
+    var o = selectedBankOpts();
+    bankList.textContent = ""; bankRows = topBanks(); bankPayEls = []; bankBtns = [];
+    var label = (o.tipo === "cartera" ? "compra de cartera" : o.tipo) + ", " + (o.vis === "vis" ? "VIS" : "No VIS");
+    if (!bankRows.length) {
+      bankList.appendChild(el("li", "bank-empty", "No hay tasas de referencia para esta combinación."));
+      if (bankSub) bankSub.textContent = bankSubDefault;
+      if (bankStatus) bankStatus.textContent = "No hay tasas de referencia para " + label + ".";
+      chosenBank = null; updateSim();
+      return;
+    }
+    if (bankSub) bankSub.textContent = bankRows.length < 3
+      ? (bankRows.length === 1 ? "Solo 1 banco ofrece" : "Solo " + bankRows.length + " bancos ofrecen") + " esta modalidad en el consolidado. " + bankSubDefault
+      : bankSubDefault;
+    bankRows.forEach(function (row, i) {
+      var li = document.createElement("li");
+      var btn = el("button", "bank"); btn.type = "button"; btn.setAttribute("aria-pressed", "false");
+      var rank = el("span", "bank-rank", String(i + 1)); rank.setAttribute("aria-hidden", "true"); btn.appendChild(rank);
+      btn.appendChild(el("span", "bank-name", row.banco));
+      var rate = el("span", "bank-rate"); rate.appendChild(el("small", null, "Desde")); rate.appendChild(document.createTextNode(fmtRate.format(row.desde) + " % E.A."));
+      btn.appendChild(rate);
+      var meta = el("span", "bank-meta", row.hasta !== null && row.hasta > row.desde ? "Hasta " + fmtRate.format(row.hasta) + " % E.A." : "Tasa única de referencia");
+      if (row.uvr !== null) {
+        meta.appendChild(document.createTextNode(" · "));
+        meta.appendChild(el("span", "nw", "En UVR, desde UVR + " + fmtRate.format(row.uvr) + " %"));
+      }
+      btn.appendChild(meta);
+      var pay = el("span", "bank-pay"); btn.appendChild(pay); bankPayEls.push(pay);
+      var use = el("span", "bank-use", "Usar esta tasa"); use.setAttribute("aria-hidden", "true"); btn.appendChild(use);
+      btn.addEventListener("click", function () { pickBank(row); });
+      bankBtns.push(btn); li.appendChild(btn); bankList.appendChild(li);
+    });
+    if (bankStatus) bankStatus.textContent = "Mejores tasas para " + label + ": " + bankRows.map(function (r) { return r.banco + " " + fmtRate.format(r.desde) + " %"; }).join(", ") + ".";
+    if (fresh || chosenBank) pickBank(bankRows[0]);   // por defecto se usa la tasa más baja
+    else { updateSim(); markChosenBank(); }           // tasa personalizada: se respeta
   }
 
   elValue.value = fmtNumber.format(SIM.value);
   elPct.value = SIM.pct;
   elTerm.value = SIM.years;
-  elRate.value = SIM.rate;
+  elRate.value = rateText(SIM.rate);
 
-  // Da formato al valor mientras se escribe, sin mover el cursor y sin tomar centavos como parte del número.
-  elValue.addEventListener("input", function () {
-    var raw = elValue.value;
-    var caret = elValue.selectionStart == null ? raw.length : elValue.selectionStart;
-    var digitsBefore = raw.slice(0, caret).replace(/\D/g, "").length;
-    var digits = raw.replace(/,\d{1,2}$/, "").replace(/\D/g, "").slice(0, 12);
-    var formatted = digits ? fmtNumber.format(Number(digits)) : "";
-    elValue.value = formatted;
-    var pos = 0, seen = 0;
-    while (pos < formatted.length && seen < digitsBefore) { if (/\d/.test(formatted.charAt(pos))) seen++; pos++; }
-    try { elValue.setSelectionRange(pos, pos); } catch (e) {}
-    updateSim();
+  bindMoney(elValue, "value");
+  bindMoney(elLoan, "loan");
+  elPct.addEventListener("input", function () { updateSim("pct"); });
+  elTerm.addEventListener("input", function () { updateSim("term"); });
+  elRate.addEventListener("input", function () {
+    var clean = elRate.value.replace(/[^\d.,]/g, "");
+    if (clean !== elRate.value) elRate.value = clean;
+    chosenBank = null; markChosenBank(); updateSim("rate");
   });
-  [elPct, elTerm, elRate].forEach(function (input) { input.addEventListener("input", updateSim); });
-  updateSim();
+  elRate.addEventListener("blur", function () {
+    var r = parseRate(elRate.value);
+    if (r === null) { elRate.value = rateText(SIM.rate); chosenBank = null; markChosenBank(); updateSim("rate"); }
+  });
+
+  if (BANCOS && banksBox) {
+    var src = BANCOS.fuente || (BANCOS.fecha ? "Tasas de " + BANCOS.fecha : "");
+    var notePrefix = src ? src.replace(/[.\s]*$/, ". ") : "";
+    bankNote.textContent = notePrefix + "Se muestra la tasa «desde» en pesos de cada banco, ordenadas de menor a mayor. " + (BANCOS.nota || "Tasas de referencia. Sujeto a estudio crediticio y aplican términos y condiciones.");
+    $$('input[name="b-tipo"], input[name="b-vis"]', banksBox).forEach(function (input) { input.addEventListener("change", function () { renderBanks(false); }); });
+    renderBanks(true);
+  } else {
+    if (banksBox) banksBox.hidden = true;
+    updateSim();
+  }
 
   /* ---------- Animaciones de entrada ---------- */
   // Terminada la entrada, se quita .reveal para que las tarjetas recuperen sus propios efectos al pasar el cursor.
@@ -1490,7 +1787,7 @@ window.SIM = { locale: "es-CO", currency: "COP", value: 320000000, pct: 70, year
     var city = cityInput.value.trim();
     var phone = phoneInput.value.trim();
     var pick = interest.value;
-    var text = "Hola Mily, soy " + name + (city ? " de " + city : "") + ". Me interesa: " + pick.charAt(0).toLowerCase() + pick.slice(1) + ".";
+    var text = "Hola, soy " + name + (city ? " de " + city : "") + ". Me interesa: " + pick.charAt(0).toLowerCase() + pick.slice(1) + ".";
     var extra = message.value.trim();
     if (extra) text += "\n\n" + extra;
     if (phone) text += "\n\nMi teléfono: " + phone;
@@ -1547,7 +1844,6 @@ window.SIM = { locale: "es-CO", currency: "COP", value: 320000000, pct: 70, year
     }
     var badges = el("div", "prop-badges");
     if (p.operacion) badges.appendChild(el("span", "badge", p.operacion));
-    if (p.internacional) badges.appendChild(el("span", "badge badge-dark", "Internacional"));
     media.appendChild(badges);
     art.appendChild(media);
 
@@ -1569,7 +1865,7 @@ window.SIM = { locale: "es-CO", currency: "COP", value: 320000000, pct: 70, year
     if (feats.children.length) body.appendChild(feats);
 
     var cta = el("a", "btn btn-dark prop-cta");
-    cta.href = waUrl("Hola Mily, me interesa esta propiedad: " + p.titulo + (p.ubicacion ? " (" + p.ubicacion + ")" : "") + ". ¿Me das más información?");
+    cta.href = waUrl("Hola, me interesa esta propiedad: " + p.titulo + (p.ubicacion ? " (" + p.ubicacion + ")" : "") + ". ¿Me das más información?");
     cta.target = "_blank";
     cta.rel = "noopener";
     cta.appendChild(svgIcon("i-whatsapp"));
@@ -1586,7 +1882,6 @@ window.SIM = { locale: "es-CO", currency: "COP", value: 320000000, pct: 70, year
     items
       .filter(function (p) {
         if (filter === "Todas") return true;
-        if (filter === "Internacional") return !!p.internacional;
         return p.operacion === filter;
       })
       .forEach(function (p) { list.appendChild(card(p)); });
@@ -1598,7 +1893,6 @@ window.SIM = { locale: "es-CO", currency: "COP", value: 320000000, pct: 70, year
     ["Venta", "Alquiler"].forEach(function (op) {
       if (items.some(function (p) { return p.operacion === op; })) filters.push(op);
     });
-    if (items.some(function (p) { return p.internacional; })) filters.push("Internacional");
 
     if (filters.length > 2) {
       filtersBox.hidden = false;
