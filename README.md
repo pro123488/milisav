@@ -24,8 +24,8 @@ python3 -m http.server 8000
 
 ## Simulador y tasas de banco
 
-- Campos: **valor del inmueble**, **valor a financiar** (se puede escribir el monto directo; el porcentaje se ajusta
-  solo, y al revés), plazo y tasa.
+- Campos: **valor del inmueble**, **valor exacto a financiar** (el cliente escribe el monto; debajo se muestra a qué
+  porcentaje del inmueble equivale), plazo y tasa.
 - **Las 3 mejores tasas de banco**: la página elige sola las 3 con la tasa «desde» más baja **en pesos** para el tipo de crédito
   (Hipotecario, Compra de cartera, Leasing, Remodelación) y la vivienda (VIS / No VIS) que se escoja. Al tocar un banco,
   su tasa se usa en la simulación y se ve la cuota estimada con cada banco.
@@ -56,7 +56,7 @@ En el bloque **`DATOS EDITABLES`** (cerca del final de `index.html`) hay instruc
 
 - **`PROPIEDADES`**: agrega tus propiedades (las fotos van en la carpeta `images/`). Se crean solas las tarjetas y los
   filtros (Venta, Alquiler). Mientras la lista esté vacía, la sección invita a ver las propiedades en Instagram.
-  El servicio «Propiedades en Colombia» también lleva directo al Instagram.
+  El servicio «Propiedades en Colombia y exterior» también lleva directo al Instagram.
 - **`TESTIMONIOS`**: agrega testimonios **reales** (con permiso de la persona). Mientras esté vacío, la sección no aparece.
 - **`SIM`**: valores iniciales del simulador (moneda, valor, porcentaje y plazo).
 - **`BANCOS`**: las tasas de los bancos (ver arriba).

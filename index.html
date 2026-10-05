@@ -325,6 +325,7 @@ input[type="range"]:focus-visible { outline: 3px solid var(--dk-fg); outline-off
 
 /* ---------- Mejores tasas de banco ---------- */
 .intent .seg { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.field-hint { margin-top: 8px; font-size: .8rem; line-height: 1.4; color: var(--dk-muted); }
 .rate-src { margin-top: 8px; font-size: .78rem; line-height: 1.4; color: var(--dk-muted); text-align: right; }
 .banks { position: relative; padding: clamp(20px, 3vw, 28px); border-radius: calc(var(--r-xl) * .8); color: var(--dk-fg); background: linear-gradient(160deg, var(--dk-a10), var(--dk-a05)); border: 1px solid var(--dk-a18); }
 .banks[hidden] { display: none; }
@@ -438,7 +439,7 @@ input[type="range"]:focus-visible { outline: 3px solid var(--dk-fg); outline-off
 h1, h2, h3 { overflow-wrap: anywhere; }
 .site-footer { overflow-x: clip; }
 .svc-main h3 { font-size: calc(clamp(1.45rem, 3vw, 2rem) * var(--d-scale) / .9); line-height: 1.08; margin-bottom: 8px; }
-.svc-main p { color: var(--lt-muted); font-size: .98rem; max-width: 460px; }
+.svc-main p { color: var(--lt-muted); font-size: .98rem; max-width: 560px; }
 .svc-row .chips { grid-column: 2; margin-top: 0; }
 .svc-row .b-link { grid-column: 2; margin: 0; padding: 0; min-height: 44px; }
 .b-wide {
@@ -650,7 +651,8 @@ h1, h2, h3 { overflow-wrap: anywhere; }
   .svc-row:hover { padding-left: 26px; }
   .svc-row .chips { grid-column: 3; align-self: center; }
   .svc-row .b-link { grid-column: 4; grid-row: auto; justify-self: end; }
-  .svc-row:not(:has(.chips)) .b-link { grid-column: 3 / span 2; justify-self: end; }
+  .svc-row:not(:has(.chips)) .svc-main { grid-column: 2 / span 2; }
+  .svc-row:not(:has(.chips)) .b-link { grid-column: 4; justify-self: end; }
   .sim-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 520px); gap: 90px; }
   .how-grid { grid-template-columns: .8fr 1.2fr; gap: 90px; }
   .how-aside { position: sticky; top: 110px; align-self: start; margin-bottom: 0; }
@@ -972,25 +974,21 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
         <article class="svc-row spot reveal">
           <span class="svc-ico"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></span>
           <div class="svc-main"><span class="svc-tag">Compra</span><h3>Comprar tu vivienda</h3><p>Encuentra la propiedad que encaja con tu presupuesto, tu zona y tu momento de vida.</p></div>
-          <ul class="chips"><li>Búsqueda a tu medida</li><li>Visitas acompañadas</li><li>Negociación</li><li>Cierre</li></ul>
           <a class="b-link" href="#contacto" data-interest="Comprar una vivienda" aria-label="Consultar: Comprar tu vivienda">Consultar <span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
         </article>
         <article class="svc-row spot reveal">
           <span class="svc-ico"><svg class="icon" aria-hidden="true"><use href="#i-tag"/></svg></span>
-          <div class="svc-main"><span class="svc-tag">Venta</span><h3>Vender tu propiedad</h3><p>Conectamos con los compradores indicados.</p></div>
-          <ul class="chips"><li>Claridad en cada paso</li><li>Visibilidad</li><li>Experiencia</li><li>Respaldo</li></ul>
+          <div class="svc-main"><span class="svc-tag">Venta</span><h3>Vender tu propiedad</h3><p>Conectamos con los compradores indicados, claridad en cada paso, visibilidad, experiencia y respaldo.</p></div>
           <a class="b-link" href="#contacto" data-interest="Vender mi propiedad" aria-label="Consultar: Vender tu propiedad">Consultar <span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
         </article>
         <article class="svc-row spot reveal">
           <span class="svc-ico"><svg class="icon" aria-hidden="true"><use href="#i-bank"/></svg></span>
-          <div class="svc-main"><span class="svc-tag">Financiamiento</span><h3>Financiamiento de vivienda</h3><p>Compara las 3 mejores tasas de banco y simula tu cuota.</p></div>
-          <ul class="chips"><li>Hipotecario</li><li>Compra de cartera</li><li>Leasing</li><li>Remodelación</li></ul>
+          <div class="svc-main"><span class="svc-tag">Financiamiento</span><h3>Financiamiento de vivienda</h3><p>Revisa tus opciones antes de decidir, con cifras claras.</p></div>
           <a class="b-link" href="#simulador" aria-label="Simular: Financiamiento de vivienda">Simular <span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
         </article>
         <article class="svc-row spot reveal">
           <span class="svc-ico"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg></span>
-          <div class="svc-main"><span class="svc-tag">Colombia</span><h3>Propiedades en Colombia</h3><p>Casas, apartamentos y más. Mira las propiedades disponibles y las novedades en nuestro Instagram.</p></div>
-          <ul class="chips"><li>Opciones a tu medida</li><li>Atención directa</li></ul>
+          <div class="svc-main"><span class="svc-tag">Colombia</span><h3>Propiedades en Colombia y exterior</h3><p>Casas, apartamentos y más. Mira las propiedades disponibles y las novedades en nuestro Instagram.</p></div>
           <a class="b-link" href="https://www.instagram.com/inmobiliariabosch/" target="_blank" rel="noopener" aria-label="Ver en Instagram: propiedades en Colombia (se abre en una pestaña nueva)">Ver en Instagram <span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></span></a>
         </article>
       </div>
@@ -1028,7 +1026,7 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
         <div class="sim-head">
           <span class="sim-badge"><svg class="icon" aria-hidden="true" style="width:14px;height:14px"><use href="#i-bank"/></svg> Simulador</span>
           <h3 id="sim-title">Calcula tu cuota mensual</h3>
-          <p>Ajusta los valores y mira tu cuota estimada.</p>
+          <p>Revisa tus opciones antes de decidir, con cifras claras.</p>
         </div>
 
         <div class="sim-fields">
@@ -1037,12 +1035,9 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
             <div class="money"><span aria-hidden="true">$</span><input id="s-value" type="text" inputmode="numeric" autocomplete="off" value="320.000.000"></div>
           </div>
           <div class="sim-field">
-            <label for="s-loan-in">Valor a financiar</label>
-            <div class="money"><span aria-hidden="true">$</span><input id="s-loan-in" type="text" inputmode="numeric" autocomplete="off" value="224.000.000"></div>
-          </div>
-          <div class="sim-field">
-            <div class="sim-row"><label for="s-pct">Porcentaje a financiar</label><output id="s-pct-out" for="s-pct" aria-live="off">70%</output></div>
-            <input id="s-pct" type="range" min="10" max="90" step="1" value="70" autocomplete="off">
+            <label for="s-loan-in">Valor exacto a financiar</label>
+            <div class="money"><span aria-hidden="true">$</span><input id="s-loan-in" type="text" inputmode="numeric" autocomplete="off" aria-describedby="s-pct-out" value="224.000.000"></div>
+            <p class="field-hint" id="s-pct-out">Escribe el monto exacto que necesitas. Equivale al 70 % del inmueble.</p>
           </div>
           <div class="sim-field">
             <div class="sim-row"><label for="s-term">Plazo</label><output id="s-term-out" for="s-term" aria-live="off">20 años (240 meses)</output></div>
@@ -1335,7 +1330,7 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
         // { texto: "Nos acompañaron con mucha claridad.", nombre: "Nombre Apellido", detalle: "Compra · Ciudad" },
 
    3) SIM: valores iniciales del simulador (valor del inmueble, porcentaje
-      a financiar, plazo). "rate" solo se usa si no hay datos de BANCOS.
+      inicial a financiar —el cliente luego escribe el monto exacto—, plazo). "rate" solo se usa si no hay datos de BANCOS.
 
    4) BANCOS: tasas de referencia de todos los bancos, por tipo de crédito
       (hipotecario, cartera = compra de cartera, leasing, remodelacion),
@@ -1472,7 +1467,7 @@ window.BANCOS = {
   });
 
   /* ---------- Simulador de cuota ---------- */
-  var elValue = $("#s-value"), elLoan = $("#s-loan-in"), elPct = $("#s-pct"), elTerm = $("#s-term"), elRate = $("#s-rate");
+  var elValue = $("#s-value"), elLoan = $("#s-loan-in"), elTerm = $("#s-term"), elRate = $("#s-rate");
   var outPct = $("#s-pct-out"), outTerm = $("#s-term-out"), outPay = $("#s-payment"), outLoan = $("#s-loan"), outDown = $("#s-down");
   var outRateSrc = $("#rate-src");
   var simCta = $("#sim-cta");
@@ -1483,8 +1478,8 @@ window.BANCOS = {
   var fmtPct = new Intl.NumberFormat(SIM.locale, { maximumFractionDigits: 1 });
   var MAX_DIGITS = 12;
   var simCtaDefault = simCta.getAttribute("href");
-  var pct = SIM.pct;       // porcentaje a financiar (exacto); el deslizador solo lo muestra
-  var mode = "pct";        // "pct": el financiado sigue el porcentaje · "abs": la persona escribió un monto
+  var pct = SIM.pct;       // porcentaje a financiar (exacto); solo se muestra como referencia
+  var mode = "pct";        // "pct": mientras no escriba un monto, se financia el % inicial · "abs": la persona escribió el monto exacto
   var loanAbs = Math.round(SIM.value * SIM.pct / 100);
   var chosenBank = null;   // { banco, desde } cuando la tasa viene de un banco
 
@@ -1523,20 +1518,16 @@ window.BANCOS = {
     if (rateOk && rate > 60) { rate = 60; elRate.value = "60"; }
 
     var typedLoan = readMoney(elLoan);
-    if (source === "pct") { pct = Number(elPct.value); mode = "pct"; }
-    else if (source === "loan" && typedLoan > 0) { loanAbs = value > 0 ? Math.min(typedLoan, value) : typedLoan; mode = "abs"; }
+    if (source === "loan" && typedLoan > 0) { loanAbs = value > 0 ? Math.min(typedLoan, value) : typedLoan; mode = "abs"; }
     var loan = mode === "abs" ? (value > 0 ? Math.min(loanAbs, value) : loanAbs) : (value > 0 ? Math.round(value * pct / 100) : readMoney(elLoan));
     if (value > 0 && mode === "abs") pct = loan / value * 100;
     // el campo "Valor a financiar" no se reescribe mientras la persona lo teclea (o lo deja vacío); al salir del campo sí
     var typing = source === "loan" && typedLoan > 0 && loan === typedLoan;
     if (value > 0 && !typing && !(source === "loan" && typedLoan === 0)) elLoan.value = fmtNumber.format(loan);
-    elPct.value = String(pct);
 
-    outPct.textContent = fmtPct.format(pct) + "%";
+    outPct.textContent = value > 0 ? "Escribe el monto exacto que necesitas. Equivale al " + fmtPct.format(pct) + " % del inmueble." : "Escribe el monto exacto que necesitas.";
     outTerm.textContent = years + " años (" + years * 12 + " meses)";
-    elPct.setAttribute("aria-valuetext", fmtPct.format(pct) + "% del valor del inmueble");
     elTerm.setAttribute("aria-valuetext", years + " años");
-    paintRange(elPct);
     paintRange(elTerm);
     outRateSrc.textContent = chosenBank
       ? "Tasa de referencia de " + chosenBank.banco + " (desde)"
@@ -1686,13 +1677,11 @@ window.BANCOS = {
   }
 
   elValue.value = fmtNumber.format(SIM.value);
-  elPct.value = SIM.pct;
   elTerm.value = SIM.years;
   elRate.value = rateText(SIM.rate);
 
   bindMoney(elValue, "value");
   bindMoney(elLoan, "loan");
-  elPct.addEventListener("input", function () { updateSim("pct"); });
   elTerm.addEventListener("input", function () { updateSim("term"); });
   elRate.addEventListener("input", function () {
     var clean = elRate.value.replace(/[^\d.,]/g, "");
