@@ -1,0 +1,16 @@
+<!doctype html><meta charset="utf-8"><title>Vista previa de texturas</title>
+<style>body{background:#222;color:#ddd;font:12px monospace;margin:8px}canvas,img{image-rendering:pixelated}.g{display:flex;flex-wrap:wrap;gap:6px}.c{width:70px;text-align:center}</style>
+<h3>Atlas</h3><div id="atlas"></div><h3>Iconos</h3><div class="g" id="icons"></div>
+<script type="module">
+import { getAtlasCanvas, getItemIcon, missingTilePainters } from '../src/atlas.js';
+import { Items } from '../src/items.js';
+const a = getAtlasCanvas(); a.style.width = '1024px'; a.style.height = '1024px'; document.getElementById('atlas').appendChild(a);
+const g = document.getElementById('icons');
+for (const it of Items.all()) {
+  const d = document.createElement('div'); d.className = 'c';
+  const c = getItemIcon(it); const img = document.createElement('img'); img.src = c.toDataURL(); img.width = 64; img.height = 64;
+  d.appendChild(img); const t = document.createElement('div'); t.textContent = it.key; d.appendChild(t); g.appendChild(d);
+}
+window.__missing = missingTilePainters();
+window.__done = true;
+</script>

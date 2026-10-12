@@ -1,0 +1,12 @@
+{
+  "name": "blockworld-ultimate",
+  "version": "0.1.0",
+  "description": "BLOCKWORLD ULTIMATE - juego original de bloques, supervivencia y construcción (Fase 1)",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node tools/serve.mjs",
+    "test": "node tests/run.mjs"
+  },
+  "license": "UNLICENSED"
+}

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BLOCKWORLD ULTIMATE</title>
+  <meta name="description" content="Videojuego original de bloques: supervivencia, construcción y exploración en mundos generados proceduralmente.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%232a6f4f'/%3E%3Crect y='8' width='16' height='8' fill='%23775234'/%3E%3Crect x='3' y='3' width='4' height='4' fill='%2358d6e8'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+</head>
+<body>
+  <canvas id="gl" tabindex="0"></canvas>
+
+  <!-- Interfaz de juego -->
+  <div id="hud" class="hidden">
+    <div id="crosshair"></div>
+    <div id="dmg-flash"></div>
+    <div id="water-tint"></div>
+    <div id="hud-top-left"></div>
+    <div id="hud-top-right"></div>
+    <div id="hud-center-msg"></div>
+    <div id="hud-bars">
+      <div id="armor-row" class="bar-row"></div>
+      <div id="bubbles-row" class="bar-row"></div>
+      <div id="stats-row">
+        <div id="hearts" class="bar-row"></div>
+        <div id="hunger" class="bar-row"></div>
+      </div>
+      <div id="hotbar"></div>
+    </div>
+    <div id="toasts"></div>
+    <div id="eat-progress" class="hidden"><div></div></div>
+    <div id="chat-log"></div>
+    <input id="chat-input" class="hidden" maxlength="120" autocomplete="off" spellcheck="false">
+  </div>
+
+  <div id="screen-root"></div>
+  <div id="menu-root"></div>
+  <div id="loading" class="hidden"><div class="load-box"><div class="load-title">Generando el mundo…</div><div class="load-bar"><div></div></div><div class="load-hint"></div></div></div>
+  <div id="fatal" class="hidden"></div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

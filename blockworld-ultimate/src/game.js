@@ -1,0 +1,933 @@
+// Orquestador del juego: renderizador, mundo, jugador, interacción, entidades, guardado y bucle principal.
+import * as THREE from 'three';
+import { World } from './world.js';
+import { WorldRenderer } from './render.js';
+import { Sky } from './sky.js';
+import { Player } from './player.js';
+import { Controls } from './controls.js';
+import { DAY_LENGTH, REACH_SURVIVAL, REACH_CREATIVE, WORLD_HEIGHT as WH, SEA_LEVEL, GENERATOR_VERSION, VERSION } from './config.js';
+import { Blocks, ID, B_SOUND, B_FLUID, B_REPLACEABLE, B_SOLID } from './blocks.js';
+import { Items, makeStack, rollDrops } from './items.js';
+import { Inventory, Container, addToSlots } from './inventory.js';
+import { RECIPES } from './crafting.js';
+import { Survival } from './survival.js';
+import { Mining } from './mining.js';
+import { Building, supportOk, isContainerBlock } from './building.js';
+import { EntityManager, ItemEntity, FallingBlock, Particles, buildModel } from './entities.js';
+import { ANIMALS, createAnimal } from './animals.js';
+import { MONSTERS, createMonster } from './monsters.js';
+import { Spawner } from './spawner.js';
+import { RandomTicks, tickFurnace } from './ticks.js';
+import { HandRenderer } from './hand.js';
+import { UI } from './ui.js';
+import { openInventoryScreen, openWorkbenchScreen, openChestScreen, openFurnaceScreen, openPauseScreen, openDeathScreen, openControlsScreen, openAchievementsScreen } from './screens.js';
+import { AudioEngine } from './audio.js';
+import { raycastBlocks } from './raycast.js';
+import { chunkKey } from './chunk.js';
+import { rollLoot } from './structures.js';
+import { hash3, mulberry32 } from './noise.js';
+import { runCommand } from './commands.js';
+import { biomeName } from './biomes.js';
+import { buildOptionsPanel } from './menus.js';
+import { moveEntity } from './physics.js';
+import { ACHIEVEMENTS } from './achievements.js';
+
+export { ACHIEVEMENTS };
+
+export class Game {
+  constructor(canvas, settings) {
+    this.canvas = canvas;
+    this.settings = settings;
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    this.renderer.autoClear = false;
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.PerspectiveCamera(settings.fov, 1, 0.07, 1400);
+    this.camera.rotation.order = 'YXZ';
+    this.controls = new Controls(canvas);
+    this.sky = new Sky(this.scene);
+    this.audio = new AudioEngine(settings);
+    this.player = new Player();
+    this.ui = new UI(this);
+    this.versionText = VERSION;
+    this.world = null; this.wr = null; this.meta = null;
+    this.state = 'menu';           // menu | loading | playing | screen | paused | dead
+    this.paused = false; this.frozen = false; this.panorama = false;
+    this.time = 0.12;
+    this.elapsed = 0; this.frameStats = { fps: 0, frames: 0, acc: 0 };
+    this.mode = 'survival'; this.difficulty = 'normal';
+    this.hit = null; this.headFluid = 0; this.handLight = 1;
+    this.eating = null; this.cameraMode = 0;
+    this.discovered = new Set(); this.achievements = new Set();
+    this.stats = { blocksBroken: 0, blocksPlaced: 0, mobsKilled: 0, deaths: 0 };
+    this.updateQueue = []; this.updateSet = new Set();
+    this.sleeping = new Map();      // chunkKey → [entidades serializadas]
+    this.structQueue = []; this.structDone = new Set();
+    this.bobPhase = 0; this.stepAcc = 0; this.fovBoost = 0;
+    this.useCooldown = 0; this.attackCharge = 1; this.saveTimer = 30; this.playTime = 0;
+    this._expectUnlock = false; this._biomeTimer = 0; this.currentBiome = 2;
+    this._furnaceAcc = 0; this.onExitRequest = null;
+    this._wire();
+    this._resize();
+    window.addEventListener('resize', () => this._resize());
+    this.canvas.addEventListener('click', () => { if (this.state === 'playing' && !this.controls.locked) this.controls.lock(); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden && this.state === 'playing') this.openPause(); });
+  }
+
+  _resize() {
+    const w = window.innerWidth, h = window.innerHeight;
+    this.renderer.setSize(w, h, false);
+    this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
+  }
+
+  // ═════════════ Panorama de fondo del menú ═════════════
+  startPanorama() {
+    this.endSessionObjects();
+    this.panorama = true; this.state = 'menu';
+    this.createWorld({ seed: 20240607, type: 'normal', structures: false, size: 0, useWorker: true, mobs: 'none' }, null, 4);
+    const sp = this.world.terrain.findSpawn();
+    this.pano = { x: sp.x + 0.5, z: sp.z + 0.5, yaw: 0.6 };
+    this.time = 0.14; this.player.teleport(this.pano.x, 82, this.pano.z);
+    this.ui.showHud(false);
+  }
+
+  // ═════════════ Mundo ═════════════
+  createWorld(meta, store, renderDistance) {
+    this.disposeWorld();
+    this.world = new World({
+      seed: meta.seed, type: meta.type, structures: meta.structures, size: meta.size,
+      renderDistance: renderDistance ?? this.settings.renderDistance, store, useWorker: meta.useWorker,
+    });
+    this.world.fancyLeaves = !!this.settings.fancyLeaves;
+    this.wr = new WorldRenderer(this.scene, this.world);
+    const prevUnload = this.world.onChunkUnload;
+    this.world.onChunkUnload = (c) => { this.sleepChunk(c); prevUnload(c); };
+    this.world.onFreshChunk = (c, info) => this.onFreshChunk(c, info);
+    this.world.onChunkLoaded = (c) => this.wakeChunk(c);
+    this.world.onBlockChange = (x, y, z, o, n) => this.onBlockChange(x, y, z, o, n);
+    this.meta = meta;
+  }
+
+  disposeWorld() {
+    if (this.world) { this.world.dispose(); this.world = null; }
+    if (this.wr) { this.scene.remove(this.wr.group); this.wr = null; }
+  }
+
+  endSessionObjects() {
+    if (this.entities) { this.entities.clear(); }
+    if (this.particles) { this.scene.remove(this.particles.mesh); this.particles = null; }
+    if (this.mining) { this.mining.dispose(); this.mining = null; }
+    if (this.building) { this.building.dispose(); this.building = null; }
+    if (this.avatar) { this.scene.remove(this.avatar.root); this.avatar = null; }
+    this.hand = null; this.entities = null;
+    this.disposeWorld();
+  }
+
+  /** Empieza (o reanuda) una partida. Devuelve una promesa que se cumple cuando el entorno inicial está listo. */
+  async startSession(meta, store, chunkStore, onProgress) {
+    this.endSessionObjects();
+    this.panorama = false; this.state = 'loading';
+    this.store = store; this.chunkStore = chunkStore;
+    this.mode = meta.mode; this.difficulty = meta.difficulty;
+    this.createWorld(meta, chunkStore, undefined);
+    const w = this.world;
+    this.particles = new Particles(this.scene); this.particles.enabled = this.settings.particles;
+    this.entities = new EntityManager(this);
+    this.mining = new Mining(this); this.building = new Building(this);
+    this.hand = new HandRenderer(this); this.spawner = new Spawner(this); this.ticks = new RandomTicks(this);
+    this.spawner.configure(meta, this.difficulty);
+    this.inventory = new Inventory(); this.survival = new Survival(this);
+    this.discovered = new Set(); this.achievements = new Set(); this.stats = { blocksBroken: 0, blocksPlaced: 0, mobsKilled: 0, deaths: 0 };
+    this.sleeping = new Map(); this.structQueue = []; this.structDone = new Set(meta.structDone || []);
+    this._buildAvatar();
+    const saved = meta.player;
+    let sx, sz;
+    this.spawnPoint = null;
+    // Punto de aparición del mundo
+    const wsp = w.terrain.findSpawn();
+    this.worldSpawn = { x: wsp.x + 0.5, z: wsp.z + 0.5 };
+    if (saved) {
+      this.inventory = Inventory.deserialize(saved.inv);
+      this.survival.load(saved.sv);
+      this.discovered = new Set(saved.discovered || []);
+      this.achievements = new Set(saved.ach || []);
+      this.stats = { ...this.stats, ...(saved.stats || {}) };
+      this.spawnPoint = saved.spawn || null;
+      this.player.yaw = saved.yaw || 0; this.player.pitch = saved.pitch || 0;
+      this.time = meta.time ?? 0.12; this.playTime = meta.playTime || 0;
+      for (const [k, list] of Object.entries(meta.sleeping || {})) this.sleeping.set(+k, list);
+      for (const [k, v] of Object.entries(meta.be || {})) w.blockEntities.set(k, Container.deserialize(v));
+      sx = saved.x; sz = saved.z;
+    } else {
+      this.time = 0.1; this.playTime = 0;
+      sx = this.worldSpawn.x; sz = this.worldSpawn.z;
+    }
+    this.player.allowFlying = this.mode === 'creative';
+    this.player.flying = !!(saved && saved.flying && this.mode === 'creative');
+    this.currentBiome = w.terrain.biomeAt(Math.floor(sx), Math.floor(sz));
+    this.saveTimer = 30;
+    // Esperar a que haya chunks alrededor
+    this.player.teleport(sx, WH - 4, sz);
+    this.frozen = true;
+    await new Promise((resolve) => {
+      let n = 0;
+      const tick = () => {
+        w.update(sx, sz, 14);
+        const ready = w.isAreaReady(sx, sz, 2);
+        n++;
+        if (onProgress) onProgress(Math.min(0.95, (w.stats.meshed + w.stats.loadedFromSave) / 25));
+        if (ready) resolve(); else setTimeout(tick, 12);
+      };
+      tick();
+    });
+    if (saved) this.player.teleport(saved.x, saved.y, saved.z);
+    else {
+      const sp = w.findGroundStand(sx, sz);
+      if (sp) this.player.teleport(sp.x, sp.y, sp.z);
+      else { let y = w.findStandY(Math.floor(sx), Math.floor(sz)); if (y < 0) y = SEA_LEVEL + 20; this.player.teleport(sx, y, sz); }
+    }
+    // si el sitio guardado estuviera bloqueado, la física lo corrige
+    if (!saved) { this.spawner.initialFill(36); }
+    this.frozen = false;
+    this.ui.showHud(true);
+    this.audio.startMusic();
+    this.state = 'playing';
+    if (this.settings.renderDistance !== w.renderDistance) w.setRenderDistance(this.settings.renderDistance);
+    if (meta.genVersion !== undefined && meta.genVersion !== GENERATOR_VERSION) this.ui.toast('Este mundo se creó con otra versión del generador: el terreno nuevo podría no encajar.');
+    return true;
+  }
+
+  async endSession() {
+    if (this.world && this.state !== 'menu') await this.saveGame(true);
+    this.controls.unlock();
+    this.ui.closeScreen(true);
+    this.ui.showHud(false);
+    this.audio.stopMusic();
+    this.state = 'menu'; this.paused = false;
+  }
+
+  // ═════════════ Entrada ═════════════
+  _wire() {
+    const c = this.controls;
+    c.onKeyDown = (code, e) => this.onKey(code, e);
+    c.onLockChange = (locked, error) => this.onLockChange(locked, error);
+    c.onMouseDown = (b) => this.onMouseDown(b);
+    c.onWheel = (d) => { if (this.state === 'playing') this.inventory.selected = (this.inventory.selected + d + 9) % 9; };
+    const ci = this.ui.chatInput;
+    ci.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'Enter') {
+        const t = ci.value.trim();
+        this.ui.closeChat();
+        if (t) { this.ui.chat('> ' + t, 'me'); const r = t.startsWith('/') ? runCommand(this, t) : (this.meta.commands && t ? runCommand(this, t) : t); if (r) this.ui.chat(r, 'sys'); }
+        this.afterChat();
+      } else if (e.key === 'Escape') { this.ui.closeChat(); this.afterChat(); }
+    });
+  }
+
+  afterChat() { if (this.state === 'playing') this.controls.lock(); }
+
+  onLockChange(locked, error) {
+    if (locked) { if (this.state === 'screen' && !this.ui.screen) this.state = 'playing'; return; }
+    if (error) return;
+    if (this._expectUnlock) { this._expectUnlock = false; return; }
+    if (this.state === 'playing' && !this.ui.hasScreen) this.openPause();
+  }
+
+  onKey(code, e) {
+    if (this.state === 'menu' || this.state === 'loading') return;
+    if (this.ui.chatOpen) return;
+    if (code === 'Escape') {
+      if (this.state === 'paused') { this.resume(); return; }
+      if (this.ui.screen && this.state === 'screen') { this.closeScreen(); return; }
+      if (this.state === 'dead') return;
+      return;
+    }
+    if (this.state === 'screen') {
+      if (code === 'KeyE' && this.ui.screen && !this.ui.screen.keepOnE) this.closeScreen();
+      return;
+    }
+    if (this.state !== 'playing') return;
+    if (code === 'F3') { this.ui.debug = !this.ui.debug; return; }
+    if (code === 'F1') { this.ui.hudHidden = !this.ui.hudHidden; this.ui.hud.classList.toggle('nohud', this.ui.hudHidden); return; }
+    if (code === 'KeyV') { this.cameraMode = (this.cameraMode + 1) % 3; return; }
+    if (code === 'KeyE') { this.openInventory(); return; }
+    if (code === 'KeyT' || code === 'Slash') { e.preventDefault(); this.ui.openChat(code === 'Slash' ? '/' : ''); return; }
+    if (code === 'KeyQ') { this.dropSelected(e.shiftKey); return; }
+    if (code.startsWith('Digit')) { const n = parseInt(code.slice(5), 10); if (n >= 1 && n <= 9) this.inventory.selected = n - 1; }
+  }
+
+  onMouseDown(button) {
+    if (this.state !== 'playing' || this.paused) return;
+    if (button === 0) this.tryAttack(true);
+    else if (button === 2) { this.useCooldown = 0; this.useItem(true); }
+    else if (button === 1 && this.mode === 'creative' && this.hit) {
+      const id = this.world.getBlock(this.hit.x, this.hit.y, this.hit.z);
+      const it = Items.forBlock(id);
+      if (it) {
+        const inv = this.inventory;
+        const have = inv.slots.findIndex((s, i) => i < 9 && s && s.i === it.id);
+        if (have >= 0) inv.selected = have;
+        else { inv.slots[inv.selected] = makeStack(it.id, it.stack); }
+      }
+    }
+  }
+
+  // ═════════════ Pantallas ═════════════
+  _openScreen(screen) {
+    this.state = 'screen'; this._expectUnlock = true;
+    this.mining && this.mining.reset();
+    this.ui.setScreen(screen);
+    this.controls.unlock();
+    this.audio.play('open');
+    if (screen.refresh) screen.refresh();
+  }
+  openInventory() { this._openScreen(openInventoryScreen(this)); }
+  openCrafting(station) { this._openScreen(openWorkbenchScreen(this)); void station; }
+  closeScreen() { this.ui.closeScreen(); }
+  onScreenClosed() {
+    if (this.state === 'screen' || this.state === 'paused') { this.state = 'playing'; this.paused = false; this.controls.lock(); }
+  }
+
+  getBlockEntity(x, y, z, type, size) {
+    const k = this.world.beKey(x, y, z);
+    let be = this.world.blockEntities.get(k);
+    if (!be) { be = new Container(size, type); if (type === 'furnace') be.extra = { burn: 0, burnMax: 0, cook: 0 }; this.world.blockEntities.set(k, be); }
+    return be;
+  }
+  openChest(x, y, z) {
+    const be = this.getBlockEntity(x, y, z, 'chest', 27);
+    const key = this.world.beKey(x, y, z);
+    if (be.loot && !this.achievements.has('cofre')) this.achieve('cofre');
+    void key;
+    this._openScreen(openChestScreen(this, be));
+  }
+  openFurnace(x, y, z) {
+    const be = this.getBlockEntity(x, y, z, 'furnace', 3);
+    this._openScreen(openFurnaceScreen(this, be));
+  }
+  openPause() {
+    if (this.state !== 'playing') return;
+    this.state = 'paused'; this.paused = true; this._expectUnlock = false;
+    this.controls.unlock();
+    const show = () => this.ui.setScreen(openPauseScreen(this, {
+      onResume: () => this.resume(),
+      onOptions: () => { const root = document.createElement('div'); root.className = 'screen-overlay dim'; const panel = document.createElement('div'); panel.className = 'panel'; panel.innerHTML = '<h2>Opciones</h2>'; panel.append(buildOptionsPanel(this.settings, (k, v) => this.applySetting(k, v))); const b = document.createElement('button'); b.className = 'btn primary'; b.textContent = 'Volver'; b.onclick = show; panel.append(b); root.append(panel); this.ui.setScreen({ root }); },
+      onControls: () => this.ui.setScreen(openControlsScreen(show)),
+      onAchievements: () => this.ui.setScreen(openAchievementsScreen(this, show)),
+      onQuit: () => { if (this.onExitRequest) this.onExitRequest(); },
+    }));
+    show();
+  }
+  resume() { this.ui.closeScreen(true); this.state = 'playing'; this.paused = false; this.controls.lock(); }
+
+  applySetting(key, v) {
+    switch (key) {
+      case 'renderDistance': if (this.world) this.world.setRenderDistance(v); break;
+      case 'masterVolume': case 'musicVolume': this.audio.applyVolumes(); break;
+      case 'particles': if (this.particles) this.particles.enabled = v; break;
+      case 'fancyLeaves': if (this.world) { this.world.fancyLeaves = v; for (const c of this.world.chunks.values()) c.meshDirty = true; } break;
+      default: break;
+    }
+  }
+
+  setMode(m) {
+    this.mode = m; this.meta.mode = m;
+    this.player.allowFlying = m === 'creative';
+    if (m !== 'creative') this.player.flying = false;
+  }
+  setDifficulty(d) {
+    this.difficulty = d; this.meta.difficulty = d;
+    this.spawner.configure(this.meta, d);
+    if (d === 'peaceful') for (const e of this.entities.list) if (MONSTERS[e.type]) e.removed = true;
+  }
+
+  // ═════════════ Muerte y reaparición ═════════════
+  onPlayerDeath(cause, source) {
+    this.stats.deaths++;
+    const p = this.player;
+    if (!this.meta.keepInventory && this.mode !== 'creative') {
+      for (const s of this.inventory.takeAll()) this.dropItem(s, p.x, p.y + 1, p.z, 3);
+    }
+    this.eating = null; this.mining.reset();
+    this.state = 'dead'; this._expectUnlock = true;
+    this.controls.unlock();
+    this.ui.setScreen(openDeathScreen(this, cause, {
+      onRespawn: () => this.respawn(),
+      onQuit: () => { if (this.onExitRequest) this.onExitRequest(); },
+    }));
+    void source;
+  }
+  respawn() {
+    this.survival.respawn();
+    this.teleportToSpawn();
+    this.ui.closeScreen(true);
+    this.state = 'playing'; this.paused = false;
+    this.controls.lock();
+  }
+  teleportToSpawn() {
+    const sp = this.spawnPoint || { x: this.worldSpawn.x, z: this.worldSpawn.z };
+    const w = this.world;
+    if (sp.y !== undefined) { this.player.teleport(sp.x, sp.y, sp.z); return; }
+    this.player.teleport(sp.x, WH - 4, sp.z); this.frozen = true;
+    const tryFind = () => {
+      if (!this.world) return;
+      if (w.isLoaded(Math.floor(sp.x), Math.floor(sp.z))) {
+        const gs = w.findGroundStand(sp.x, sp.z);
+        if (gs) this.player.teleport(gs.x, gs.y, gs.z);
+        else { const y = w.findStandY(Math.floor(sp.x), Math.floor(sp.z)); this.player.teleport(sp.x, y > 0 ? y : SEA_LEVEL + 20, sp.z); }
+        this.frozen = false;
+      } else setTimeout(tryFind, 100);
+    };
+    tryFind();
+  }
+
+  sleep(x, y, z) {
+    const night = this.time > 0.54 && this.time < 0.97;
+    const hostile = this.entities.count((e) => MONSTERS[e.type] && !e.removed && Math.hypot(e.x - x, e.z - z) < 10);
+    this.spawnPoint = { x: x + 0.5, y: y + 1, z: z + 0.5 };
+    if (!night) { this.ui.toast('Solo puedes dormir de noche. Punto de reaparición guardado.'); return; }
+    if (hostile) { this.ui.toast('No puedes dormir: hay monstruos cerca'); return; }
+    this.time = 0.01;
+    this.ui.centerMessage('Has dormido hasta el amanecer');
+    this.ui.toast('Punto de reaparición guardado');
+    this.achieve('dormir');
+  }
+
+  // ═════════════ Objetos y logros ═════════════
+  achieve(id) {
+    if (this.achievements.has(id)) return;
+    this.achievements.add(id);
+    const a = ACHIEVEMENTS.find((x) => x.id === id);
+    if (a) { this.ui.toast(`🏆 Logro: ${a.name} — ${a.desc}`, 5000); this.audio.play('levelup'); }
+  }
+
+  /** Se llama al obtener un objeto (recoger, fabricar, fundir...). Desbloquea recetas y logros. */
+  onItemObtained(key) {
+    if (!this.discovered.has(key)) {
+      this.discovered.add(key);
+      const newRecipes = RECIPES.filter((r) => r.unlock === key);
+      if (newRecipes.length && this.mode !== 'creative') this.ui.toast(`Nuevas recetas desbloqueadas (${newRecipes.length})`);
+    }
+    if (key.startsWith('log_')) this.achieve('tronco');
+    else if (key === 'workbench') this.achieve('mesa');
+    else if (key.endsWith('_pickaxe')) this.achieve('pico');
+    else if (key === 'cobble') this.achieve('adoquin');
+    else if (key === 'furnace') this.achieve('horno');
+    else if (key === 'iron_ingot') this.achieve('hierro');
+    else if (key === 'crystal_shard') this.achieve('cristal');
+    else if (key === 'raw_noctisite' || key === 'noctisite_ingot') this.achieve('noctisita');
+    else if (key === 'wheat') this.achieve('cosecha');
+    else if (key === 'bread') this.achieve('pan');
+    else { const it = Items.get(key); if (it && it.armor) this.achieve('armadura'); }
+  }
+
+  canPickup(stack) { return this.inventory.canFit(stack); }
+  pickup(e) {
+    const rest = this.inventory.add(e.stack);
+    const got = rest ? e.stack.n - rest.n : e.stack.n;
+    if (got > 0) { this.audio.play('pickup', e.x, e.y, e.z); this.onItemObtained(Items.get(e.stack.i).key); }
+    if (rest) e.stack.n = rest.n; else e.removed = true;
+  }
+
+  dropItem(stack, x, y, z, speed = 1.6) {
+    if (!stack || stack.n <= 0) return null;
+    const items = this.entities.list.filter((e) => e.type === 'item');
+    if (items.length > 160) items[0].removed = true;
+    const e = new ItemEntity(this, stack);
+    e.setPos(x, y, z);
+    const a = Math.random() * Math.PI * 2;
+    e.vx = Math.cos(a) * speed * Math.random(); e.vz = Math.sin(a) * speed * Math.random(); e.vy = 3 + Math.random() * 2;
+    this.entities.add(e);
+    return e;
+  }
+  dropFromPlayer(stack) {
+    if (!stack || stack.n <= 0) return;
+    const p = this.player, d = p.lookDir();
+    const e = new ItemEntity(this, stack, 1.6);
+    e.setPos(p.x + d.x * 0.4, p.eyeY - 0.3, p.z + d.z * 0.4);
+    e.vx = d.x * 4.2; e.vy = d.y * 3 + 1.2; e.vz = d.z * 4.2;
+    this.entities.add(e);
+  }
+  dropSelected(whole) {
+    const inv = this.inventory, s = inv.getSelected();
+    if (!s) return;
+    const n = whole ? s.n : 1;
+    this.dropFromPlayer({ i: s.i, n, d: s.d });
+    s.n -= n; if (s.n <= 0) inv.slots[inv.selected] = null;
+    this.hand && this.hand.swing();
+  }
+
+  lightAt(x, y, z) {
+    const w = this.world, atm = this.sky.atm;
+    const fx = Math.floor(x), fy = Math.floor(y), fz = Math.floor(z);
+    const sky = w.getSky(fx, fy, fz) / 15 * atm.sun, blk = w.getBlockLight(fx, fy, fz) / 15;
+    const c = (l) => Math.pow(0.8, 15 * (1 - l));
+    return Math.min(1, Math.max(c(sky), c(blk), 0.13) * this.settings.brightness);
+  }
+
+  // ═════════════ Criaturas ═════════════
+  spawnMob(key, x, y, z) {
+    const m = ANIMALS[key] ? createAnimal(this, key) : MONSTERS[key] ? createMonster(this, key) : null;
+    if (!m) return null;
+    m.setPos(x, y, z);
+    this.entities.add(m);
+    return m;
+  }
+  mobKilled(mob, source) {
+    if (MONSTERS[mob.type]) { this.stats.mobsKilled++; this.achieve('monstruo'); }
+    void source;
+  }
+  sleepEntity(e) {
+    if (!e.persistent || e.removed) return;
+    const k = chunkKey(Math.floor(e.x / 16), Math.floor(e.z / 16));
+    if (!this.sleeping.has(k)) this.sleeping.set(k, []);
+    const list = this.sleeping.get(k);
+    if (list.length < 40) list.push(e.serialize());
+  }
+  sleepChunk(c) {
+    if (!this.entities) return;
+    for (const e of this.entities.list) {
+      if (e.removed) continue;
+      if (Math.floor(e.x / 16) === c.cx && Math.floor(e.z / 16) === c.cz) { if (e.persistent) this.sleepEntity(e); e.removed = true; }
+    }
+  }
+  wakeChunk(c) {
+    const list = this.sleeping.get(c.key);
+    if (!list || !this.entities) return;
+    this.sleeping.delete(c.key);
+    for (const s of list) this.restoreEntity(s);
+  }
+  restoreEntity(s) {
+    if (s.t === 'item') {
+      const e = new ItemEntity(this, { i: s.s[0], n: s.s[1], d: s.s[2] }, 0.2);
+      e.setPos(s.x, s.y, s.z); e.life = s.life ?? 300; this.entities.add(e); return;
+    }
+    const m = this.spawnMob(s.t, s.x, s.y, s.z);
+    if (!m) return;
+    m.hp = s.hp ?? m.hp;
+    if (s.baby) m.setBaby(true);
+    m.growAge = s.age || 0; m.tamed = !!s.tamed; m.trust = s.trust || 0; m.persistentFlag = !!s.pf; m.breedCd = s.love || 0;
+  }
+
+  // ═════════════ Chunks generados: cofres y criaturas de estructuras ═════════════
+  onFreshChunk(c, info) {
+    const w = this.world;
+    for (const ch of info.chests) {
+      const k = w.beKey(ch.x, ch.y, ch.z);
+      if (w.blockEntities.has(k)) continue;
+      const be = new Container(27, 'chest'); be.loot = true;
+      const rnd = mulberry32((hash3(ch.x, ch.y, ch.z, w.seed) * 4294967296) >>> 0);
+      for (const l of rollLoot(ch.table, rnd, 4 + Math.floor(rnd() * 4))) {
+        let slot = Math.floor(rnd() * 27), tries = 0;
+        while (be.slots[slot] && tries++ < 40) slot = Math.floor(rnd() * 27);
+        const it = Items.get(l.item);
+        if (it && !be.slots[slot]) be.slots[slot] = { i: it.id, n: Math.min(l.n, it.stack), d: 0 };
+      }
+      w.blockEntities.set(k, be);
+    }
+    for (const m of info.mobs) {
+      const key = `${m.type}@${Math.floor(m.x)},${m.y},${Math.floor(m.z)}`;
+      if (!this.structDone.has(key)) this.structQueue.push({ ...m, key });
+    }
+  }
+  _structMobs() {
+    if (!this.structQueue.length) return;
+    const p = this.player;
+    for (let i = this.structQueue.length - 1; i >= 0; i--) {
+      const m = this.structQueue[i];
+      if (Math.hypot(m.x - p.x, m.z - p.z) > 44) continue;
+      if (!this.world.isLoaded(Math.floor(m.x), Math.floor(m.z))) continue;
+      this.structQueue.splice(i, 1);
+      this.structDone.add(m.key);
+      if (this.meta.mobs === 'all' && this.difficulty !== 'peaceful') this.spawnMob(m.type, m.x, m.y + 0.01, m.z);
+    }
+  }
+
+  // ═════════════ Cambios de bloques ═════════════
+  onBlockChange(x, y, z, old, nw) {
+    const w = this.world;
+    if (isContainerBlock(old) && !isContainerBlock(nw)) {
+      const k = w.beKey(x, y, z);
+      const be = w.blockEntities.get(k);
+      if (be) {
+        for (const s of be.slots) if (s) this.dropItem(s, x + 0.5, y + 0.5, z + 0.5, 2);
+        w.blockEntities.delete(k);
+      }
+    }
+    this.queueUpdate(x, y, z);
+    this.queueUpdate(x + 1, y, z); this.queueUpdate(x - 1, y, z); this.queueUpdate(x, y + 1, z); this.queueUpdate(x, y - 1, z); this.queueUpdate(x, y, z + 1); this.queueUpdate(x, y, z - 1);
+  }
+  queueUpdate(x, y, z) {
+    const k = `${x},${y},${z}`;
+    if (this.updateSet.has(k)) return;
+    this.updateSet.add(k); this.updateQueue.push([x, y, z, k]);
+  }
+  processBlockUpdates() {
+    let n = 0;
+    const w = this.world;
+    while (this.updateQueue.length && n < 160) {
+      const [x, y, z, k] = this.updateQueue.shift(); this.updateSet.delete(k); n++;
+      const id = w.getBlock(x, y, z);
+      if (!id) continue;
+      const b = Blocks.get(id);
+      if (b.plantOn && !supportOk(w, x, y, z, id)) { this.breakNatural(x, y, z); continue; }
+      if (b.gravity) {
+        const below = w.getBlock(x, y - 1, z);
+        if (below === 0 || B_FLUID[below] || (B_REPLACEABLE[below] && !B_SOLID[below])) {
+          w.setBlock(x, y, z, 0);
+          const f = new FallingBlock(this, id); f.setPos(x + 0.5, y, z + 0.5); this.entities.add(f);
+        }
+      }
+    }
+  }
+  /** Rompe un bloque sin herramienta (pierde el soporte) y suelta sus objetos. */
+  breakNatural(x, y, z) {
+    const w = this.world;
+    const id = w.getBlock(x, y, z); if (!id) return;
+    const b = Blocks.get(id);
+    for (const d of rollDrops(b.drops)) this.dropItem({ i: d.id, n: d.n, d: 0 }, x + 0.5, y + 0.5, z + 0.5);
+    this.audio.blockSound('break', b.sound, x + 0.5, y + 0.5, z + 0.5);
+    w.setBlock(x, y, z, 0);
+  }
+
+  tickBlockEntities(dt) {
+    this._furnaceAcc += dt;
+    if (this._furnaceAcc < 0.25) return;
+    const step = this._furnaceAcc; this._furnaceAcc = 0;
+    const w = this.world;
+    for (const [k, be] of w.blockEntities) {
+      if (be.type !== 'furnace') continue;
+      const [x, y, z] = k.split(',').map(Number);
+      if (!w.isLoaded(x, z)) continue;
+      if (tickFurnace(be, step)) {
+        const lit = be.extra.burn > 0;
+        const cur = w.getBlock(x, y, z);
+        if (cur === ID.FURNACE || cur === ID.FURNACE_LIT) w.setBlock(x, y, z, lit ? ID.FURNACE_LIT : ID.FURNACE);
+      }
+      // objetos fundidos → descubrimiento de recetas
+      const out = be.slots[2];
+      if (out) { const key = Items.get(out.i).key; if (!this.discovered.has(key)) this.onItemObtained(key); }
+    }
+  }
+
+  // ═════════════ Interacción ═════════════
+  _eyeRay() {
+    const p = this.player, d = p.lookDir();
+    return { ox: p.x, oy: p.eyeY, oz: p.z, dx: d.x, dy: d.y, dz: d.z };
+  }
+  get reach() { return this.mode === 'creative' ? REACH_CREATIVE : REACH_SURVIVAL; }
+
+  updateInteraction(dt) {
+    const w = this.world, ctl = this.controls;
+    const r = this._eyeRay();
+    const canAct = this.state === 'playing' && ctl.locked && !this.survival.dead;
+    let hit = canAct ? raycastBlocks(w, r.ox, r.oy, r.oz, r.dx, r.dy, r.dz, this.reach) : null;
+    const eh = canAct ? this.entities.raycast(r.ox, r.oy, r.oz, r.dx, r.dy, r.dz, this.reach, (e) => !e.burrowed) : null;
+    let entityTarget = null;
+    if (eh && (!hit || eh.dist < hit.dist)) { entityTarget = eh.entity; hit = null; }
+    this.hit = hit; this.entityTarget = entityTarget;
+    const stack = this.inventory.getSelected();
+    this.attackCharge = Math.min(2, this.attackCharge + dt);
+    this.useCooldown -= dt;
+    // Romper (mantener)
+    this.mining.update(dt, hit, canAct && ctl.mouse[0] && !entityTarget);
+    if (canAct && ctl.mouse[0] && entityTarget) this.tryAttack(false);
+    // Vista previa de colocación
+    this.building.updatePreview(canAct ? hit : null, stack);
+    // Mantener clic derecho: colocar bloques repetidamente / comer
+    if (canAct && ctl.mouse[2]) {
+      const it = stack ? Items.get(stack.i) : null;
+      if (it && it.food) { /* gestionado por updateEating */ }
+      else if (it && it.kind === 'block' && this.useCooldown <= 0) { this.useItem(false); }
+    }
+    this.updateEating(dt, canAct && ctl.mouse[2]);
+    // Mano / golpe visual
+    if (this.mining.progress > 0 && this.mining.target) { this.handSwingAcc = (this.handSwingAcc || 0) + dt; if (this.handSwingAcc > 0.28) { this.handSwingAcc = 0; this.hand.swing(); } }
+  }
+
+  tryAttack(pressed) {
+    const e = this.entityTarget;
+    if (!e || this.mode === 'adventure' && false) return;
+    const stack = this.inventory.getSelected();
+    const it = stack ? Items.get(stack.i) : null;
+    const tool = it && it.tool;
+    const cd = tool ? tool.cooldown : 0.3;
+    if (!pressed && this.attackCharge < cd) return;
+    const charge = Math.min(1, this.attackCharge / Math.max(cd, 0.01));
+    if (pressed && this.attackCharge < 0.15) return;
+    const base = tool ? tool.damage : 1;
+    let dmg = base * (0.25 + 0.75 * charge * charge);
+    const p = this.player;
+    const crit = !p.onGround && p.vy < -0.5 && !p.inWater && charge > 0.9;
+    if (crit) dmg *= 1.5;
+    const sprint = p.sprinting;
+    if (typeof e.hurt !== 'function') return;
+    const ok = e.hurt(dmg, p.x, p.z, sprint ? 1.7 : 1, p);
+    this.attackCharge = 0;
+    this.hand.swing();
+    if (ok) {
+      if (crit) this.particles.emit(e.x, e.y + e.h * 0.7, e.z, 0xffe8a0, 8, 3);
+      if (this.mode !== 'creative' && tool) {
+        const broke = this.inventory.damageSelected(it.tool.type === 'sword' ? 1 : 2);
+        if (broke) { this.ui.toast('¡Se rompió ' + it.name.toLowerCase() + '!'); this.audio.play('toolbreak'); }
+      }
+      this.survival.addExhaustion(0.1);
+    }
+  }
+
+  /** Clic derecho: interactuar con criatura, usar objeto o colocar bloque. */
+  useItem(pressed) {
+    const inv = this.inventory, stack = inv.getSelected();
+    const it = stack ? Items.get(stack.i) : null;
+    const p = this.player;
+    // Alimentar / domesticar criaturas
+    if (this.entityTarget && stack && this.entityTarget.feed && this.entityTarget.feed(stack)) {
+      const e = this.entityTarget;
+      if (this.mode !== 'creative') inv.consumeSelected(1);
+      this.audio.play('eat', e.x, e.y, e.z); this.hand.swing();
+      return;
+    }
+    let fluidHit = null;
+    if (it && it.kind === 'bucket') { const r = this._eyeRay(); fluidHit = raycastBlocks(this.world, r.ox, r.oy, r.oz, r.dx, r.dy, r.dz, this.reach, { fluids: true }); }
+    const did = this.building.use(this.hit, fluidHit, p.crouching);
+    this.useCooldown = 0.22;
+    if (did) this.hand.swing();
+    void pressed;
+  }
+
+  beginEating() {
+    const stack = this.inventory.getSelected();
+    if (!stack || this.eating) return;
+    const it = Items.get(stack.i);
+    if (!it.food) return;
+    if (this.mode === 'creative' || this.survival.hunger >= 20) { if (this.mode !== 'creative') this.ui.toast('No tienes hambre'); return; }
+    this.eating = { t: 0, dur: 1.4, slot: this.inventory.selected, last: 0 };
+  }
+  updateEating(dt, holding) {
+    const e = this.eating;
+    if (!e) return;
+    const stack = this.inventory.slots[e.slot];
+    if (!holding || this.inventory.selected !== e.slot || !stack || !Items.get(stack.i).food) { this.eating = null; return; }
+    e.t += dt;
+    if (e.t - e.last > 0.22) { e.last = e.t; this.audio.play('eat'); const it = Items.get(stack.i); this.particles.emit(this.player.x, this.player.eyeY - 0.3, this.player.z, it.key.includes('cooked') ? 0xb07a40 : 0xc04040, 2, 1.5, 0.3); }
+    if (e.t >= e.dur) {
+      const it = Items.get(stack.i);
+      this.survival.eat(it);
+      this.inventory.consumeSelected(1);
+      this.audio.play('burp'); this.eating = null;
+      this.onItemObtained(it.key);
+    }
+  }
+
+  // ═════════════ Bucle principal ═════════════
+  start() {
+    if (this.running) return;
+    this.running = true; this._last = performance.now();
+    const loop = () => {
+      requestAnimationFrame(loop);
+      const now = performance.now();
+      let dt = (now - this._last) / 1000; this._last = now;
+      this.frame(Math.min(dt, 0.1));
+    };
+    requestAnimationFrame(loop);
+  }
+
+  frame(dt) {
+    this.elapsed += dt;
+    const fs = this.frameStats; fs.acc += dt; fs.frames++;
+    if (fs.acc >= 0.5) { fs.fps = Math.round(fs.frames / fs.acc); fs.frames = 0; fs.acc = 0; }
+    const w = this.world;
+    if (!w) { this.renderer.clear(); return; }
+    const cam = this.camera;
+    if (this.panorama) {
+      this.pano.yaw += dt * 0.045;
+      const r = 6, y = 86 + Math.sin(this.elapsed * 0.12) * 4;
+      this.player.x = this.pano.x; this.player.z = this.pano.z; this.player.y = y - this.player.eye;
+      this.player.yaw = this.pano.yaw; this.player.pitch = -0.2;
+      w.update(this.pano.x, this.pano.z, 6);
+      cam.position.set(this.pano.x + Math.sin(this.pano.yaw) * r * 0, y, this.pano.z);
+      cam.rotation.set(-0.2, this.pano.yaw, 0);
+      this._atmosphere(dt, 0);
+      this.renderer.clear(); this.renderer.render(this.scene, cam);
+      return;
+    }
+    const p = this.player, ctl = this.controls;
+    const simulating = (this.state === 'playing' || this.state === 'screen' || this.state === 'dead') && !this.paused && !this.frozen;
+    if (ctl.locked && this.state === 'playing') {
+      const { dx, dy } = ctl.consumeLook();
+      const k = 0.0022 * this.settings.sensitivity;
+      p.yaw -= dx * k; p.pitch -= dy * k * (this.settings.invertY ? -1 : 1);
+      p.pitch = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, p.pitch));
+    } else ctl.consumeLook();
+
+    if (simulating) this.simulate(dt);
+    w.update(p.x, p.z, this.frozen ? 14 : 5);
+    if (this.state !== 'loading') this.ui.update(dt);
+    if (this.ui.screen && this.ui.screen.update) this.ui.screen.update(dt);
+
+    this._atmosphere(dt, this.fovBoost);
+    this._camera(dt);
+    this.renderer.clear();
+    this.renderer.render(this.scene, cam);
+    // mano (solo en primera persona)
+    if (this.cameraMode === 0 && this.hand && this.state !== 'menu') {
+      const spd = Math.min(1, Math.hypot(p.vx, p.vz) / 5);
+      this.handLight = this.lightAt(p.x, p.eyeY, p.z);
+      this.hand.update(dt, this.inventory.getSelected(), p.onGround ? spd : 0, this.bobPhase, this.camera.aspect);
+      this.hand.render(this.renderer);
+    }
+  }
+
+  _atmosphere(dt, fovBoost) {
+    const w = this.world, p = this.player;
+    const atm = this.sky.update(this.time, this.camera, dt);
+    this.sky.cloudsVisible = this.settings.clouds;
+    const R = w.renderDistance * 16;
+    let fogNear = R * 0.55, fogFar = R - 6, fogColor = atm.fog;
+    const headFluid = this.panorama ? 0 : w.fluidAt(Math.floor(p.x), Math.floor(p.eyeY), Math.floor(p.z));
+    this.headFluid = headFluid;
+    const a = { ...atm };
+    if (headFluid === 1) { const b = 0.4 + atm.day * 0.6; fogNear = 0.4; fogFar = 22; a.fog = [0.07 * b, 0.26 * b, 0.5 * b]; fogColor = a.fog; }
+    else if (headFluid === 2) { fogNear = 0.1; fogFar = 3.5; a.fog = [0.7, 0.18, 0.04]; fogColor = a.fog; }
+    this.wr.setAtmosphere(a, fogNear, fogFar, this.settings.brightness, this.elapsed);
+    this.renderer.setClearColor(new THREE.Color(fogColor[0], fogColor[1], fogColor[2]));
+    this.camera.fov = this.settings.fov + fovBoost;
+    this.camera.updateProjectionMatrix();
+  }
+
+  _camera(dt) {
+    const p = this.player, cam = this.camera;
+    // balanceo
+    const speed = Math.hypot(p.vx, p.vz);
+    if (p.onGround && speed > 0.5) this.bobPhase += dt * speed * 2.4;
+    this.fovBoost += ((p.sprinting && speed > 3 ? 7 : 0) - this.fovBoost) * Math.min(1, dt * 8);
+    let bobY = 0, roll = 0;
+    if (this.settings.bobbing && this.cameraMode === 0) {
+      const k = Math.min(1, speed / 5) * (p.onGround ? 1 : 0);
+      bobY = Math.abs(Math.sin(this.bobPhase)) * 0.045 * k; roll = Math.sin(this.bobPhase) * 0.004 * k;
+    }
+    const look = p.lookDir();
+    const ex = p.x, ey = p.eyeY + bobY, ez = p.z;
+    if (this.cameraMode === 0) {
+      cam.position.set(ex, ey, ez);
+      cam.rotation.set(p.pitch, p.yaw, roll);
+      if (this.avatar) this.avatar.root.visible = false;
+    } else {
+      const dir = this.cameraMode === 1 ? 1 : -1; // 1: detrás del jugador, -1: de frente
+      const dist = 4;
+      const bx = -look.x * dir, by = -look.y * dir, bz = -look.z * dir;
+      const h = raycastBlocks(this.world, ex, ey, ez, bx, by, bz, dist + 0.3);
+      const d = h ? Math.max(0.4, h.dist - 0.3) : dist;
+      cam.position.set(ex + bx * d, ey + by * d, ez + bz * d);
+      cam.rotation.set(this.cameraMode === 1 ? p.pitch : -p.pitch, this.cameraMode === 1 ? p.yaw : p.yaw + Math.PI, 0);
+      if (this.avatar) { this.avatar.root.visible = true; this._animAvatar(dt); }
+    }
+    if (this.audio) this.audio.setListener(p.x, p.eyeY, p.z, p.yaw);
+  }
+
+  // ═════════════ Simulación ═════════════
+  simulate(dt) {
+    const p = this.player, w = this.world, ctl = this.controls;
+    this.playTime += dt;
+    this.time += dt / DAY_LENGTH;
+    if (this.time >= 1) this.time -= 1;
+    const move = (ctl.locked && this.state === 'playing') ? ctl.getMove() : { fwd: 0, strafe: 0, jump: false, sprint: false, crouch: false, crouchDown: false };
+    p.autoJump = this.settings.autoJump;
+    p.update(dt, move, w, this.survival.canSprint);
+    // pasos / aterrizaje
+    if (p.onGround && p.moved > 0) {
+      this.stepAcc += p.moved;
+      if (this.stepAcc > (p.sprinting ? 2.6 : 1.9)) {
+        this.stepAcc = 0;
+        const id = w.getBlock(Math.floor(p.x), Math.floor(p.y - 0.2), Math.floor(p.z));
+        this.audio.blockSound('step', B_SOUND[id] || 'stone', p.x, p.y, p.z);
+      }
+    }
+    if (p.landed && p.landed.distance > 1.5 && !p.inWater) { const id = w.getBlock(Math.floor(p.x), Math.floor(p.y - 0.2), Math.floor(p.z)); this.audio.blockSound('place', B_SOUND[id] || 'stone', p.x, p.y, p.z); }
+    if (p.inWater && !this._wasWater) this.audio.play('splash', p.x, p.y, p.z);
+    this._wasWater = p.inWater;
+    this.survival.update(dt);
+    this.updateInteraction(dt);
+    this.entities.update(dt);
+    this.particles.update(dt);
+    this.spawner.update(dt);
+    this.ticks.update(dt);
+    this.tickBlockEntities(dt);
+    this.processBlockUpdates();
+    this._structMobs();
+    this.audio.update(dt, this.sky.atm.day);
+    // bioma actual
+    this._biomeTimer -= dt;
+    if (this._biomeTimer <= 0) {
+      this._biomeTimer = 0.6;
+      const b = w.terrain.biomeAt(Math.floor(p.x), Math.floor(p.z));
+      if (b !== this.currentBiome) { this.currentBiome = b; this.ui.centerMessage(biomeName(b)); if (b === 11) this.achieve('volcan'); }
+    }
+    // autoguardado
+    this.saveTimer -= dt;
+    if (this.saveTimer <= 0) { this.saveTimer = 30; this.saveGame(); }
+    // los cultivos recogidos se descubren: trigo al romper
+  }
+
+  // ═════════════ Avatar en tercera persona ═════════════
+  _buildAvatar() {
+    const P = (name, size, center, color, o = {}) => ({ name, size, center, color, ...o });
+    const m = buildModel([
+      P('torso', [0.5, 0.7, 0.26], [0, 1.1, 0], '#3a6fc0', { pivot: [0, 1.1, 0] }),
+      P('head', [0.46, 0.46, 0.46], [0, 1.68, 0], '#d8a67a', { pivot: [0, 1.5, 0] }),
+      P('hair', [0.48, 0.18, 0.48], [0, 1.9, 0.02], '#4a3020', { pivot: [0, 1.5, 0], parent: 'head' }),
+      P('armL', [0.18, 0.7, 0.18], [-0.34, 1.1, 0], '#d8a67a', { pivot: [-0.34, 1.42, 0] }),
+      P('armR', [0.18, 0.7, 0.18], [0.34, 1.1, 0], '#d8a67a', { pivot: [0.34, 1.42, 0] }),
+      P('legL', [0.22, 0.75, 0.24], [-0.13, 0.375, 0], '#2c3e6e', { pivot: [-0.13, 0.75, 0] }),
+      P('legR', [0.22, 0.75, 0.24], [0.13, 0.375, 0], '#2c3e6e', { pivot: [0.13, 0.75, 0] }),
+    ]);
+    m.root.visible = false;
+    this.scene.add(m.root);
+    this.avatar = m; this._avatarPhase = 0;
+  }
+  _animAvatar(dt) {
+    const p = this.player, a = this.avatar;
+    a.root.position.set(p.x, p.y, p.z);
+    a.root.rotation.y = p.yaw;
+    const sp = Math.hypot(p.vx, p.vz);
+    this._avatarPhase += sp * dt * 2.2;
+    const s = Math.sin(this._avatarPhase) * Math.min(1, sp / 3) * 0.9;
+    a.parts.legL.rotation.x = s; a.parts.legR.rotation.x = -s; a.parts.armL.rotation.x = -s; a.parts.armR.rotation.x = s;
+    a.parts.head.rotation.x = p.pitch * 0.6;
+    const l = this.lightAt(p.x, p.y + 1, p.z); a.mat.color.setScalar(l);
+  }
+
+  // ═════════════ Guardado ═════════════
+  async saveGame(quiet = false) {
+    if (!this.world || !this.meta || !this.store || this.saving || this.panorama) return;
+    this.saving = true;
+    try {
+      const meta = this.meta, p = this.player;
+      const sleeping = {};
+      for (const [k, v] of this.sleeping) sleeping[k] = v.slice();
+      for (const e of this.entities.list) {
+        if (e.removed || !e.persistent) continue;
+        const k = chunkKey(Math.floor(e.x / 16), Math.floor(e.z / 16));
+        (sleeping[k] = sleeping[k] || []).push(e.serialize());
+      }
+      const be = {};
+      for (const [k, v] of this.world.blockEntities) be[k] = v.serialize();
+      meta.player = {
+        x: p.x, y: p.y, z: p.z, yaw: p.yaw, pitch: p.pitch, flying: p.flying,
+        inv: this.inventory.serialize(), sv: this.survival.serialize(),
+        discovered: [...this.discovered], ach: [...this.achievements], spawn: this.spawnPoint, stats: this.stats,
+      };
+      meta.time = this.time; meta.playTime = this.playTime; meta.sleeping = sleeping; meta.be = be;
+      meta.structDone = [...this.structDone]; meta.genVersion = GENERATOR_VERSION; meta.gameVersion = VERSION;
+      await this.world.saveModified();
+      if (this.chunkStore) await this.chunkStore.flush();
+      await this.store.putWorld(meta);
+      if (!quiet) this.ui.toast('Partida guardada', 1200);
+    } catch (e) {
+      console.error('Error al guardar', e);
+      this.ui.toast('⚠ No se pudo guardar la partida');
+    } finally { this.saving = false; }
+  }
+}
+void moveEntity; void addToSlots; void makeStack;

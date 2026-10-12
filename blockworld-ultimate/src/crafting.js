@@ -1,0 +1,173 @@
+// Recetas basadas en datos: materiales, cantidades, resultado, estación y condición de desbloqueo.
+// También la tabla de fundición (horno). No hay cuadrícula de crafteo: las recetas son listas de
+// ingredientes, y la interfaz comprueba y consume los materiales reales del inventario.
+import { Items, TIER_ORDER, TIER_MATERIAL, TOOL_ORDER, ARMOR_ORDER, ARMOR_TIERS, makeStack, cloneStack } from './items.js';
+import { addToSlots, countInSlots, removeFromSlots } from './inventory.js';
+
+/** Etiquetas: un ingrediente '#tag' acepta cualquiera de sus miembros. */
+export const TAGS = {
+  '#log': ['log_oak', 'log_dark', 'log_jungle', 'log_pine'],
+  '#coal': ['coal', 'charcoal'],
+};
+
+/** @typedef {{id:string,out:string,n:number,in:[string,number][],station:'hand'|'workbench',unlock:?string,category:string}} Recipe */
+/** @type {Recipe[]} */
+export const RECIPES = [];
+let seq = 0;
+function recipe(out, n, inputs, station = 'hand', unlock = null, category = 'Bloques') {
+  const id = `${out}#${seq++}`;
+  RECIPES.push({ id, out, n, in: inputs, station, unlock, category });
+}
+
+// Básicos (a mano)
+recipe('planks', 4, [['#log', 1]], 'hand', null, 'Básicos');
+recipe('stick', 4, [['planks', 2]], 'hand', null, 'Básicos');
+recipe('workbench', 1, [['planks', 4]], 'hand', null, 'Básicos');
+recipe('torch', 4, [['#coal', 1], ['stick', 1]], 'hand', null, 'Básicos');
+recipe('snow', 1, [['snowball', 4]], 'hand', null, 'Bloques');
+
+// Mesa de trabajo
+recipe('chest', 1, [['planks', 8]], 'workbench', null, 'Almacenaje');
+recipe('furnace', 1, [['cobble', 8]], 'workbench', null, 'Almacenaje');
+recipe('bed', 1, [['planks', 3], ['leather', 3]], 'workbench', 'leather', 'Almacenaje');
+recipe('bucket', 1, [['iron_ingot', 3]], 'workbench', 'iron_ingot', 'Recipientes');
+recipe('bread', 1, [['wheat', 3]], 'workbench', 'wheat', 'Comida');
+
+// Bloques decorativos y de construcción
+recipe('slab_planks', 6, [['planks', 3]], 'workbench', null, 'Bloques');
+recipe('slab_stone', 6, [['stone', 3]], 'workbench', 'stone', 'Bloques');
+recipe('slab_cobble', 6, [['cobble', 3]], 'workbench', null, 'Bloques');
+recipe('slab_bricks', 6, [['bricks', 3]], 'workbench', 'bricks', 'Bloques');
+recipe('bricks', 1, [['brick', 4]], 'workbench', 'brick', 'Bloques');
+recipe('stonebricks', 4, [['stone', 4]], 'workbench', 'stone', 'Bloques');
+recipe('crystal_lamp', 1, [['crystal_shard', 4], ['torch', 1]], 'workbench', 'crystal_shard', 'Bloques');
+for (const [block, mat] of [['block_copper', 'copper_ingot'], ['block_iron', 'iron_ingot'], ['block_gold', 'gold_ingot'], ['block_crystal', 'crystal_shard'], ['block_noctisite', 'noctisite_ingot']]) {
+  recipe(block, 1, [[mat, 9]], 'workbench', mat, 'Bloques');
+  recipe(mat, 9, [[block, 1]], 'workbench', mat, 'Bloques');
+}
+
+// Herramientas: cabeza + palos
+const HEAD_COST = { pickaxe: [3, 2], axe: [3, 2], shovel: [1, 2], sword: [2, 1], hoe: [2, 2] };
+for (const tier of TIER_ORDER) {
+  const mat = TIER_MATERIAL[tier];
+  for (const type of TOOL_ORDER) {
+    const [heads, sticks] = HEAD_COST[type];
+    recipe(`${tier}_${type}`, 1, [[mat, heads], ['stick', sticks]], 'workbench', tier === 'wood' || tier === 'stone' ? null : mat, 'Herramientas');
+  }
+}
+
+// Armaduras
+const ARMOR_COST = [5, 8, 7, 4];
+for (const a of ARMOR_ORDER) {
+  const mat = ARMOR_TIERS[a].material;
+  ['helmet', 'chestplate', 'leggings', 'boots'].forEach((piece, i) => {
+    recipe(`${a}_${piece}`, 1, [[mat, ARMOR_COST[i]]], 'workbench', mat, 'Armaduras');
+  });
+}
+
+// ── Fundición ────────────────────────────────────────────────────
+/** entrada → salida. time = segundos por unidad. */
+export const SMELTING = [
+  { in: 'cobble', out: 'stone', time: 8 },
+  { in: 'sand', out: 'glass', time: 8 },
+  { in: 'clay_ball', out: 'brick', time: 8 },
+  { in: 'raw_copper', out: 'copper_ingot', time: 10 },
+  { in: 'raw_iron', out: 'iron_ingot', time: 10 },
+  { in: 'raw_gold', out: 'gold_ingot', time: 10 },
+  { in: 'raw_noctisite', out: 'noctisite_ingot', time: 16 },
+  { in: 'log_oak', out: 'charcoal', time: 8 },
+  { in: 'log_dark', out: 'charcoal', time: 8 },
+  { in: 'log_jungle', out: 'charcoal', time: 8 },
+  { in: 'log_pine', out: 'charcoal', time: 8 },
+  { in: 'raw_beef', out: 'cooked_beef', time: 8 },
+  { in: 'raw_pork', out: 'cooked_pork', time: 8 },
+  { in: 'raw_bird', out: 'cooked_bird', time: 8 },
+  { in: 'raw_fish', out: 'cooked_fish', time: 8 },
+  { in: 'raw_venison', out: 'cooked_venison', time: 8 },
+  { in: 'potato', out: 'baked_potato', time: 8 },
+];
+const SMELT_BY_ID = new Map();
+for (const s of SMELTING) SMELT_BY_ID.set(Items.id(s.in), s);
+export const smeltRecipe = (itemId) => SMELT_BY_ID.get(itemId) || null;
+export const fuelTime = (itemId) => { const it = Items.get(itemId); return it && it.fuel ? it.fuel : 0; };
+
+// ── Lógica de fabricación ────────────────────────────────────────
+function tagMembers(spec) {
+  return spec.startsWith('#') ? TAGS[spec].map((k) => Items.id(k)) : [Items.id(spec)];
+}
+export function countIngredient(slots, spec) {
+  let c = 0;
+  for (const id of tagMembers(spec)) c += countInSlots(slots, id);
+  return c;
+}
+function consumeIngredient(slots, spec, n) {
+  for (const id of tagMembers(spec)) {
+    const have = countInSlots(slots, id);
+    const take = Math.min(have, n);
+    if (take > 0) { removeFromSlots(slots, id, take); n -= take; }
+    if (n <= 0) return true;
+  }
+  return n <= 0;
+}
+
+export function canCraft(r, slots) {
+  return r.in.every(([spec, n]) => countIngredient(slots, spec) >= n);
+}
+
+/** Máximo de veces que se puede fabricar con los materiales actuales. */
+export function maxCrafts(r, slots) {
+  let m = Infinity;
+  for (const [spec, n] of r.in) m = Math.min(m, Math.floor(countIngredient(slots, spec) / n));
+  return Number.isFinite(m) ? m : 0;
+}
+
+/**
+ * Fabrica `times` veces. Solo consume si todo cabe en el inventario. Devuelve cuántas veces se fabricó.
+ * `slots` es el array de huecos del inventario (jugador).
+ */
+export function craft(r, slots, times = 1) {
+  const outItem = Items.get(r.out);
+  if (!outItem) return 0;
+  let done = 0;
+  for (let k = 0; k < times; k++) {
+    if (!canCraft(r, slots)) break;
+    // Simula primero: el resultado debe caber DESPUÉS de consumir los ingredientes (que liberan huecos)
+    const sim = slots.map(cloneStack);
+    for (const [spec, n] of r.in) consumeIngredient(sim, spec, n);
+    if (addToSlots(sim, makeStack(outItem.id, r.n))) break;
+    for (const [spec, n] of r.in) consumeIngredient(slots, spec, n);
+    const rest = addToSlots(slots, makeStack(outItem.id, r.n));
+    if (rest) throw new Error('Inconsistencia al fabricar (no debería ocurrir)');
+    done++;
+  }
+  return done;
+}
+
+/** Recetas visibles en una estación. `discovered` = Set de claves de objeto ya obtenidos. */
+export function recipesFor(station, discovered, creative = false) {
+  return RECIPES.filter((r) => {
+    if (station === 'hand' && r.station !== 'hand') return false;
+    if (!creative && r.unlock && !(discovered && discovered.has(r.unlock))) return false;
+    return true;
+  });
+}
+
+// ── Reparación ───────────────────────────────────────────────────
+/** Material de reparación de una herramienta/armadura, o null. */
+export function repairMaterial(it) {
+  if (it.tool) return TIER_MATERIAL[it.tool.tier];
+  if (it.armor) return ARMOR_TIERS[it.armor.tier].material;
+  return null;
+}
+/** Repara un 30 % de la durabilidad máxima por unidad de material (consume 1). */
+export function repairStack(stack, slots) {
+  const it = Items.get(stack.i);
+  const matKey = it && repairMaterial(it);
+  if (!matKey || !stack.d) return { ok: false, reason: stack.d ? 'Este objeto no se puede reparar.' : 'No está dañado.' };
+  const mat = Items.id(matKey);
+  if (countInSlots(slots, mat) < 1) return { ok: false, reason: `Necesitas: ${Items.get(mat).name}` };
+  const max = it.tool ? it.tool.durability : it.armor.durability;
+  removeFromSlots(slots, mat, 1);
+  stack.d = Math.max(0, stack.d - Math.ceil(max * 0.3));
+  return { ok: true };
+}
