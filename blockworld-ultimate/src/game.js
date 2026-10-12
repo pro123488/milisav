@@ -229,7 +229,7 @@ export class Game {
 
   onLockChange(locked, error) {
     if (locked) { if (this.state === 'screen' && !this.ui.screen) this.state = 'playing'; return; }
-    if (error) return;
+    if (error) { this.ui.toast('El navegador no permitió capturar el ratón. Pulsa en el juego otra vez o ábrelo en su propia pestaña.', 6000); return; }
     if (this._expectUnlock) { this._expectUnlock = false; return; }
     if (this.state === 'playing' && !this.ui.hasScreen) this.openPause();
   }
