@@ -1,5 +1,6 @@
 /* BLOCKWORLD ULTIMATE — estilos. Identidad propia: noche verdeazulada, acentos turquesa y ámbar, paneles "biselados". */
 :root {
+  color-scheme: dark;
   --bg0: #0a1016; --bg1: #121b24; --bg2: #1b2733; --bg3: #26364a;
   --line: #3b516b; --line-hi: #5d7ea3; --txt: #e8f0f8; --dim: #92a6bd;
   --acc: #2fd6c0; --acc2: #f2b84b; --danger: #e5534b; --ok: #5ad85a;
