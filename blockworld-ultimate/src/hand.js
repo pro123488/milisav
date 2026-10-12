@@ -56,15 +56,15 @@ export class HandRenderer {
   }
 
   _armMesh() {
-    const g = new THREE.BoxGeometry(0.2, 0.2, 0.75);
+    const g = new THREE.BoxGeometry(0.13, 0.13, 0.6);
     const col = new Float32Array(24 * 3);
     const c = new THREE.Color('#d8a67a');
     for (let f = 0; f < 6; f++) for (let v = 0; v < 4; v++) { const i = f * 4 + v; col[i * 3] = c.r * FACE_TINT[f]; col[i * 3 + 1] = c.g * FACE_TINT[f]; col[i * 3 + 2] = c.b * FACE_TINT[f]; }
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true }));
-    m.rotation.set(0.2, -0.3, 0);
-    const sleeve = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.28), new THREE.MeshBasicMaterial({ color: 0x3a6fc0 }));
-    sleeve.position.z = 0.28; m.add(sleeve);
+    m.rotation.set(0.35, -0.35, 0.05);
+    const sleeve = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.24), new THREE.MeshBasicMaterial({ color: 0x3a6fc0 }));
+    sleeve.position.z = 0.24; m.add(sleeve);
     const o = new THREE.Group(); o.add(m); o.userData.mat = m.material; o.userData.extra = sleeve.material;
     return o;
   }
@@ -78,7 +78,7 @@ export class HandRenderer {
       if (shape === 2 || shape === 4) return { obj: this._spriteMesh(it, 0.55), kind: 'sprite' };
       return { obj: this._blockMesh(b, this.game.wr.atlasTexture), kind: 'block' };
     }
-    return { obj: this._spriteMesh(it, it.kind === 'tool' ? 0.78 : 0.6), kind: it.kind === 'tool' ? 'tool' : 'sprite' };
+    return { obj: this._spriteMesh(it, it.kind === 'tool' ? 0.46 : 0.42), kind: it.kind === 'tool' ? 'tool' : 'sprite' };
   }
 
   update(dt, stack, speed, walkPhase, aspect) {
@@ -99,7 +99,7 @@ export class HandRenderer {
     const bobAmt = this.game.settings.bobbing ? Math.min(1, speed) : 0;
     const bx = Math.cos(walkPhase * 0.5) * 0.02 * bobAmt, by = -Math.abs(Math.sin(walkPhase * 0.5)) * 0.03 * bobAmt;
     const kind = this.current.kind;
-    const baseX = kind === 'arm' ? 0.42 : 0.5, baseY = kind === 'arm' ? -0.42 : -0.38, baseZ = kind === 'arm' ? -0.62 : -0.8;
+    const baseX = kind === 'arm' ? 0.36 : 0.46, baseY = kind === 'arm' ? -0.4 : -0.36, baseZ = kind === 'arm' ? -0.75 : -0.8;
     this.holder.position.set(baseX + bx - sw * 0.12, baseY + by - this.equip * 0.5 + eat - sw * 0.1, baseZ - sw * 0.25);
     this.holder.rotation.set(-sw * 0.9 + (kind === 'tool' ? -0.1 : 0), sw * 0.3, -sw * 0.2);
     const l = this.game.handLight;

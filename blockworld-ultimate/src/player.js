@@ -104,6 +104,7 @@ export class Player {
     else { this.vx += (dvx / dl) * maxd; this.vz += (dvz / dl) * maxd; }
 
     // Vertical
+    let dyAvg = null;
     if (this.flying) {
       let tvy = 0;
       if (input.jump) tvy += speed * 0.55;
@@ -122,9 +123,12 @@ export class Player {
       } else if (input.crouch) this.vy = approach(this.vy, -3, 20 * dt);
       this.vy = Math.max(this.vy, -3.5);
     } else {
+      // Integración exacta de la parábola: la altura del salto no depende de los FPS
+      const vy0 = this.vy;
       this.vy -= GRAVITY * dt;
       if (this.vy < -TERMINAL) this.vy = -TERMINAL;
-      if (input.jump && grounded) { this.vy = JUMP_V; this.jumpedThisFrame = true; this.onGround = false; }
+      if (input.jump && grounded) { this.vy = JUMP_V - GRAVITY * dt; dyAvg = ((JUMP_V + this.vy) / 2) * dt; this.jumpedThisFrame = true; this.onGround = false; }
+      else dyAvg = ((vy0 + this.vy) / 2) * dt;
     }
 
     // Autosalto: obstáculo de 1 bloque delante
@@ -137,7 +141,7 @@ export class Player {
 
     // Mover
     const prevX = this.x, prevZ = this.z, prevY = this.y;
-    let dx = this.vx * dt, dz = this.vz * dt, dy = this.vy * dt;
+    let dx = this.vx * dt, dz = this.vz * dt, dy = dyAvg !== null ? dyAvg : this.vy * dt;
     const wasGround = this.onGround;
     if (this.noClip) { this.x += dx; this.y += dy; this.z += dz; this.onGround = false; }
     else {
@@ -157,7 +161,7 @@ export class Player {
 
     // Caídas
     if (inFluid || this.flying) this.fallDistance = 0;
-    else if (!this.onGround && this.y < prevY) this.fallDistance += prevY - this.y;
+    else if (this.y < prevY) this.fallDistance += prevY - this.y;
     if (this.onGround && !wasGround && this.fallDistance > 0) {
       this.landed = { distance: this.fallDistance };
       this.fallDistance = 0;

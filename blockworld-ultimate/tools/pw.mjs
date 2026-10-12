@@ -3,8 +3,13 @@ import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-const require = createRequire('/opt/node-tools/node_modules/');
-const { chromium } = require('playwright');
+// Playwright: se busca primero en PW_MODULES (ruta a un node_modules), si no, en el resolver normal.
+let chromium;
+for (const base of [process.env.PW_MODULES, '/opt/node-tools/node_modules/', import.meta.url]) {
+  if (!base) continue;
+  try { ({ chromium } = createRequire(base.startsWith('file:') ? base : base.replace(/\/?$/, '/'))('playwright')); break; } catch (e) { /* probar el siguiente */ }
+}
+if (!chromium) throw new Error('No se encontró Playwright. Instálalo (npm i -D playwright) o define PW_MODULES.');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 export async function withPage(urlPath, fn, { w = 1280, h = 720, port = 8123, readyFlag = null, readyTimeout = 90000 } = {}) {

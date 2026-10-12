@@ -7,6 +7,11 @@ import { RECIPES, craft, canCraft, SMELTING, recipesFor, repairStack } from '../
 import { Terrain, seedFromString } from '../src/terrain.js';
 import { mulberry32 } from '../src/noise.js';
 import { World } from '../src/world.js';
+import { Player } from '../src/player.js';
+import { rleEncode, rleDecode } from '../src/save.js';
+import { raycastBlocks } from '../src/raycast.js';
+import { meshChunk } from '../src/mesher.js';
+import { boxCollides } from '../src/physics.js';
 
 let passed = 0;
 const test = (name, fn) => {
@@ -264,6 +269,104 @@ test('guardar y recargar: un chunk modificado se marca para guardar', () => {
   W.store = { hasChunk: () => false, loadChunk: async () => null, saveChunk: (cx, cz, b) => { saved.push([cx, cz, b.length]); return Promise.resolve(); } };
   W.saveModified();
   assert.ok(saved.length >= 1 && saved[0][2] === 16 * 16 * 128);
+});
+
+
+console.log('Física, raycast, mallado y guardado');
+const idle = { fwd: 0, strafe: 0, jump: false, sprint: false, crouch: false, crouchDown: false };
+const PWD = makeWorld('fisica'); // mundo limpio para las pruebas de física
+const run = (p, n, input = idle, w = PWD) => { for (let i = 0; i < n; i++) p.update(0.05, input, w, true); };
+test('el jugador cae, aterriza sobre el suelo y no lo atraviesa', () => {
+  const p = new Player(); p.teleport(8.5, 60, 8.5);
+  run(p, 80);
+  assert.ok(p.onGround); assert.ok(Math.abs(p.y - 42) < 0.01, 'y=' + p.y);
+});
+test('daño por caída: se informa la distancia al aterrizar', () => {
+  const p = new Player(); p.teleport(8.5, 60, 8.5);
+  let landed = null;
+  for (let i = 0; i < 100; i++) { p.update(0.05, idle, PWD, true); if (p.landed) landed = p.landed.distance; }
+  assert.ok(landed > 17 && landed < 19, 'distancia ' + landed);
+});
+test('saltar eleva ~1,25 bloques y no más', () => {
+  const p = new Player(); p.teleport(8.5, 42, 8.5); run(p, 5);
+  let maxY = p.y;
+  for (let i = 0; i < 40; i++) { p.update(0.05, { ...idle, jump: i < 2 }, PWD, true); maxY = Math.max(maxY, p.y); }
+  assert.ok(maxY - 42 > 1.1 && maxY - 42 < 1.45, 'altura ' + (maxY - 42));
+});
+test('un muro sólido detiene al jugador (sin atravesarlo ni a gran velocidad)', () => {
+  for (let y = 42; y < 46; y++) PWD.setBlock(14, y, 8, ID.STONE);
+  const p = new Player(); p.autoJump = false; p.yaw = -Math.PI / 2; // mira hacia +X
+  p.teleport(10.5, 42, 8.5); run(p, 5);
+  run(p, 120, { ...idle, fwd: 1, sprint: true });
+  assert.ok(p.x < 14 - 0.3 + 1e-3, 'x=' + p.x);
+  p.vx = 80; p.update(0.05, idle, PWD, true);
+  assert.ok(p.x < 14, 'atravesó a gran velocidad x=' + p.x);
+});
+test('no queda incrustado: si lo emparedan, se desatasca hacia arriba', () => {
+  const p = new Player(); p.teleport(8.5, 42, 20.5); run(p, 3);
+  for (let y = 42; y < 44; y++) PWD.setBlock(8, y, 20, ID.STONE);
+  p.update(0.05, idle, PWD, true);
+  assert.ok(!boxCollides(PWD, p.x, p.y, p.z, p.w, p.h));
+});
+test('el agua frena la caída y permite flotar/nadar', () => {
+  for (let x = 20; x < 28; x++) for (let z = 4; z < 12; z++) for (let y = 38; y <= 41; y++) PWD.setBlock(x, y, z, ID.WATER);
+  const p = new Player(); p.teleport(24.5, 50, 8.5);
+  for (let i = 0; i < 80; i++) p.update(0.05, idle, PWD, true);
+  assert.ok(p.inWater, 'debería estar en el agua');
+  assert.ok(p.y > 36 && p.y < 42.5);
+});
+test('creativo: doble toque de espacio activa/desactiva el vuelo', () => {
+  const p = new Player(); p.allowFlying = true; p.teleport(8.5, 42, 8.5); run(p, 3);
+  const tap = (down) => p.update(0.05, { ...idle, jump: down }, PWD, true);
+  tap(true); tap(false); tap(true);
+  assert.ok(p.flying, 'volando');
+  const y0 = p.y; for (let i = 0; i < 10; i++) tap(true);
+  assert.ok(p.y > y0 + 1, 'sube con espacio');
+});
+test('raycast: golpea el bloque correcto y devuelve la cara', () => {
+  const h = raycastBlocks(PWD, 8.5, 45, 8.5, 0, -1, 0, 10);
+  assert.ok(h && h.y === 41 && h.ny === 1, JSON.stringify(h));
+  const none = raycastBlocks(PWD, 8.5, 45, 8.5, 0, 1, 0, 10);
+  assert.equal(none, null);
+  const lim = raycastBlocks(PWD, 8.5, 60, 8.5, 0, -1, 0, 5);
+  assert.equal(lim, null); // fuera de alcance
+});
+test('raycast: respeta la caja real de una losa (la mitad superior es aire)', () => {
+  PWD.setBlock(30, 42, 30, ID.SLAB_STONE);
+  const above = raycastBlocks(PWD, 30.5, 42.9, 30.5, 0.001, -1, 0, 3);
+  assert.ok(above && above.y === 42 && Math.abs(above.dist - 0.4) < 0.02, JSON.stringify(above));
+});
+test('mallado: bloque aislado = 6 caras; dos bloques juntos ocultan las caras comunes', () => {
+  const w2 = new World({ seed: 1, type: 'flat', structures: false, renderDistance: 2, useWorker: false });
+  for (let i = 0; i < 2000; i++) { w2.update(8, 8, 8); if (w2.isAreaReady(8, 8, 1) && !w2.incoming.length) break; }
+  const c = w2.chunkAt(0, 0);
+  const faces = () => { const m = meshChunk(w2, c, {}); return (m.opaque ? m.opaque.index.length / 6 : 0); };
+  const base = faces();
+  w2.setBlock(5, 60, 5, ID.STONE); const f1 = faces();
+  assert.equal(f1 - base, 6);
+  w2.setBlock(6, 60, 5, ID.STONE); const f2 = faces();
+  assert.equal(f2 - base, 10); // 12 caras - 2 ocultas
+  w2.setBlock(6, 60, 5, ID.GLASS);
+  const m = meshChunk(w2, c, {}); assert.ok(m.trans && m.trans.vertexCount === 20, 'el vidrio va en la pasada translúcida (5 caras visibles)');
+});
+test('compresión RLE es reversible y reduce el tamaño del terreno', () => {
+  const a = new Terrain(seedFromString('rle'), {}).generateChunk(1, 1).blocks;
+  const e = rleEncode(a); const d = rleDecode(e, a.length);
+  assert.deepEqual(d, a); assert.ok(e.length < a.length / 3, 'tamaño ' + e.length);
+});
+test('el mundo respeta los límites (tamaño finito)', () => {
+  const w3 = new World({ seed: 2, type: 'flat', structures: false, size: 256, renderDistance: 2, useWorker: false });
+  assert.ok(w3.inBounds(0, 0) && w3.inBounds(-8, 7) && !w3.inBounds(8, 0) && !w3.inBounds(-9, 0));
+  const p = new Player(); p.teleport(500, 60, 0); p.update(0.05, idle, w3, true);
+  assert.ok(p.x <= 128);
+});
+test('punto de aparición sobre suelo natural, no sobre árboles', () => {
+  const w4 = new World({ seed: seedFromString('prueba'), type: 'normal', structures: false, renderDistance: 3, useWorker: false });
+  const sp = w4.terrain.findSpawn();
+  for (let i = 0; i < 3000; i++) { w4.update(sp.x, sp.z, 8); if (w4.isAreaReady(sp.x, sp.z, 2) && !w4.incoming.length) break; }
+  const s = w4.findGroundStand(sp.x, sp.z);
+  assert.ok(s, 'sin lugar de aparición');
+  assert.equal(s.y, Math.floor(w4.terrain.column(Math.floor(s.x), Math.floor(s.z)).h) + 1);
 });
 
 console.log(`\n${passed} pruebas correctas${process.exitCode ? ' — HAY FALLOS' : ''}`);

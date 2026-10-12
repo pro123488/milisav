@@ -155,7 +155,7 @@ export class Building {
   interact(hit, b) {
     const g = this.game;
     switch (b.interact) {
-      case 'workbench': g.ui.openCrafting('workbench'); return true;
+      case 'workbench': g.openCrafting('workbench'); return true;
       case 'chest': g.openChest(hit.x, hit.y, hit.z); return true;
       case 'furnace': g.openFurnace(hit.x, hit.y, hit.z); return true;
       case 'bed': g.sleep(hit.x, hit.y, hit.z); return true;
@@ -182,9 +182,13 @@ export class Building {
         w.setBlock(hit.x, hit.y, hit.z, 0);
         const filled = Items.id(hit.id === ID.WATER ? 'water_bucket' : 'lava_bucket');
         if (g.mode !== 'creative') {
-          inv.consumeSelected(1);
-          const rest = inv.add({ i: filled, n: 1, d: 0 });
-          if (rest) g.dropItem(rest, g.player.x, g.player.y + 1, g.player.z);
+          const cur = inv.getSelected();
+          if (cur && cur.n === 1) inv.slots[inv.selected] = { i: filled, n: 1, d: 0 }; // el cubo vacío se transforma en la mano
+          else {
+            inv.consumeSelected(1);
+            const rest = inv.add({ i: filled, n: 1, d: 0 });
+            if (rest) g.dropItem(rest, g.player.x, g.player.y + 1, g.player.z);
+          }
         }
         g.audio && g.audio.play('splash', hit.x, hit.y, hit.z);
         return true;

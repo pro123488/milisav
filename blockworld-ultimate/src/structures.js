@@ -6,7 +6,7 @@ import { ID } from './blocks.js';
 import { hash2, hash3, mulberry32 } from './noise.js';
 import { BIOME } from './biomes.js';
 
-const REGION = 7; // chunks por región; como mucho una estructura de superficie por región
+const REGION = 5; // chunks por región; como mucho una estructura de superficie por región
 
 export const LOOT = {
   hut: [
@@ -91,7 +91,7 @@ function planFor(terrain, cx, cz) {
   }
   // Superficie: una por región
   const rx = Math.floor(cx / REGION), rz = Math.floor(cz / REGION);
-  if (hash2(rx, rz, seed + 7001) > 0.72) return null;
+  if (hash2(rx, rz, seed + 7001) > 0.6) return null;
   const pcx = rx * REGION + 1 + Math.floor(hash2(rx, rz, seed + 7002) * (REGION - 2));
   const pcz = rz * REGION + 1 + Math.floor(hash2(rx, rz, seed + 7003) * (REGION - 2));
   if (pcx !== cx || pcz !== cz) return null;
@@ -106,7 +106,7 @@ function planFor(terrain, cx, cz) {
     const c = terrain.column(ox + dx, oz + dz);
     lo = Math.min(lo, c.h); hi = Math.max(hi, c.h);
   }
-  if (hi - lo > 6) return null;
+  if (hi - lo > 7) return null;
   const roll = hash2(cx, cz, seed + 7006);
   let type = null;
   switch (mid.biome) {

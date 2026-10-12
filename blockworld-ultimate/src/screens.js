@@ -89,6 +89,14 @@ class SlotScreen {
   onShift(slots, idx) { return false; }
   afterChange() { this.refresh(); }
 
+  /** Repinta si el inventario cambió por fuera (p. ej. recogiendo objetos con la pantalla abierta). */
+  sigCheck() {
+    const inv = this.game.inventory;
+    const sig = inv.slots.map((x) => (x ? x.i + ':' + x.n : '-')).join(',') + '|' + (inv.cursor ? inv.cursor.n : 0);
+    if (sig !== this._sig) { this._sig = sig; this.refresh(); }
+  }
+  update() { this.sigCheck(); }
+
   refresh() {
     const inv = this.game.inventory;
     for (const v of this.views) UI.paintSlot(v.el, v.slots[v.idx]);
@@ -323,6 +331,7 @@ export function openFurnaceScreen(game, be) {
     return s.shiftFromPlayer(slots, idx, targets);
   };
   s.update = () => {
+    s.sigCheck();
     $('div', fire).style.height = (ex.burn > 0 && ex.burnMax ? Math.round((ex.burn / ex.burnMax) * 100) : 0) + '%';
     const rec = be.slots[0] ? smeltRecipe(be.slots[0].i) : null;
     $('div', arrow).style.width = (rec ? Math.round((ex.cook / rec.time) * 100) : 0) + '%';

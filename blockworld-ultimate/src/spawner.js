@@ -121,7 +121,7 @@ export class Spawner {
       if (sy < 0) return false;
       const ground = w.getBlock(x, sy, z);
       if (!GROUND_OK.has(ground) || w.getBlock(x, sy + 1, z) !== 0 || w.getBlock(x, sy + 2, z) !== 0) return false;
-      const sky = w.getSky(x, sy + 1, z) / 15 * atm.sun, blk = w.getBlockLight(x, sy + 1, z) / 15;
+      const sky = w.getSky(x, sy + 1, z) / 15 * atm.gameSky, blk = w.getBlockLight(x, sy + 1, z) / 15;
       const dark = Math.max(sky, blk) < 0.5;
       const biome = w.terrain.biomeAt(x, z);
       const table = BIOMES[biome] && BIOMES[biome].monsters;

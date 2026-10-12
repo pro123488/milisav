@@ -17,7 +17,7 @@ export class RandomTicks {
   /** ¿Hay luz suficiente para crecer? (incluye la hora: de noche el cielo no basta) */
   _lightOK(x, y, z) {
     const w = this.game.world;
-    const sky = w.getSky(x, y, z) * this.game.sky.atm.sun;
+    const sky = w.getSky(x, y, z) * this.game.sky.atm.gameSky;
     return sky >= 8 || w.getBlockLight(x, y, z) >= 9;
   }
 

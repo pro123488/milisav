@@ -58,7 +58,6 @@ class App {
     const cs = await this.store.chunkStore(meta.id);
     await this.store.putWorld(meta);
     await this.game.startSession(meta, this.store, cs, () => {});
-    this.game.resume = this.game.resume.bind(this.game);
     window.__ready = true;
   }
 

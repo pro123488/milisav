@@ -6,7 +6,8 @@
   "private": true,
   "scripts": {
     "start": "node tools/serve.mjs",
-    "test": "node tests/run.mjs"
+    "test": "node tests/run.mjs",
+    "test:e2e": "node tests/e2e/ui-crafting.mjs && node tests/e2e/furnace-chest-death.mjs && node tests/e2e/save-load.mjs && node tests/e2e/systems.mjs && node tests/e2e/creatures.mjs"
   },
   "license": "UNLICENSED"
 }

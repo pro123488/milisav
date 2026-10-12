@@ -90,7 +90,7 @@ export class Menus {
     row.append(btn('Opciones', () => this.showOptions()), btn('Controles', () => this.showControls()), btn('Créditos', () => this.showCredits()));
     col.append(row);
     wrap.append(col);
-    wrap.append(el('div', 'menu-foot', { text: `${GAME_NAME} · ${VERSION} · Fase 1 jugable` }));
+    wrap.append(el('div', 'menu-foot', { text: `${GAME_NAME} · ${VERSION}` }));
     if (!app.store.persistent) wrap.append(el('div', 'warn', { text: '⚠ El almacenamiento del navegador no está disponible: los mundos no se guardarán.' }));
     this._show(wrap);
   }

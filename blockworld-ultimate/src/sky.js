@@ -104,12 +104,12 @@ export class Sky {
       for (let y = 0; y < cells; y++) for (let x = 0; x < cells; x++) {
         let v = 0;
         for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) v += grid[(y + dy + cells) % cells][(x + dx + cells) % cells];
-        if (v / 9 > 0.5) { g.fillStyle = '#ffffff'; g.fillRect(x * 4, y * 4, 4, 4); }
+        if (v / 9 > 0.55) { g.fillStyle = '#ffffff'; g.fillRect(x * 4, y * 4, 4, 4); }
       }
     }, 256);
     cloudTex.wrapS = cloudTex.wrapT = THREE.RepeatWrapping;
     cloudTex.repeat.set(3, 3);
-    this.cloudMat = new THREE.MeshBasicMaterial({ map: cloudTex, transparent: true, opacity: 0.8, depthWrite: false, fog: false, side: THREE.DoubleSide });
+    this.cloudMat = new THREE.MeshBasicMaterial({ map: cloudTex, transparent: true, opacity: 0.78, depthWrite: false, fog: false, side: THREE.DoubleSide });
     this.clouds = new THREE.Mesh(new THREE.PlaneGeometry(3600, 3600), this.cloudMat);
     this.clouds.rotation.x = -Math.PI / 2; this.clouds.renderOrder = -80; this.clouds.frustumCulled = false;
     this.scene.add(this.clouds);
@@ -129,9 +129,10 @@ export class Sky {
     let zen = mix3(NIGHT_Z, DAY_Z, day), hor = mix3(NIGHT_H, DAY_H, day);
     const dk = dusk * (0.35 + 0.65 * smooth(-0.3, 0.1, sunH) * (1 - smooth(0.2, 0.5, sunH)));
     zen = mix3(zen, DUSK_Z, dk * 0.55); hor = mix3(hor, DUSK_H, dk);
-    const sunScale = 0.40 + 0.60 * day;
-    const tintDay = [1, 1, 1], tintNight = [0.62, 0.74, 1.0], tintDusk = [1.0, 0.86, 0.72];
-    let tint = mix3(tintNight, tintDay, day); tint = mix3(tint, tintDusk, dk * 0.6);
+    const light = smooth(-0.25, 0.2, sunH);              // la luz del mundo cae más tarde que el color del cielo
+    const sunScale = 0.62 + 0.38 * light;               // de noche sigue habiendo luz de luna: siempre se puede jugar
+    const tintDay = [1, 1, 1], tintNight = [0.68, 0.8, 1.0], tintDusk = [1.0, 0.86, 0.72];
+    let tint = mix3(tintNight, tintDay, light); tint = mix3(tint, tintDusk, dk * 0.6);
 
     this.domeMat.uniforms.uZenith.value.setRGB(zen[0], zen[1], zen[2]);
     this.domeMat.uniforms.uHorizon.value.setRGB(hor[0], hor[1], hor[2]);
@@ -151,12 +152,13 @@ export class Sky {
     this.clouds.position.set(cp.x, 124, cp.z);
     this.cloudTex.offset.x = (this._t * 0.0016) + cp.x / 1200 * 0; // desplazamiento lento
     this.cloudTex.offset.y = cp.z / 1200 * 0;
-    const cc = mix3([0.12, 0.14, 0.24], [1, 1, 1], day);
+    const cc = mix3([0.05, 0.06, 0.11], [1, 1, 1], day);
     const cd = mix3(cc, [1, 0.7, 0.55], dk * 0.6);
     this.cloudMat.color.setRGB(cd[0], cd[1], cd[2]);
 
     const atm = this.atm;
-    atm.sunH = sunH; atm.day = day; atm.fog = hor; atm.sun = sunScale; atm.skyTint = tint; atm.ambient = 0.035 + 0.01 * day; atm.zenith = zen; atm.horizon = hor; atm.dusk = dk;
+    atm.sunH = sunH; atm.day = day; atm.gameSky = 0.27 + 0.73 * light; // luz de cielo "real" para reglas de juego (cultivos, apariciones)
+     atm.fog = hor; atm.sun = sunScale; atm.skyTint = tint; atm.ambient = 0.045 + 0.01 * day; atm.zenith = zen; atm.horizon = hor; atm.dusk = dk;
     atm.sunDir = sunDir;
     return atm;
   }

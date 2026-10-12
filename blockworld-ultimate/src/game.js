@@ -86,8 +86,8 @@ export class Game {
     this.panorama = true; this.state = 'menu';
     this.createWorld({ seed: 20240607, type: 'normal', structures: false, size: 0, useWorker: true, mobs: 'none' }, null, 4);
     const sp = this.world.terrain.findSpawn();
-    this.pano = { x: sp.x + 0.5, z: sp.z + 0.5, yaw: 0.6 };
-    this.time = 0.14; this.player.teleport(this.pano.x, 82, this.pano.z);
+    this.pano = { x: sp.x + 0.5, z: sp.z + 0.5, y: sp.h, angle: 0.6 };
+    this.time = 0.14; this.player.teleport(this.pano.x + 46, sp.h + 20, this.pano.z);
     this.ui.showHud(false);
   }
 
@@ -422,7 +422,7 @@ export class Game {
     else { const it = Items.get(key); if (it && it.armor) this.achieve('armadura'); }
   }
 
-  canPickup(stack) { return this.inventory.canFit(stack); }
+  canPickup(stack) { return !this.survival.dead && this.inventory.canFit(stack); }
   pickup(e) {
     const rest = this.inventory.add(e.stack);
     const got = rest ? e.stack.n - rest.n : e.stack.n;
@@ -741,13 +741,14 @@ export class Game {
     if (!w) { this.renderer.clear(); return; }
     const cam = this.camera;
     if (this.panorama) {
-      this.pano.yaw += dt * 0.045;
-      const r = 6, y = 86 + Math.sin(this.elapsed * 0.12) * 4;
-      this.player.x = this.pano.x; this.player.z = this.pano.z; this.player.y = y - this.player.eye;
-      this.player.yaw = this.pano.yaw; this.player.pitch = -0.2;
-      w.update(this.pano.x, this.pano.z, 6);
-      cam.position.set(this.pano.x + Math.sin(this.pano.yaw) * r * 0, y, this.pano.z);
-      cam.rotation.set(-0.2, this.pano.yaw, 0);
+      const pn = this.pano;
+      pn.angle += dt * 0.035;
+      const camX = pn.x + Math.sin(pn.angle) * 46, camZ = pn.z + Math.cos(pn.angle) * 46;
+      const camY = pn.y + 20 + Math.sin(this.elapsed * 0.15) * 3;
+      this.player.x = camX; this.player.z = camZ; this.player.y = camY - this.player.eye;
+      w.update(camX, camZ, 6);
+      cam.position.set(camX, camY, camZ);
+      cam.rotation.set(-0.3, pn.angle, 0);
       this._atmosphere(dt, 0);
       this.renderer.clear(); this.renderer.render(this.scene, cam);
       return;
