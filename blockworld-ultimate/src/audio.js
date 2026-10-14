@@ -122,6 +122,11 @@ export class AudioEngine {
       case 'craft': this._tone({ dur: 0.1, type: 'triangle', freq: 520, to: 780, gain: 0.2 }, { g: 1, pan: 0 }); this._tone({ dur: 0.12, type: 'triangle', freq: 780, to: 1040, gain: 0.15, attack: 0.05 }, { g: 1, pan: 0 }); break;
       case 'levelup': [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => this._tone({ dur: 0.2, type: 'triangle', freq: f, gain: 0.2 }, { g: 1, pan: 0 }), i * 90)); break;
       case 'fall': this._noise({ dur: 0.18, type: 'lowpass', freq: 400, gain: 0.7 }, sp); break;
+      case 'door': this._tone({ dur: 0.16, type: 'triangle', freq: 150 * p, to: 95, gain: 0.35 }, sp); this._noise({ dur: 0.1, type: 'bandpass', freq: 700 * p, q: 2, gain: 0.3 }, sp); break;
+      case 'door_metal': this._tone({ dur: 0.3, type: 'square', freq: 210 * p, to: 160, gain: 0.18 }, sp); this._noise({ dur: 0.12, type: 'bandpass', freq: 2600, q: 3, gain: 0.25 }, sp); break;
+      case 'fizz': this._noise({ dur: 0.45, type: 'highpass', freq: 2200, sweep: 0.5, gain: 0.35 }, sp); break;
+      case 'leash': this._noise({ dur: 0.08, type: 'bandpass', freq: 1500 * p, q: 1.5, gain: 0.35 }, sp); break;
+      case 'deny': this._tone({ dur: 0.12, type: 'square', freq: 180, to: 140, gain: 0.12 }, { g: 1, pan: 0 }); break;
       // criaturas
       case 'moo': this._tone({ dur: 0.7, type: 'sawtooth', freq: 130 * p, to: 95, gain: 0.3 }, sp); this._tone({ dur: 0.7, type: 'triangle', freq: 195 * p, to: 140, gain: 0.15 }, sp); break;
       case 'oink': this._tone({ dur: 0.18, type: 'square', freq: 260 * p, to: 200, gain: 0.2 }, sp); this._noise({ dur: 0.12, type: 'bandpass', freq: 900, gain: 0.25 }, sp); break;

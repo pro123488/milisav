@@ -1,11 +1,12 @@
 // Texturas procedurales (arte propio, sin imágenes externas) e iconos de objetos.
 // Todo se dibuja en canvas al iniciar: atlas de bloques 16×16 px por tile, e iconos para la interfaz.
-import { BLOCKS, Blocks, ID } from './blocks.js';
+import { BLOCKS, Blocks, ID, MAX_BLOCKS } from './blocks.js';
 import { Items, TIERS, ARMOR_TIERS } from './items.js';
 import { hashString, mulberry32 } from './noise.js';
+import { renderBoxes } from './shapes.js';
 
 const N = 16;
-export const ATLAS_COLS = 16;
+export const ATLAS_COLS = 32;
 export const ATLAS_SIZE = ATLAS_COLS * N;
 
 const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16), 255];
@@ -343,6 +344,43 @@ P.crystal_lamp = (g, r) => {
 P.farmland_dry = (g, r) => { g.noise(rgb(112, 80, 54), 5, r); for (let y = 1; y < N; y += 4) g.hline(0, 15, y, rgb(84, 58, 38)); g.specks(rgb(136, 100, 68), r, 12); };
 P.farmland_wet = (g, r) => { g.noise(rgb(78, 54, 38), 4, r); for (let y = 1; y < N; y += 4) g.hline(0, 15, y, rgb(54, 36, 26)); g.specks(rgb(96, 70, 52), r, 12); };
 
+// Puertas y escalera de mano (con transparencia en las ventanas / huecos)
+function doorTile(wood, upper) {
+  return (g, r) => {
+    const base = wood ? rgb(150, 108, 62) : rgb(196, 200, 208);
+    const dark = wood ? rgb(98, 66, 36) : rgb(120, 124, 134);
+    const light = wood ? rgb(182, 138, 84) : rgb(232, 236, 242);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) g.set(x, y, add(base, (r() - 0.5) * (wood ? 14 : 6)));
+    // marco
+    g.vline(0, 0, 15, dark); g.vline(15, 0, 15, dark);
+    if (upper) g.hline(0, 15, 0, dark); else g.hline(0, 15, 15, dark);
+    if (wood) {
+      for (const x of [5, 10]) g.vline(x, 0, 15, shade(base, 0.8));
+      if (upper) { g.rect(3, 3, 12, 8, [0, 0, 0, 0]); g.vline(7, 3, 8, dark); g.vline(8, 3, 8, dark); g.hline(3, 12, 5, dark); g.rect(2, 2, 13, 2, dark); g.rect(2, 9, 13, 9, dark); g.vline(2, 2, 9, dark); g.vline(13, 2, 9, dark); }
+      else { g.rect(3, 3, 12, 6, shade(base, 0.85)); g.rect(3, 9, 12, 13, shade(base, 0.85)); g.hline(3, 12, 3, light); g.hline(3, 12, 9, light); g.set(12, 1, rgb(214, 180, 70)); g.set(12, 2, rgb(150, 120, 40)); }
+    } else {
+      for (let y = 2; y < 16; y += 4) g.hline(1, 14, y, light);
+      if (upper) { g.rect(4, 3, 11, 9, [0, 0, 0, 0]); g.vline(7, 3, 9, dark); g.vline(8, 3, 9, dark); g.rect(3, 2, 12, 2, dark); g.rect(3, 10, 12, 10, dark); g.vline(3, 2, 10, dark); g.vline(12, 2, 10, dark); }
+      else { g.rect(11, 0, 12, 2, rgb(70, 72, 80)); g.set(11, 1, rgb(220, 224, 230)); for (const [x, y] of [[3, 4], [12, 4], [3, 12], [12, 12]]) g.set(x, y, dark); }
+    }
+  };
+}
+P.door_wood_lower = doorTile(true, false); P.door_wood_upper = doorTile(true, true);
+P.door_iron_lower = doorTile(false, false); P.door_iron_upper = doorTile(false, true);
+P.ladder = (g, r) => {
+  const c = rgb(150, 108, 62), d = rgb(104, 72, 40);
+  for (const x of [2, 3, 12, 13]) for (let y = 0; y < N; y++) g.set(x, y, add(x === 3 || x === 13 ? d : c, (r() - 0.5) * 10));
+  for (const y of [1, 5, 9, 13]) { g.hline(4, 11, y, add(c, (r() - 0.5) * 10)); g.hline(4, 11, y + 1, d); }
+};
+
+P.trapdoor_wood = (g, r) => {
+  const c = rgb(156, 112, 64), d = rgb(98, 66, 36);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) g.set(x, y, add(c, (r() - 0.5) * 12));
+  g.rect(0, 0, 15, 0, d); g.rect(0, 15, 15, 15, d); g.vline(0, 0, 15, d); g.vline(15, 0, 15, d);
+  for (const [x0, y0] of [[2, 2], [9, 2], [2, 9], [9, 9]]) { g.rect(x0, y0, x0 + 4, y0 + 4, [0, 0, 0, 0]); g.rect(x0 + 2, y0, x0 + 2, y0 + 4, d); }
+  g.hline(1, 14, 7, d); g.hline(1, 14, 8, shade(c, 0.85));
+};
+
 // Vegetación (con transparencia)
 function blade(g, x, y0, y1, c) { for (let y = y0; y <= y1; y++) g.set(x, y, c); }
 P.tall_grass = (g, r) => {
@@ -429,6 +467,35 @@ function crop(kind, stage) {
   };
 }
 for (const k of ['wheat', 'carrot', 'potato']) for (let s = 0; s < 4; s++) P[`crop_${k}_${s}`] = crop(k, s);
+// Tomatera: tallos con tutor y frutos rojos al madurar
+function tomatoCrop(stage) {
+  return (g, r) => {
+    const h = [4, 7, 10, 12][stage];
+    for (const x of [4, 11]) {
+      g.vline(x, 15 - h - 1, 15, rgb(150, 118, 70)); // tutor de madera
+      for (let k = 0; k < h; k++) { g.set(x + 1, 15 - k, rgb(66, 140, 50)); if (k % 3 === 1) { g.set(x + 2, 15 - k, rgb(84, 168, 62)); g.set(x - 1, 14 - k, rgb(58, 128, 46)); } }
+      if (stage >= 2) for (const [dx, dy] of [[2, 4], [-1, 7], [2, 9]]) {
+        const c = stage === 3 ? rgb(220, 46, 40) : rgb(150, 186, 70);
+        g.set(x + dx, 15 - dy, c); g.set(x + dx, 16 - dy, shade(c, 0.8)); if (stage === 3) g.set(x + dx + 1, 15 - dy, rgb(246, 110, 96));
+      }
+    }
+    void r;
+  };
+}
+// Maíz: cañas altas con hojas largas y mazorcas amarillas
+function cornCrop(stage) {
+  return (g, r) => {
+    const h = [5, 9, 13, 15][stage];
+    for (const x of [3, 8, 13]) {
+      g.vline(x, 16 - h, 15, rgb(92, 158, 58)); g.vline(x + 1, 17 - h, 15, rgb(70, 130, 46));
+      for (let k = 2; k < h; k += 3) { g.line(x, 15 - k, x - 2, 13 - k, rgb(108, 176, 70)); g.line(x + 1, 14 - k, x + 3, 12 - k, rgb(84, 150, 56)); }
+      if (stage === 3) { g.rect(x + 1, 7, x + 2, 10, rgb(242, 206, 64)); g.set(x + 1, 6, rgb(206, 170, 90)); g.set(x + 2, 8, rgb(255, 232, 120)); }
+      if (stage >= 2) g.set(x, 15 - h, rgb(220, 200, 120));
+    }
+    void r;
+  };
+}
+for (let s = 0; s < 4; s++) { P[`crop_tomato_${s}`] = tomatoCrop(s); P[`crop_corn_${s}`] = cornCrop(s); }
 // Fluidos (periódicos para poder animarlos desplazando el UV dentro del tile)
 P.water = (g) => {
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
@@ -456,10 +523,10 @@ addTile('missing');
 for (const b of BLOCKS) if (b) for (const t of b.tiles) addTile(P[t] ? t : 'missing');
 if (tileNames.length > ATLAS_COLS * ATLAS_COLS) throw new Error('Demasiados tiles para el atlas');
 
-/** Índice de tile (0..255) de un nombre; 0 = textura "faltante". */
+/** Índice de tile (0..ATLAS_COLS²−1) de un nombre; 0 = textura "faltante". */
 export const tileOf = (name) => tileIndex.get(name) ?? 0;
 /** Tile de cada cara de cada bloque: B_TILE[id*6 + cara] */
-export const B_TILE = new Uint16Array(256 * 6);
+export const B_TILE = new Uint16Array(MAX_BLOCKS * 6);
 for (const b of BLOCKS) if (b) for (let f = 0; f < 6; f++) B_TILE[b.id * 6 + f] = tileOf(P[b.tiles[f]] ? b.tiles[f] : 'missing');
 
 let atlasCanvas = null;
@@ -558,6 +625,20 @@ function ingot(g, col) {
   g.poly([[2, 10], [5, 6], [14, 6], [11, 10]], l); g.poly([[2, 10], [11, 10], [11, 13], [2, 13]], m); g.poly([[11, 10], [14, 6], [14, 9], [11, 13]], d);
   g.hline(3, 10, 10, add(m, 25)); g.set(6, 7, add(l, 30)); g.set(7, 7, add(l, 30));
 }
+function doorItem(g, key) {
+  const lo = new Grid(16), up = new Grid(16);
+  P[key + '_lower'](lo, mulberry32(hashString('tile:' + key + '_lower')));
+  P[key + '_upper'](up, mulberry32(hashString('tile:' + key + '_upper')));
+  for (let y = 0; y < 16; y++) for (let x = 0; x < 8; x++) {
+    g.set(4 + x, y >> 1, up.get(x * 2, y));
+    g.set(4 + x, 8 + (y >> 1), lo.get(x * 2, y));
+  }
+}
+function bowlWith(g, soup, bits) {
+  g.poly([[2, 7], [14, 7], [12, 12], [4, 12]], hex('#9a6a3a')); g.hline(5, 11, 13, hex('#7a522a'));
+  g.ellipse(8, 7, 6, 1.6, hex(soup));
+  for (const [c, x, y] of bits) { g.set(x, y, hex(c)); g.set(x + 1, y, hex(c)); }
+}
 function sprites(key) {
   const g = new Grid(16);
   const S = { // dibujos concretos
@@ -589,6 +670,17 @@ function sprites(key) {
     cooked_fish: () => { g.ellipse(7, 8, 5.5, 3.5, hex('#b8783c')); g.poly([[11, 8], [15, 4], [15, 12]], hex('#8a542a')); g.set(4, 7, hex('#201408')); g.line(5, 10, 10, 10, hex('#e0b070')); g.line(4, 9, 8, 6, hex('#d29a58')); },
     raw_venison: () => { g.poly([[2, 6], [7, 3], [13, 5], [14, 10], [9, 13], [3, 11]], hex('#a8344a')); g.poly([[3, 6], [7, 4], [10, 5], [6, 8]], hex('#c85468')); g.line(5, 10, 11, 8, hex('#e8b8c0')); },
     cooked_venison: () => { g.poly([[2, 6], [7, 3], [13, 5], [14, 10], [9, 13], [3, 11]], hex('#6a3a30')); g.poly([[3, 6], [7, 4], [10, 5], [6, 8]], hex('#94584a')); g.line(5, 10, 11, 8, hex('#3e1e18')); },
+    door_wood: () => doorItem(g, 'door_wood'),
+    door_iron: () => doorItem(g, 'door_iron'),
+    rope: () => { for (let k = 0; k < 3; k++) g.ellipse(8, 5 + k * 3, 5 - k, 2, hex('#c8a46a')); for (let k = 0; k < 3; k++) g.ellipse(8, 5 + k * 3, 3 - k, 1, [0, 0, 0, 0]); g.line(8, 12, 11, 15, hex('#b08a50')); g.line(4, 5, 12, 5, hex('#e0c08a')); },
+    bowl: () => { g.poly([[2, 7], [14, 7], [12, 12], [4, 12]], hex('#9a6a3a')); g.hline(2, 14, 7, hex('#c8955a')); g.hline(3, 13, 8, hex('#5c3c1c')); g.hline(5, 11, 13, hex('#7a522a')); },
+    tomato: () => { g.circle(8, 9, 5, hex('#e03a2e')); g.circle(6, 7, 1.6, hex('#ff8a74')); g.poly([[6, 4], [10, 4], [8, 6]], hex('#3e9a3a')); g.set(8, 3, hex('#2e7a2a')); g.set(10, 12, hex('#a4201a')); },
+    corn: () => { g.poly([[6, 3], [10, 3], [11, 12], [8, 14], [5, 12]], hex('#f2cc40')); for (let y = 4; y < 13; y += 2) g.hline(6, 10, y, hex('#d8a82a')); g.line(4, 14, 7, 6, hex('#6aaa48')); g.line(12, 14, 10, 6, hex('#58963c')); },
+    roasted_corn: () => { g.poly([[6, 3], [10, 3], [11, 12], [8, 14], [5, 12]], hex('#d89a30')); for (let y = 4; y < 13; y += 2) g.hline(6, 10, y, hex('#9a5c18')); g.set(7, 6, hex('#5a3410')); g.set(9, 10, hex('#5a3410')); },
+    corn_bread: () => { g.poly([[2, 8], [5, 5], [11, 5], [14, 8], [14, 12], [2, 12]], hex('#e8b448')); g.hline(3, 13, 6, hex('#f6d27a')); g.hline(2, 14, 12, hex('#a8741e')); g.set(6, 9, hex('#c88a2a')); g.set(10, 8, hex('#c88a2a')); },
+    vegetable_stew: () => { bowlWith(g, '#c8642a', [['#f08a2a', 5, 7], ['#e03a2e', 9, 6], ['#e8d090', 11, 8]]); },
+    mushroom_stew: () => { bowlWith(g, '#a8784a', [['#8a5a3a', 5, 7], ['#7ae0d0', 10, 6], ['#d8c0a0', 8, 8]]); },
+    salad: () => { bowlWith(g, '#5aa844', [['#e03a2e', 6, 6], ['#f08a2a', 10, 7], ['#8ad06a', 8, 5]]); },
     crystal_shard: () => { g.poly([[8, 1], [12, 6], [9, 14], [5, 11], [4, 6]], hex('#58d6e8')); g.poly([[8, 1], [12, 6], [8, 7]], hex('#c4f7ff')); g.poly([[8, 7], [12, 6], [9, 14]], hex('#2a8aa6')); g.line(8, 1, 8, 13, hex('#8aeaf6')); },
   };
   if (S[key]) { S[key](); g.outline(); return g; }
@@ -630,11 +722,12 @@ function blockIcon(block) {
   const ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = false;
   const atlas = getAtlasCanvas();
   const src = (name) => { const i = tileOf(P[name] ? name : 'missing'); return [(i % ATLAS_COLS) * N, Math.floor(i / ATLAS_COLS) * N]; };
-  if (block.shape === 'cross' || block.shape === 'torch') {
+  if (block.shape === 'cross' || block.shape === 'torch' || block.family === 'ladder') {
     const [sx, sy] = src(block.tiles[0]);
     ctx.drawImage(atlas, sx, sy, N, N, 2, 2, 28, 28);
     return c;
   }
+  if (block.shape === 'box') { boxIcon(block, ctx, atlas, src); return c; }
   const hFrac = block.shape === 'slab' ? Math.max(0.5, block.height) : block.shape === 'farmland' ? 0.9375 : 1;
   const oy = 13 * (1 - hFrac) + 0; // desplazamiento vertical por altura reducida
   const draw = (tileName, m, dark) => {
@@ -651,6 +744,32 @@ function blockIcon(block) {
   draw(block.tiles[0], [k, -k / 2, 0, k * hFrac, 16, 16 + oy], 0.42);
   draw(block.tiles[2], [k, k / 2, -k, k / 2, 16, 3 + oy], 0);
   return c;
+}
+
+/**
+ * Icono isométrico de un bloque formado por cajas (escaleras, vallas, muros, puertas de valla, trampillas).
+ * Proyección igual que la del cubo: P(X,Y,Z) = (16 + 13(X − Z), 16 + 6,5(X + Z) − 13Y).
+ */
+function boxIcon(block, ctx, atlas, src) {
+  const id = block.family === 'stairs' ? block.famBase + 3 : block.id; // escalón alto a la izquierda
+  const boxes = renderBoxes(id, 2 | 8).slice().sort((a, b) => (a[0] + a[3] + a[1] + a[4] + a[2] + a[5]) - (b[0] + b[3] + b[1] + b[4] + b[2] + b[5]));
+  const P = (X, Y, Z) => [16 + 13 * (X - Z), 16 + 6.5 * (X + Z) - 13 * Y];
+  const k = 13 / 16, h = 6.5 / 16;
+  const face = (tile, sx, sy, sw, sh, m, dark) => {
+    if (sw < 0.5 || sh < 0.5) return;
+    const [ax, ay] = src(tile);
+    const t = document.createElement('canvas'); t.width = Math.ceil(sw); t.height = Math.ceil(sh);
+    const tc = t.getContext('2d');
+    tc.drawImage(atlas, ax + sx, ay + sy, sw, sh, 0, 0, sw, sh);
+    if (dark > 0) { tc.globalCompositeOperation = 'source-atop'; tc.fillStyle = `rgba(0,0,0,${dark})`; tc.fillRect(0, 0, sw, sh); }
+    ctx.save(); ctx.setTransform(m[0], m[1], m[2], m[3], m[4], m[5]); ctx.drawImage(t, 0, 0); ctx.restore();
+  };
+  for (const b of boxes) {
+    const [x0, y0, z0, x1, y1, z1] = b;
+    face(block.tiles[4], x0 * N, (1 - y1) * N, (x1 - x0) * N, (y1 - y0) * N, [k, h, 0, k, ...P(x0, y1, z1)], 0.22);
+    face(block.tiles[0], (1 - z1) * N, (1 - y1) * N, (z1 - z0) * N, (y1 - y0) * N, [k, -h, 0, k, ...P(x1, y1, z1)], 0.42);
+    face(block.tiles[2], x0 * N, z0 * N, (x1 - x0) * N, (z1 - z0) * N, [k, h, -k, h, ...P(x0, y1, z0)], 0);
+  }
 }
 
 /** Icono de un objeto como canvas (16×16 para objetos, 32×32 para bloques). */

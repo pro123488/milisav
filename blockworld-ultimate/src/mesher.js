@@ -2,16 +2,17 @@
 // Devuelve búferes intercalados [x,y,z,u,v,cielo,bloque,sombra] (8 floats por vértice) listos para three.js.
 // Sin dependencias del DOM: se puede ejecutar en Node para pruebas.
 import { CHUNK_SIZE as CS, WORLD_HEIGHT as WH } from './config.js';
-import { B_OPAQUE, B_SHAPE, B_TRANS, B_CULLGRP, B_HEIGHT, B_LIGHT, ID, BLOCKS } from './blocks.js';
+import { B_OPAQUE, B_SHAPE, B_TRANS, B_CULLGRP, B_HEIGHT, B_LIGHT, B_FLUID, B_FLUIDLVL, B_SOLID, B_ATTEN, ID, BLOCKS } from './blocks.js';
 import { B_TILE, ATLAS_COLS } from './atlas.js';
+import { B_FAMILY, FAM, renderBoxes, connectsTo } from './shapes.js';
 
 export const STRIDE = 8;
 const PW = CS + 2;
 const PSTRIDE_Y = PW * PW;
-const PB = new Uint8Array(PW * PW * (WH + 2));   // +1 capa de margen arriba y abajo
+const PB = new Uint16Array(PW * PW * (WH + 2));  // IDs (16 bits); +1 capa de margen arriba y abajo
 const PL = new Uint8Array(PW * PW * (WH + 2));
 
-const SHAPE = { NONE: 0, CUBE: 1, CROSS: 2, FLUID: 3, TORCH: 4, SLAB: 5, FARMLAND: 6 };
+const SHAPE = { NONE: 0, CUBE: 1, CROSS: 2, FLUID: 3, TORCH: 4, SLAB: 5, FARMLAND: 6, BOX: 7 };
 const AO_CURVE = [0.5, 0.68, 0.84, 1.0];
 const FACE_SHADE = [0.82, 0.82, 1.0, 0.55, 0.7, 0.7];
 const EPS = 1 / 2048;
@@ -37,6 +38,8 @@ const VOFF = FACES.map((f) => f.v.map((p) => {
   return { f: toIdx(n), s1: toIdx(vec(n, e1)), s2: toIdx(vec(n, e2)), c: toIdx(vec(n, e1, e2)), s1y: n[1] + e1[1], s2y: n[1] + e2[1], cy: n[1] + e1[1] + e2[1] };
 }));
 const NIDX = FACES.map((f) => f.n[0] + f.n[2] * PW + f.n[1] * PSTRIDE_Y);
+/** Desplazamiento en los arrays rellenos de cada dirección horizontal (N, E, S, O). */
+const DIR_PIDX = [-PW, 1, PW, -1];
 
 class MeshBuf {
   constructor() { this.data = new Float32Array(STRIDE * 8192); this.idx = new Uint32Array(12288); this.nv = 0; this.ni = 0; }
@@ -67,8 +70,8 @@ class MeshBuf {
 }
 const OPQ = new MeshBuf(), TRN = new MeshBuf();
 
-const TILE_UV = new Float32Array(256 * 3);
-for (let t = 0; t < 256; t++) {
+const TILE_UV = new Float32Array(ATLAS_COLS * ATLAS_COLS * 3);
+for (let t = 0; t < ATLAS_COLS * ATLAS_COLS; t++) {
   const col = t % ATLAS_COLS, row = (t / ATLAS_COLS) | 0, s = 1 / ATLAS_COLS;
   TILE_UV[t * 3] = col * s + EPS; TILE_UV[t * 3 + 1] = row * s + EPS; TILE_UV[t * 3 + 2] = s - 2 * EPS;
 }
@@ -101,6 +104,69 @@ function fillPadded(world, c) {
 }
 
 const CACTUS = ID.CACTUS;
+
+// ── Fluidos: altura de la superficie ─────────────────────────────
+const CH = [0, 0, 0, 0];
+/** Altura de la superficie de una celda de fluido según su nivel (0 fuente, 1..max corriente, 8 cayendo). */
+export function fluidCellHeight(lvl, ft) {
+  if (lvl === 0 || lvl === 8) return 0.875;
+  const max = ft === 1 ? 7 : 3;
+  return ((max + 1 - lvl) / (max + 1)) * 0.875;
+}
+/**
+ * Altura de una esquina superior: media ponderada de las 4 celdas que la comparten (la fuente pesa más,
+ * el aire tira hacia abajo). Si alguna tiene el mismo fluido encima, la esquina llega arriba del todo.
+ */
+function cornerH(pi, ox, oz, ft) {
+  let sum = 0, wsum = 0;
+  for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) {
+    const q = pi + (ox + i) + (oz + j) * PW;
+    const n = PB[q];
+    if (B_FLUID[n] === ft) {
+      if (B_FLUID[PB[q + PSTRIDE_Y]] === ft) return 1;
+      const lvl = B_FLUIDLVL[n];
+      const w = lvl === 0 ? 10 : 1;
+      sum += fluidCellHeight(lvl, ft) * w; wsum += w;
+    } else if (!B_SOLID[n] && !B_OPAQUE[n]) wsum += 1;
+  }
+  return wsum ? sum / wsum : 0.875;
+}
+
+// ── Modelos de cajas (escaleras, puertas, vallas...) ─────────────
+/** Emite las caras de una caja de un bloque. Las caras en el borde de la celda se ocultan contra vecinos opacos. */
+function emitBox(buf, x, y, z, pi, id, b, ownL) {
+  for (let f = 0; f < 6; f++) {
+    const onEdge = f === 0 ? b[3] >= 1 : f === 1 ? b[0] <= 0 : f === 2 ? b[4] >= 1 : f === 3 ? b[1] <= 0 : f === 4 ? b[5] >= 1 : b[2] <= 0;
+    let lv;
+    if (onEdge) {
+      if (f === 3 && y === 0) continue;
+      const nb = PB[pi + NIDX[f]];
+      if (B_OPAQUE[nb]) continue;
+      lv = PL[pi + NIDX[f]];
+    } else lv = ownL; // cara interior: luz de la propia celda (o de sus vecinas si la celda bloquea la luz)
+    const tile = B_TILE[id * 6 + f];
+    const u0 = TILE_UV[tile * 3], v0 = TILE_UV[tile * 3 + 1], ts = TILE_UV[tile * 3 + 2];
+    const sk = (lv >> 4) / 15, bl = (lv & 15) / 15, sh = FACE_SHADE[f];
+    const face = FACES[f];
+    buf._ensure(4);
+    for (let k = 0; k < 4; k++) {
+      const pp = face.v[k];
+      const px = pp[0] ? b[3] : b[0], py = pp[1] ? b[4] : b[1], pz = pp[2] ? b[5] : b[2];
+      // UV tomadas de la posición (mismo criterio que las caras del cubo) → trozo coherente de la textura
+      let u, v;
+      switch (f) {
+        case 0: u = 1 - pz; v = 1 - py; break;
+        case 1: u = pz; v = 1 - py; break;
+        case 2: u = px; v = pz; break;
+        case 3: u = px; v = 1 - pz; break;
+        case 4: u = px; v = 1 - py; break;
+        default: u = 1 - px; v = 1 - py;
+      }
+      buf.vert(x + px, y + py, z + pz, u0 + u * ts, v0 + v * ts, sk, bl, sh);
+    }
+    buf.quad(false);
+  }
+}
 
 /**
  * Genera las mallas opaca y translúcida de un chunk.
@@ -178,27 +244,50 @@ export function meshChunk(world, c, opts = {}) {
             buf.quad(flip);
           }
         } else if (shape === SHAPE.FLUID) {
-          const isWater = B_TRANS[id] === 1;
-          const above = PB[pi + PSTRIDE_Y];
-          const topH = (above === id) ? 1 : 0.875;
+          const ft = B_FLUID[id];
+          const isWater = ft === 1;
+          const aboveSame = B_FLUID[PB[pi + PSTRIDE_Y]] === ft;
+          // Altura de las 4 esquinas superiores (compartidas con los vecinos → superficie continua y en pendiente)
+          if (aboveSame) { CH[0] = CH[1] = CH[2] = CH[3] = 1; }
+          else { CH[0] = cornerH(pi, -1, -1, ft); CH[1] = cornerH(pi, 0, -1, ft); CH[2] = cornerH(pi, 0, 0, ft); CH[3] = cornerH(pi, -1, 0, ft); }
           for (let f = 0; f < 6; f++) {
             if (y === 0 && f === 3) continue;
             const nb = PB[pi + NIDX[f]];
-            if (nb === id || (nb !== 0 && B_OPAQUE[nb])) continue;
+            if (f === 2) { if (aboveSame) continue; }
+            else if (B_FLUID[nb] === ft || (nb !== 0 && B_OPAQUE[nb])) continue;
             const face = FACES[f];
             const tile = B_TILE[id * 6 + f];
             const u0 = TILE_UV[tile * 3], v0 = TILE_UV[tile * 3 + 1], ts = TILE_UV[tile * 3 + 2];
             const fo = pi + NIDX[f];
-            const lv = PL[fo];
+            const lv = B_OPAQUE[nb] ? PL[pi] : PL[fo];
             const sk = (lv >> 4) / 15, bl = (isWater ? lv & 15 : 15) / 15;
             const fs = FACE_SHADE[f];
             buf._ensure(4);
             for (let k = 0; k < 4; k++) {
-              const p = face.v[k], uv = face.uv[k];
-              buf.vert(x + p[0], y + p[1] * topH, z + p[2], u0 + uv[0] * ts, v0 + uv[1] * ts, sk, bl, fs);
+              const pp = face.v[k], uv = face.uv[k];
+              const hy = pp[1] ? CH[pp[0] ? (pp[2] ? 2 : 1) : (pp[2] ? 3 : 0)] : 0;
+              // en las caras laterales la textura se recorta a la altura real del fluido
+              const vv = (f === 2 || f === 3) ? uv[1] : 1 - hy;
+              buf.vert(x + pp[0], y + hy, z + pp[2], u0 + uv[0] * ts, v0 + vv * ts, sk, bl, fs);
             }
             buf.quad(false);
           }
+        } else if (shape === SHAPE.BOX) {
+          const fam = B_FAMILY[id];
+          let mask = 0;
+          if (fam === FAM.FENCE || fam === FAM.WALL) {
+            for (let d = 0; d < 4; d++) if (connectsTo(fam, PB[pi + DIR_PIDX[d]])) mask |= 1 << d;
+          }
+          const boxes = renderBoxes(id, mask);
+          // Las escaleras no dejan pasar la luz (atten 15) y su celda queda a oscuras: sus caras interiores usan
+          // la luz más alta de las 6 celdas vecinas (como hacen las losas y escaleras del juego de referencia).
+          let ownL = PL[pi];
+          if (B_ATTEN[id] >= 15) {
+            let s = 0, bl = 0;
+            for (let f = 0; f < 6; f++) { const v = PL[pi + NIDX[f]], nb = PB[pi + NIDX[f]]; if (B_OPAQUE[nb]) continue; if ((v >> 4) > s) s = v >> 4; if ((v & 15) > bl) bl = v & 15; }
+            ownL = (s << 4) | bl;
+          }
+          for (let i = 0; i < boxes.length; i++) emitBox(buf, x, y, z, pi, id, boxes[i], ownL);
         } else if (shape === SHAPE.CROSS) {
           const lv = PL[pi];
           const sk = (lv >> 4) / 15, bl = (lv & 15) / 15;

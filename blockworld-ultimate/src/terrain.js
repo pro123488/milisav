@@ -182,7 +182,7 @@ export class Terrain {
 
   /** Genera un chunk completo. */
   generateChunk(cx, cz) {
-    const blocks = new Uint8Array(CS * CS * WH);
+    const blocks = new Uint16Array(CS * CS * WH);
     const x0 = cx * CS, z0 = cz * CS;
     const cols = new Array(256);
     for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) cols[lx + lz * CS] = this.column(x0 + lx, z0 + lz);

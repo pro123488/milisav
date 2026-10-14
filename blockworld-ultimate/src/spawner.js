@@ -4,6 +4,7 @@ import { BIOMES } from './biomes.js';
 import { ANIMALS } from './animals.js';
 import { MONSTERS } from './monsters.js';
 import { ID, B_SOLID, B_FLUID, B_REPLACEABLE } from './blocks.js';
+import { B_FAMILY } from './shapes.js';
 
 const pickWeighted = (table) => {
   const entries = Object.entries(table).filter(([, w]) => w > 0);
@@ -146,7 +147,7 @@ export class Spawner {
     if (r < 0.4) key = 'cave_bat';
     else if (y < 38 && r < 0.65) key = 'obsidian_skeleton';
     else key = 'night_stalker';
-    if (key !== 'cave_bat' && !B_SOLID[below]) return false;
+    if (key !== 'cave_bat' && (!B_SOLID[below] || B_FAMILY[below])) return false; // ni sobre vallas, escaleras o puertas
     if (B_FLUID[below]) return false;
     return !!g.spawnMob(key, x + 0.5, y + 0.01, z + 0.5);
   }

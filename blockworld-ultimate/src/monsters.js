@@ -6,6 +6,7 @@ import { Items } from './items.js';
 import { moveEntity } from './physics.js';
 import { mobDamageScale } from './survival.js';
 import { B_SOLID } from './blocks.js';
+import { segmentBlocked } from './raycast.js';
 
 const P = (name, size, center, color, o = {}) => ({ name, size, center, color, ...o });
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -139,7 +140,7 @@ export class Projectile extends Entity {
     if (this.life <= 0) { this.removed = true; return; }
     this.vy -= 4 * dt;
     const nx = this.x + this.vx * dt, ny = this.y + this.vy * dt, nz = this.z + this.vz * dt;
-    if (this.world.solidAt(Math.floor(nx), Math.floor(ny), Math.floor(nz))) { this.removed = true; this.game.particles.emit(this.x, this.y, this.z, 0xc040ff, 5, 2); return; }
+    if (segmentBlocked(this.world, this.x, this.y, this.z, nx, ny, nz)) { this.removed = true; this.game.particles.emit(this.x, this.y, this.z, 0xc040ff, 5, 2); return; }
     this.x = nx; this.y = ny; this.z = nz;
     this.obj.position.set(nx, ny, nz);
     this.mesh.rotation.y = Math.atan2(this.vx, this.vz); this.mesh.rotation.x = -Math.atan2(this.vy, Math.hypot(this.vx, this.vz));
@@ -247,8 +248,8 @@ export class Monster extends Mob {
       if (this.stuckTime > 1.0) { this.sidestep = 0.9; this.sideDir = Math.random() < 0.5 ? 1 : -1; this.stuckTime = 0; this.wantJump = true; }
       if (this.sidestep > 0) { this.sidestep -= dt; const t = wx; wx = -wz * this.sideDir; wz = t * this.sideDir; }
       if (dist > def.reach * 0.8) { const m = def.chase / def.speed; this.wishX = wx * m; this.wishZ = wz * m; }
-      // atacar
-      if (dist < def.reach && Math.abs(dy) < 1.8 && this.atkCd <= 0) {
+      // atacar (solo con línea de visión: una puerta cerrada o una valla protegen)
+      if (dist < def.reach && Math.abs(dy) < 1.8 && this.atkCd <= 0 && this._hasLineOfSight(p)) {
         this.atkCd = def.cooldown;
         this.attackAnim = 0.35;
         const hurt = g.survival.damage(def.dmg, 'mob', this);
@@ -297,16 +298,10 @@ export class Monster extends Mob {
     }
   }
 
+  /** Línea de visión de los ojos de la criatura al pecho o a la cabeza del jugador (cajas de colisión reales). */
   _hasLineOfSight(p) {
-    const w = this.world;
-    const sx = this.x, sy = this.y + 1.5, sz = this.z;
-    const tx = p.x, ty = p.y + 1.2, tz = p.z;
-    const n = Math.ceil(Math.hypot(tx - sx, ty - sy, tz - sz) * 1.5);
-    for (let i = 1; i < n; i++) {
-      const t = i / n;
-      if (B_SOLID[w.getBlock(Math.floor(sx + (tx - sx) * t), Math.floor(sy + (ty - sy) * t), Math.floor(sz + (tz - sz) * t))]) return false;
-    }
-    return true;
+    const sx = this.x, sy = this.y + Math.min(1.5, this.h * 0.85), sz = this.z;
+    return !segmentBlocked(this.world, sx, sy, sz, p.x, p.y + 1.2, p.z) || !segmentBlocked(this.world, sx, sy, sz, p.x, p.y + 0.5, p.z);
   }
 
   _thinkBat(dt, canSee, dist, dx, dy, dz) {

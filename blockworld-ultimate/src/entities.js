@@ -1,9 +1,10 @@
 // Entidades: base, objetos soltados, bloques que caen, partículas, criaturas (Mob) y el gestor.
 import * as THREE from 'three';
-import { moveEntity } from './physics.js';
+import { moveEntity, boxCollides } from './physics.js';
 import { Items, cloneStack } from './items.js';
 import { getItemIcon } from './atlas.js';
 import { Blocks, B_FLUID, B_SOLID } from './blocks.js';
+import { B_FAMILY } from './shapes.js';
 import { addToSlots } from './inventory.js';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -164,9 +165,15 @@ export class FallingBlock extends Entity {
     moveEntity(this.world, this, 0, this.vy * dt, 0);
     this._sync();
     if (this.onGround || this.y < 0) {
-      const bx = Math.floor(this.x), by = Math.round(this.y), bz = Math.floor(this.z);
+      const bx = Math.floor(this.x), by = Math.floor(this.y + 0.01), bz = Math.floor(this.z);
       this.removed = true;
       const w = this.world;
+      // Al caer sobre una forma de cajas (valla, escalera, puerta...) no encaja en la rejilla: se suelta como objeto
+      if (this.y >= 0 && (this.y - by > 0.02 || B_FAMILY[w.getBlock(bx, by - 1, bz)])) {
+        const item = Items.forBlock(this.blockId);
+        if (item) this.game.dropItem({ i: item.id, n: 1, d: 0 }, this.x, this.y + 0.2, this.z, 0.5);
+        return;
+      }
       let y = by;
       while (y < 127 && w.getBlock(bx, y, bz) !== 0 && !B_FLUID[w.getBlock(bx, y, bz)] && Blocks.get(w.getBlock(bx, y, bz)).shape !== 'cross') y++;
       w.setBlock(bx, y, bz, this.blockId);
@@ -254,6 +261,7 @@ export class Mob extends Entity {
     this.id = this.id;
     this.noDespawn = false;
     this.lastHitBy = null;
+    this.stepHeight = def.stepHeight ?? 0.6; // suben escaleras y losas andando
   }
 
   setBaby(b) {
@@ -329,8 +337,13 @@ export class Mob extends Entity {
 
     const px = this.x, pz = this.z;
     moveEntity(w, this, this.vx * dt, this.vy * dt, this.vz * dt);
-    // Obstáculo de 1 bloque: saltar
-    if ((this.hitX || this.hitZ) && this.onGround && (this.wishX || this.wishZ) && this.def.canJump !== false && !this.def.flying) this.vy = this.def.jump ?? 8.2;
+    // Obstáculo de 1 bloque: saltar (solo si encima hay hueco: contra vallas de 1,5 o muros altos no sirve)
+    if ((this.hitX || this.hitZ) && this.onGround && (this.wishX || this.wishZ) && this.def.canJump !== false && !this.def.flying) {
+      const wl = Math.hypot(this.wishX, this.wishZ) || 1;
+      const ax = this.x + (this.wishX / wl) * 0.5, az = this.z + (this.wishZ / wl) * 0.5;
+      if (!boxCollides(w, ax, this.y + 1.05, az, this.w, this.h)) this.vy = this.def.jump ?? 8.2;
+      else this.blocked = (this.blocked || 0) + dt;
+    } else this.blocked = 0;
     const moved = Math.hypot(this.x - px, this.z - pz);
     this.walkAmt = approach(this.walkAmt, Math.min(1, moved / Math.max(dt, 1e-3) / Math.max(0.5, this.speed)), 6 * dt);
     this.walkPhase += moved * 3.2 / Math.max(0.4, this.scale);

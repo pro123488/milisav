@@ -8,7 +8,7 @@ import { Terrain, seedFromString } from '../src/terrain.js';
 import { mulberry32 } from '../src/noise.js';
 import { World } from '../src/world.js';
 import { Player } from '../src/player.js';
-import { rleEncode, rleDecode } from '../src/save.js';
+import { rleEncode, rleDecode, rleEncode16, rleDecode16, decodeChunkRecord } from '../src/save.js';
 import { raycastBlocks } from '../src/raycast.js';
 import { meshChunk } from '../src/mesher.js';
 import { boxCollides } from '../src/physics.js';
@@ -58,10 +58,23 @@ test('bloques de almacenamiento: compresión y descompresión conservan el valor
   assert.equal(craft(dec, inv.slots, 1), 1);
   assert.equal(inv.count(Items.id('iron_ingot')), 9);
 });
-test('los IDs de bloque son únicos y < 256; los de objeto no se pisan', () => {
+test('los IDs de objeto no se pisan; los objetos de bloque ≥256 usan 16384+id', () => {
   const seen = new Set();
   for (const it of ITEMS) { if (!it) continue; assert.ok(!seen.has(it.id)); seen.add(it.id); }
-  assert.ok(ITEMS.length < 1000);
+  for (const it of ITEMS) {
+    if (!it) continue;
+    if (it.kind === 'block') assert.equal(it.id, it.block < 256 ? it.block : 16384 + it.block, it.key);
+    else assert.ok(it.id >= 256 && it.id < 16384, it.key);
+  }
+  for (const b of BLOCKS) if (b) assert.ok(b.id < 4096);
+});
+test('IDs persistentes de objetos fijados (no se pueden reordenar)', () => {
+  assert.equal(Items.id('stick'), 256);
+  assert.equal(Items.id('noctisite_boots'), 354);
+  assert.equal(Items.id('door_wood'), 355);
+  assert.equal(Items.id('door_iron'), 356);
+  assert.equal(ID.STAIRS_PLANKS, 101); assert.equal(ID.LADDER, 141); assert.equal(ID.DOOR_WOOD_N, 145); assert.equal(ID.FENCE_WOOD, 177);
+  assert.equal(ID.GATE_WOOD, 179); assert.equal(ID.TRAPDOOR_WOOD, 187); assert.equal(ID.WATER_FLOW_1, 203); assert.equal(ID.CROP_CORN_3, 222);
 });
 test('tabla de fundición con objetos válidos', () => {
   for (const s of SMELTING) { assert.ok(Items.get(s.in)); assert.ok(Items.get(s.out)); }
@@ -349,10 +362,20 @@ test('mallado: bloque aislado = 6 caras; dos bloques juntos ocultan las caras co
   w2.setBlock(6, 60, 5, ID.GLASS);
   const m = meshChunk(w2, c, {}); assert.ok(m.trans && m.trans.vertexCount === 20, 'el vidrio va en la pasada translúcida (5 caras visibles)');
 });
-test('compresión RLE es reversible y reduce el tamaño del terreno', () => {
+test('compresión RLE de 16 bits es reversible, guarda IDs ≥ 256 y reduce el tamaño del terreno', () => {
   const a = new Terrain(seedFromString('rle'), {}).generateChunk(1, 1).blocks;
-  const e = rleEncode(a); const d = rleDecode(e, a.length);
+  assert.ok(a instanceof Uint16Array);
+  a[1000] = 300; a[1001] = 4095;
+  const e = rleEncode16(a); const d = rleDecode16(e, a.length);
   assert.deepEqual(d, a); assert.ok(e.length < a.length / 3, 'tamaño ' + e.length);
+  assert.deepEqual(decodeChunkRecord({ b: e, f: 2 }), a);
+});
+test('migración: un chunk guardado en formato 1 (8 bits) se carga como 16 bits idéntico', () => {
+  const a8 = new Uint8Array(16 * 16 * 128); for (let i = 0; i < a8.length; i++) a8[i] = (i >> 8) < 40 ? 1 : (i % 97 === 0 ? 24 : 0);
+  const rec = { b: rleEncode(a8), v: 1 };
+  const d = decodeChunkRecord(rec);
+  assert.ok(d instanceof Uint16Array);
+  assert.deepEqual(Array.from(d), Array.from(rleDecode(rec.b, a8.length)));
 });
 test('el mundo respeta los límites (tamaño finito)', () => {
   const w3 = new World({ seed: 2, type: 'flat', structures: false, size: 256, renderDistance: 2, useWorker: false });

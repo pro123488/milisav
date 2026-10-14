@@ -5,7 +5,7 @@ const S = process.env.SHOTS || os.tmpdir();
 const ok = (name, cond, extra = '') => console.log((cond ? 'PASS ' : 'FAIL ') + name + (extra ? ' — ' + extra : ''));
 await withPage('index.html?autostart=survival&rd=2&seed=prueba&mobs=none&structures=0', async (page) => {
   await page.waitForTimeout(500);
-  await page.evaluate(() => { const g = window.__game; g.renderer.setPixelRatio(0.3); g._resize(); });
+  await page.evaluate(() => { const g = window.__game; g.renderer.setPixelRatio(0.3); g._resize(); g.settings.sensitivity = 0; /* la cámara la fija la prueba: el ratón capturado no debe girarla */ });
   await page.click('#gl'); await frames(page, 3); await page.mouse.move(640, 360); await frames(page, 3);
   const ev = (f, a) => page.evaluate(f, a);
   const cmd = (c) => ev((c) => import('/src/commands.js').then((m) => m.runCommand(window.__game, c)), c);

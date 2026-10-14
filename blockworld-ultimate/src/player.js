@@ -1,11 +1,15 @@
 // Jugador: movimiento en primera persona con gravedad, salto, carrera, agacharse, natación, vuelo creativo,
-// autosalto y daño por caída. Sin DOM ni three.js (se alimenta con un objeto `input`).
+// autosalto, subida de escalones, escaleras de mano, corrientes de agua y daño por caída.
+// Sin DOM ni three.js (se alimenta con un objeto `input`).
 import { moveEntity, boxCollides, unstick } from './physics.js';
-import { B_FLUID } from './blocks.js';
+import { B_FLUID, B_CLIMB } from './blocks.js';
+import { flowVector } from './fluids.js';
+import { renderBoxes } from './shapes.js';
 
 export const PLAYER_W = 0.6, PLAYER_H = 1.8, EYE = 1.62, EYE_CROUCH = 1.27;
 const WALK = 4.3, SPRINT = 5.9, CROUCH = 1.7, SWIM = 2.6, FLY = 11, FLY_SPRINT = 20;
 const GRAVITY = 32, JUMP_V = 9.0, TERMINAL = 70;
+const CLIMB_UP = 2.6, CLIMB_DOWN = 2.4, STEP = 0.6;
 
 const approach = (v, target, delta) => (v < target ? Math.min(v + delta, target) : Math.max(v - delta, target));
 
@@ -29,6 +33,9 @@ export class Player {
     this._prevJump = false;
     this.noClip = false;
     this.speedMul = 1;
+    this.stepHeight = STEP;   // sube escaleras y losas andando
+    this.stepSmooth = 0;      // desfase de cámara al subir un escalón (decrece a 0)
+    this.onLadder = false;
   }
 
   get eyeY() { return this.y + this.eye; }
@@ -59,6 +66,9 @@ export class Player {
     this.inLava = feetF === 2 || bodyF === 2;
     this.headInWater = headF === 1;
     const inFluid = this.inWater || this.inLava;
+    this.onLadder = !this.flying && !this.noClip && this._touchingLadder(world);
+    // Corriente: el agua que fluye arrastra al jugador
+    const flow = this.inWater && !this.flying ? flowVector(world, fx, Math.floor(this.y + 0.1), fz) : null;
 
     // Doble toque de espacio → volar (creativo)
     if (input.jump && !this._prevJump && this.allowFlying) {
@@ -89,7 +99,8 @@ export class Player {
     else speed = this.sprinting ? SPRINT : WALK;
     speed *= this.speedMul;
 
-    const tvx = wx * speed, tvz = wz * speed;
+    let tvx = wx * speed, tvz = wz * speed;
+    if (flow) { const fl = Math.hypot(flow.x, flow.z); tvx += (flow.x / fl) * 1.7; tvz += (flow.z / fl) * 1.7; }
     const grounded = this.onGround;
     let accel;
     if (this.flying) accel = 60;
@@ -131,8 +142,18 @@ export class Player {
       else dyAvg = ((vy0 + this.vy) / 2) * dt;
     }
 
+    // Escalera de mano: sube con salto o empujando contra ella, se sujeta agachado, baja despacio
+    if (this.onLadder) {
+      const pushing = (this.hitX || this.hitZ) && wl > 0.1;
+      if (input.jump || pushing) this.vy = CLIMB_UP;
+      else if (this.crouching) this.vy = 0;
+      else this.vy = Math.max(this.vy, -CLIMB_DOWN);
+      dyAvg = null;
+      this.fallDistance = 0;
+    }
+
     // Autosalto: obstáculo de 1 bloque delante
-    if (this.autoJump && grounded && !this.flying && !inFluid && (this.hitX || this.hitZ) && wl > 0.2 && !this.crouching) {
+    if (this.autoJump && grounded && !this.flying && !inFluid && !this.onLadder && (this.hitX || this.hitZ) && wl > 0.2 && !this.crouching) {
       const ax = this.x + wx * 0.45, az = this.z + wz * 0.45;
       if (!boxCollides(world, ax, this.y + 1.02, az, this.w, this.h) && boxCollides(world, ax, this.y + 0.1, az, this.w, 0.5)) {
         this.vy = 8.1; this.jumpedThisFrame = true;
@@ -151,7 +172,9 @@ export class Player {
         if (dz !== 0 && !this._supported(world, this.x + dx, this.y, this.z + dz)) { dz = 0; this.vz = 0; }
       }
       moveEntity(world, this, dx, dy, dz);
+      if (this.stepped > 0) this.stepSmooth = Math.min(0.6, this.stepSmooth + this.stepped);
     }
+    this.stepSmooth = Math.max(0, this.stepSmooth - dt * Math.max(2.5, this.stepSmooth * 9));
     // Límite del mundo
     if (world.size) {
       const half = world.size / 2 - 0.4;
@@ -160,7 +183,7 @@ export class Player {
     this.moved = Math.hypot(this.x - prevX, this.z - prevZ);
 
     // Caídas
-    if (inFluid || this.flying) this.fallDistance = 0;
+    if (inFluid || this.flying || this.onLadder) this.fallDistance = 0;
     else if (this.y < prevY) this.fallDistance += prevY - this.y;
     if (this.onGround && !wasGround && this.fallDistance > 0) {
       this.landed = { distance: this.fallDistance };
@@ -173,6 +196,23 @@ export class Player {
 
   _supported(world, x, y, z) {
     return boxCollides(world, x, y - 0.6, z, this.w, 0.6);
+  }
+
+  /** ¿Está el jugador en una celda de escalera de mano, o toca su hoja (caja ensanchada 0,08)? */
+  _touchingLadder(world) {
+    const cx0 = Math.floor(this.x), cz0 = Math.floor(this.z);
+    if (B_CLIMB[world.getBlock(cx0, Math.floor(this.y + 0.05), cz0)] || B_CLIMB[world.getBlock(cx0, Math.floor(this.y + 0.9), cz0)]) return true;
+    const hw = this.w / 2 + 0.08;
+    const ax0 = this.x - hw, ax1 = this.x + hw, az0 = this.z - hw, az1 = this.z + hw;
+    const x0 = Math.floor(ax0), x1 = Math.floor(ax1), z0 = Math.floor(az0), z1 = Math.floor(az1);
+    for (const yy of [Math.floor(this.y + 0.05), Math.floor(this.y + 0.9)]) {
+      for (let cz = z0; cz <= z1; cz++) for (let cx = x0; cx <= x1; cx++) {
+        const id = world.getBlock(cx, yy, cz);
+        if (!B_CLIMB[id]) continue;
+        for (const b of renderBoxes(id)) if (cx + b[0] < ax1 && cx + b[3] > ax0 && cz + b[2] < az1 && cz + b[5] > az0) return true;
+      }
+    }
+    return false;
   }
 }
 void B_FLUID;

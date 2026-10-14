@@ -1,4 +1,4 @@
-// Lista de logros de la Fase 1.
+// Lista de logros (Fase 1 y siguientes).
 export const ACHIEVEMENTS = [
   { id: 'tronco', name: 'Primeros pasos', desc: 'Consigue un tronco' },
   { id: 'mesa', name: 'Taller', desc: 'Fabrica una mesa de trabajo' },
@@ -16,4 +16,8 @@ export const ACHIEVEMENTS = [
   { id: 'cofre', name: 'Cazatesoros', desc: 'Abre un cofre de una estructura' },
   { id: 'armadura', name: 'Vestido para la ocasión', desc: 'Consigue una pieza de armadura' },
   { id: 'volcan', name: 'Cerca del fuego', desc: 'Visita la región volcánica' },
+  // Fase 2
+  { id: 'hogar', name: 'Hogar, dulce hogar', desc: 'Coloca una puerta' },
+  { id: 'pastor', name: 'Pastor', desc: 'Ata un animal a una valla con una cuerda' },
+  { id: 'cocinero', name: 'Buen provecho', desc: 'Cómete un estofado de verduras' },
 ];

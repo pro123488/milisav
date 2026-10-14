@@ -13,6 +13,7 @@ export const LOOT = {
     { item: 'bread', min: 1, max: 3, w: 6 }, { item: 'stick', min: 2, max: 8, w: 8 }, { item: 'coal', min: 2, max: 6, w: 6 },
     { item: 'seed_wheat', min: 2, max: 6, w: 5 }, { item: 'carrot', min: 1, max: 4, w: 4 }, { item: 'stone_pickaxe', min: 1, max: 1, w: 2 },
     { item: 'leather', min: 1, max: 3, w: 3 }, { item: 'torch', min: 3, max: 8, w: 5 }, { item: 'bucket', min: 1, max: 1, w: 1 },
+    { item: 'tomato', min: 1, max: 3, w: 3 }, { item: 'corn', min: 1, max: 3, w: 3 }, { item: 'rope', min: 1, max: 2, w: 2 },
   ],
   ruin: [
     { item: 'iron_ingot', min: 1, max: 4, w: 6 }, { item: 'gold_ingot', min: 1, max: 3, w: 4 }, { item: 'coal', min: 3, max: 9, w: 6 },
@@ -157,14 +158,18 @@ export function placeStructures(terrain, blocks, cx, cz) {
         st.set(x, y, z, corner ? ID.LOG_OAK : ID.PLANKS);
       }
     }
-    // puerta (hueco) y ventanas
-    st.fill(ox + 3, y0 + 1, oz + 6, ox + 3, y0 + 2, oz + 6, 0);
+    // puerta de madera (hoja en el lado sur, hacia fuera) y ventanas
+    st.set(ox + 3, y0 + 1, oz + 6, ID.DOOR_WOOD_S); st.set(ox + 3, y0 + 2, oz + 6, ID.DOOR_WOOD_S_SUP);
     st.set(ox, y0 + 2, oz + 3, 0); st.set(ox + 6, y0 + 2, oz + 3, 0);
-    // techo a dos aguas con huecos
+    // techo con alero de escaleras (la parte alta hacia dentro) y algunos huecos
     for (let x = ox - 1; x <= ox + 7; x++) for (let z = oz - 1; z <= oz + 7; z++) {
       if (r(x, 99, z) < 0.18) continue;
       const inner = x >= ox + 1 && x <= ox + 5 && z >= oz + 1 && z <= oz + 5;
-      st.set(x, y0 + 5, z, inner ? ID.PLANKS : ID.SLAB_PLANKS);
+      let id = inner ? ID.PLANKS : ID.SLAB_PLANKS;
+      const ex = x === ox - 1 || x === ox + 7, ez = z === oz - 1 || z === oz + 7;
+      if (ez && !ex) id = z === oz - 1 ? ID.STAIRS_PLANKS_S : ID.STAIRS_PLANKS;       // facing S / N
+      else if (ex && !ez) id = x === ox - 1 ? ID.STAIRS_PLANKS_E : ID.STAIRS_PLANKS_O; // facing E / O
+      st.set(x, y0 + 5, z, id);
     }
     st.chest(ox + 1, y0 + 1, oz + 1, 'hut');
     st.set(ox + 5, y0 + 1, oz + 1, ID.WORKBENCH);
@@ -232,9 +237,11 @@ export function placeStructures(terrain, blocks, cx, cz) {
     st.chest(ox + 4, bottom + 1, oz + 1, 'temple');
     st.chest(ox + 1, bottom + 1, oz + 4, 'temple');
     st.chest(ox + 7, bottom + 1, oz + 4, 'temple');
-    // Capa de arena superior y pozo de entrada de 1x1
+    // Capa de arena superior y pozo de entrada de 1x1 con escalera de mano apoyada en una columna de arenisca
     st.fill(ox, g, oz, ox + 8, g, oz + 8, ID.SAND);
-    st.fill(ox + 4, bottom + 1, oz + 6, ox + 4, g, oz + 6, 0);
+    st.fill(ox + 3, g, oz + 5, ox + 5, g, oz + 7, ID.SANDSTONE);
+    st.fill(ox + 4, bottom + 1, oz + 7, ox + 4, bottom + 4, oz + 7, ID.SANDSTONE);
+    st.fill(ox + 4, bottom + 1, oz + 6, ox + 4, g, oz + 6, ID.LADDER_S);
     // Obelisco visible desde lejos
     st.fill(ox + 4, g + 1, oz + 4, ox + 4, g + 5, oz + 4, ID.SANDSTONE);
     st.set(ox + 4, g + 6, oz + 4, ID.RED_SANDSTONE);

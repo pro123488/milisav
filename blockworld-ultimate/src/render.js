@@ -2,7 +2,7 @@
 // gestión de las mallas de cada chunk. Las mallas se posicionan en coordenadas locales de chunk.
 import * as THREE from 'three';
 import { CHUNK_SIZE as CS, WORLD_HEIGHT as WH } from './config.js';
-import { getAtlasCanvas } from './atlas.js';
+import { getAtlasCanvas, ATLAS_COLS } from './atlas.js';
 
 const VERT = `
 attribute vec3 aLight;
@@ -19,6 +19,7 @@ void main() {
 
 const FRAG = `
 precision highp float;
+#define ATLAS_N ${ATLAS_COLS.toFixed(1)}
 uniform sampler2D uMap;
 uniform float uSun;
 uniform vec3 uSkyTint;
@@ -37,10 +38,10 @@ float curve(float l) { return pow(0.80, 15.0 * (1.0 - clamp(l, 0.0, 1.0))); }
 void main() {
   vec2 uv = vUv;
   #ifdef WATER
-    vec2 tile = floor(uv * 16.0) / 16.0;
-    vec2 f = fract(uv * 16.0);
+    vec2 tile = floor(uv * ATLAS_N) / ATLAS_N;
+    vec2 f = fract(uv * ATLAS_N);
     f = fract(f + vec2(uTime * 0.035, uTime * 0.02 + 0.06 * sin(uTime * 0.7 + f.x * 6.2831)));
-    uv = tile + f / 16.0;
+    uv = tile + f / ATLAS_N;
   #endif
   vec4 tex = texture2D(uMap, uv);
   #ifdef ALPHA_TEST

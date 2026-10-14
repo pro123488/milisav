@@ -233,7 +233,7 @@ export function openInventoryScreen(game) {
   if (creative) {
     // Catálogo con búsqueda y categorías
     const cat = creativeCatalog();
-    const tabs = [['Todo', () => true], ['Bloques', (i) => i.kind === 'block'], ['Herramientas', (i) => i.kind === 'tool'], ['Armaduras', (i) => i.kind === 'armor'], ['Comida', (i) => !!i.food], ['Materiales', (i) => i.kind === 'material' || i.kind === 'bucket']];
+    const tabs = [['Todo', () => true], ['Bloques', (i) => i.kind === 'block' || i.kind === 'door'], ['Herramientas', (i) => i.kind === 'tool'], ['Armaduras', (i) => i.kind === 'armor'], ['Comida', (i) => !!i.food], ['Materiales', (i) => i.kind === 'material' || i.kind === 'bucket' || i.kind === 'rope']];
     let filter = tabs[0][1], q = '';
     const bar = el('div', 'creative-bar');
     const tabBox = el('div', 'tabs');

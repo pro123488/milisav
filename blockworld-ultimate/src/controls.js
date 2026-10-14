@@ -34,7 +34,11 @@ export class Controls {
     document.addEventListener('mouseup', (e) => { this.mouse[e.button] = false; });
     document.addEventListener('mousemove', (e) => {
       if (!this.locked) return;
-      this.mouseDX += e.movementX || 0; this.mouseDY += e.movementY || 0;
+      // Algunos navegadores envían un salto enorme justo al capturar el ratón: se descarta.
+      if (this._skipMove > 0) { this._skipMove--; return; }
+      const mx = e.movementX || 0, my = e.movementY || 0;
+      if (Math.abs(mx) > 350 || Math.abs(my) > 350) return;
+      this.mouseDX += mx; this.mouseDY += my;
     });
     document.addEventListener('wheel', (e) => {
       if (!this.locked) return;
@@ -45,6 +49,7 @@ export class Controls {
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     document.addEventListener('pointerlockchange', () => {
       this.locked = document.pointerLockElement === canvas;
+      this._skipMove = this.locked ? 1 : 0;
       if (!this.locked) { this.mouse = [false, false, false]; this.keys.clear(); }
       if (this.onLockChange) this.onLockChange(this.locked);
     });

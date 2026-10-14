@@ -1,9 +1,9 @@
 // Un chunk: columna de 16×16×128 bloques con su luz, estado de malla y bloques "tickeables".
 import { CHUNK_SIZE as CS, WORLD_HEIGHT as WH } from './config.js';
-import { BLOCKS } from './blocks.js';
+import { BLOCKS, MAX_BLOCKS } from './blocks.js';
 
 /** Bloques que reciben "random ticks" (cultivos, brotes, tierra arada...). La hierba se trata aparte. */
-export const TICKABLE = new Uint8Array(256);
+export const TICKABLE = new Uint8Array(MAX_BLOCKS);
 for (const b of BLOCKS) if (b && b.randomTick && !b.key.startsWith('grass')) TICKABLE[b.id] = 1;
 
 export const chunkKey = (cx, cz) => ((cx & 0xffff) << 16) | (cz & 0xffff);
@@ -12,7 +12,7 @@ export class Chunk {
   constructor(cx, cz) {
     this.cx = cx; this.cz = cz;
     this.key = chunkKey(cx, cz);
-    this.blocks = null;      // Uint8Array(16*16*128), índice = x | z<<4 | y<<8
+    this.blocks = null;      // Uint16Array(16*16*128) de IDs de bloque, índice = x | z<<4 | y<<8
     this.light = null;       // Uint8Array, nibble alto = cielo, bajo = bloque
     this.lightReady = false;
     this.maxY = 0;           // y más alta con un bloque no-aire

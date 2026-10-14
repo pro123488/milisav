@@ -6,7 +6,11 @@ import { Chunk, chunkKey, TICKABLE } from './chunk.js';
 import { Lighting } from './lighting.js';
 import { meshChunk } from './mesher.js';
 import { Terrain } from './terrain.js';
-import { B_SOLID, B_FLUID, B_HEIGHT } from './blocks.js';
+import { B_SOLID, B_FLUID } from './blocks.js';
+import { collisionBoxes as shapeCollision, needsMask, connectMask, B_TALLCOL } from './shapes.js';
+
+const SOLID_CELL = [[0, 0, 0, 1, 1, 1]];
+const NO_BOXES = [];
 
 const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
@@ -71,6 +75,7 @@ export class World {
     this.onChunkLoaded = null;     // (chunk)
     this.onBlockChange = null;     // (x,y,z,oldId,newId)
     this.useWorker = o.useWorker !== false && typeof Worker !== 'undefined';
+    this._get = (x, y, z) => this.getBlock(x, y, z);
     this.gen = null;
     this._startGen();
   }
@@ -130,14 +135,27 @@ export class World {
     if (!c || !c.blocks) return true;
     return B_SOLID[c.blocks[(x & 15) | ((z & 15) << 4) | (y << 8)]] === 1;
   }
-  /** Altura de colisión de la celda (0 = vacío, 1 = completa, 0.5 = losa...). */
-  collisionHeight(x, y, z) {
-    if (y < 0) return 1;
-    if (y >= WH) return 0;
+  /**
+   * Cajas de colisión de la celda (coordenadas locales 0..1, algunas llegan a 1,5).
+   * Un chunk sin cargar y debajo del mundo cuentan como cubo sólido.
+   */
+  collisionBoxes(x, y, z) {
+    if (y < 0) return SOLID_CELL;
+    if (y >= WH) return NO_BOXES;
     const c = this.chunkAt(x >> 4, z >> 4);
-    if (!c || !c.blocks) return 1;
+    if (!c || !c.blocks) return SOLID_CELL;
     const id = c.blocks[(x & 15) | ((z & 15) << 4) | (y << 8)];
-    return B_SOLID[id] ? B_HEIGHT[id] : 0;
+    if (id === 0) return NO_BOXES;
+    return shapeCollision(id, needsMask(id) ? connectMask(this._get, x, y, z, id) : 0);
+  }
+  /** Como collisionBoxes, pero solo devuelve cajas si sobresalen por encima de la celda (capa inferior de la física). */
+  collisionBoxesTall(x, y, z) {
+    if (y < 0 || y >= WH) return NO_BOXES;
+    const c = this.chunkAt(x >> 4, z >> 4);
+    if (!c || !c.blocks) return NO_BOXES;
+    const id = c.blocks[(x & 15) | ((z & 15) << 4) | (y << 8)];
+    if (!B_TALLCOL[id]) return NO_BOXES;
+    return shapeCollision(id, needsMask(id) ? connectMask(this._get, x, y, z, id) : 0);
   }
   fluidAt(x, y, z) { return B_FLUID[this.getBlock(x, y, z)]; }
 
@@ -304,7 +322,7 @@ export class World {
     const dx = r.cx - pcx, dz = r.cz - pcz;
     if (Math.max(Math.abs(dx), Math.abs(dz)) > this.renderDistance + 3) return;
     const c = new Chunk(r.cx, r.cz);
-    const blocks = r.blocks instanceof Uint8Array ? r.blocks : new Uint8Array(r.blocks);
+    const blocks = r.blocks instanceof Uint16Array ? r.blocks : Uint16Array.from(r.blocks);
     c.setBlocks(blocks);
     c.fresh = r.fresh !== false;
     c.biomes = r.biomes || null;
@@ -364,7 +382,8 @@ export class World {
   /** Busca un hueco seguro de pie cerca de (x,z) desde la altura y0 hacia abajo/arriba. */
   findStandY(x, z, y0 = WH - 2) {
     for (let y = Math.min(WH - 3, y0); y > 1; y--) {
-      if (this.solidAt(x, y - 1, z) && !this.solidAt(x, y, z) && !this.solidAt(x, y + 1, z) && !B_FLUID[this.getBlock(x, y, z)]) return y;
+      const below = this.getBlock(x, y - 1, z);
+      if (this.solidAt(x, y - 1, z) && !B_TALLCOL[below] && !this.solidAt(x, y, z) && !this.solidAt(x, y + 1, z) && !B_FLUID[this.getBlock(x, y, z)]) return y;
     }
     return -1;
   }

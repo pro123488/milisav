@@ -1,8 +1,12 @@
 // Animales originales: modelos de cajas, comportamientos (vagar, pastar, descansar, huir, seguir, criar, domesticar)
 // y reglas propias por especie. Todos distintos entre sí.
+import * as THREE from 'three';
 import { Mob } from './entities.js';
 import { Items } from './items.js';
 import { ID, B_SOLID, B_FLUID } from './blocks.js';
+import { B_TALLCOL, B_FAMILY, FAM } from './shapes.js';
+
+const LEASH_PTS = 10;
 
 const P = (name, size, center, color, o = {}) => ({ name, size, center, color, ...o });
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -149,9 +153,88 @@ export class Animal extends Mob {
     this.targetX = 0; this.targetZ = 0;
     this.restLevel = 0;
     this.bobSeed = Math.random() * 100;
-    this.persistentFlag = false; // criado/alimentado/domesticado → no desaparece
+    this.persistentFlag = false; // criado/alimentado/domesticado/atado → no desaparece
     this.altitude = 3 + Math.random() * 4;
     this.soundTimer = 6 + Math.random() * 20;
+    this.leash = null;           // 'player' | {x,y,z} (valla) | null
+    this.leashable = !def.flying && !def.swimmer;
+    this.leashLine = null;
+  }
+
+  // ── Cuerda ──────────────────────────────────────────────────
+  /** Ata el animal al jugador ('player') o a la valla {x,y,z}. */
+  attachLeash(target) {
+    if (!this.leashable) return false;
+    this.leash = target; this.persistentFlag = true;
+    if (target !== 'player') this.game.achieve && this.game.achieve('pastor');
+    if (!this.leashLine) {
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(LEASH_PTS * 3), 3));
+      this.leashLine = new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0x9a7444 }));
+      this.leashLine.frustumCulled = false;
+      this.game.scene.add(this.leashLine);
+    }
+    return true;
+  }
+  /** Suelta la cuerda; si `giveRope`, la cuerda vuelve (al inventario o al suelo). */
+  detachLeash(giveRope) {
+    if (!this.leash) return;
+    const wasPlayer = this.leash === 'player';
+    this.leash = null;
+    if (this.leashLine) { this.game.scene.remove(this.leashLine); this.leashLine.geometry.dispose(); this.leashLine.material.dispose(); this.leashLine = null; }
+    if (giveRope && this.game.mode !== 'creative') {
+      const st = { i: Items.id('rope'), n: 1, d: 0 };
+      if (wasPlayer) { const rest = this.game.inventory.add(st); if (rest) this.game.dropItem(rest, this.x, this.y + 0.5, this.z); }
+      else this.game.dropItem(st, this.x, this.y + 0.5, this.z);
+    }
+  }
+  _leashAnchor() {
+    if (this.leash === 'player') { const p = this.game.player; return { x: p.x, y: p.y + 1.1, z: p.z }; }
+    return { x: this.leash.x + 0.5, y: this.leash.y + 0.75, z: this.leash.z + 0.5 };
+  }
+  /** La cuerda tira del animal. Devuelve true si este fotograma manda la cuerda (no hace nada más). */
+  _thinkLeash() {
+    if (!this.leash) return false;
+    if (this.leash !== 'player') {
+      const k = this.leash;
+      if (B_FAMILY[this.world.getBlock(k.x, k.y, k.z)] !== FAM.FENCE) { this.detachLeash(false); this.game.dropItem({ i: Items.id('rope'), n: 1, d: 0 }, k.x + 0.5, k.y + 0.8, k.z + 0.5); return false; }
+    } else if (this.game.survival && this.game.survival.dead) { this.detachLeash(false); return false; }
+    const a = this._leashAnchor();
+    const d = Math.hypot(a.x - this.x, a.z - this.z);
+    if (d > 14) { // se rompe
+      if (this.leash === 'player') this.detachLeash(true);
+      else { const k = this.leash; this.detachLeash(false); this.game.dropItem({ i: Items.id('rope'), n: 1, d: 0 }, k.x + 0.5, k.y + 0.8, k.z + 0.5); }
+      return false;
+    }
+    const slack = this.leash === 'player' ? 3.5 : 2.5;
+    if (d > slack) {
+      this.moveToward(a.x, a.z, d > 7 ? 2.2 : 1.4);
+      if (d > 7) { const dx = (a.x - this.x) / d, dz = (a.z - this.z) / d; this.vx += dx * 0.6; this.vz += dz * 0.6; } // tirón
+      if (this.blocked > 0.6 && this.onGround) this.vy = Math.max(this.vy, this.def.jump ?? 8.2); // intenta saltar el obstáculo
+      return true;
+    }
+    return false;
+  }
+  _updateLeashLine() {
+    if (!this.leashLine) return;
+    if (!this.leash) return;
+    const a = this._leashAnchor();
+    const sx = this.x, sy = this.y + this.h * 0.75, sz = this.z;
+    const d = Math.hypot(a.x - sx, a.y - sy, a.z - sz);
+    const sag = Math.max(0, 1.2 - d * 0.12);
+    const arr = this.leashLine.geometry.attributes.position.array;
+    for (let i = 0; i < LEASH_PTS; i++) {
+      const t = i / (LEASH_PTS - 1);
+      arr[i * 3] = sx + (a.x - sx) * t; arr[i * 3 + 1] = sy + (a.y - sy) * t - sag * 4 * t * (1 - t); arr[i * 3 + 2] = sz + (a.z - sz) * t;
+    }
+    this.leashLine.geometry.attributes.position.needsUpdate = true;
+    const l = this.game.lightAt(this.x, this.y + 1, this.z);
+    this.leashLine.material.color.setRGB(0.6 * l, 0.45 * l, 0.27 * l);
+  }
+  update(dt) { super.update(dt); this._updateLeashLine(); }
+  dispose() {
+    if (this.leashLine) { this.game.scene.remove(this.leashLine); this.leashLine.geometry.dispose(); this.leashLine.material.dispose(); this.leashLine = null; }
+    super.dispose();
   }
 
   get persistent() { return this.persistentFlag || this.tamed || this.baby; }
@@ -199,6 +282,7 @@ export class Animal extends Mob {
     const fx = Math.floor(x), fz = Math.floor(z);
     if (!w.isLoaded(fx, fz)) return false;
     const y0 = Math.floor(this.y + 0.1);
+    if (B_TALLCOL[w.getBlock(fx, y0, fz)] || B_TALLCOL[w.getBlock(fx, y0 - 1, fz)]) return false; // vallas y muros: no se cruzan
     for (let d = 0; d <= 3; d++) {
       const id = w.getBlock(fx, y0 - d, fz);
       if (B_FLUID[id]) return !!this.def.swimmer || this.def.avoidWater === false;
@@ -222,6 +306,7 @@ export class Animal extends Mob {
     if (this.baby) { this.growAge += dt; if (this.growAge >= 300) this.setBaby(false); }
     if (def.flying) return this._thinkFlying(dt);
     if (def.swimmer) return this._thinkSwimmer(dt);
+    if (this.panic <= 0 && this._thinkLeash()) return;
 
     const dx = p.x - this.x, dz = p.z - this.z, dist = Math.hypot(dx, dz);
     // Pánico
@@ -405,6 +490,7 @@ export class Animal extends Mob {
   serialize() {
     const o = super.serialize();
     o.love = this.breedCd; o.pf = this.persistentFlag;
+    if (this.leash) o.leash = this.leash === 'player' ? 'p' : [this.leash.x, this.leash.y, this.leash.z];
     return o;
   }
 }

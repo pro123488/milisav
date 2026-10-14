@@ -3,7 +3,7 @@ import { withPage, frames } from '../../tools/pw.mjs';
 const ok = (name, cond, extra = '') => console.log((cond ? 'PASS ' : 'FAIL ') + name + (extra ? ' — ' + extra : ''));
 await withPage('index.html?autostart=survival&rd=3&seed=flat3&type=flat&mobs=all&structures=0', async (page) => {
   await page.waitForTimeout(500);
-  await page.evaluate(() => { const g = window.__game; g.renderer.setPixelRatio(0.2); g._resize(); });
+  await page.evaluate(() => { const g = window.__game; g.renderer.setPixelRatio(0.2); g._resize(); g.settings.sensitivity = 0; /* la cámara la fija la prueba: el ratón capturado no debe girarla */ });
   await page.click('#gl'); await frames(page, 3);
   const r = await page.evaluate(async () => {
     const g = window.__game, w = g.world, out = {};
@@ -39,7 +39,7 @@ await withPage('index.html?autostart=survival&rd=3&seed=flat3&type=flat&mobs=all
     p.teleport(0.5, 42, 0.5); g.survival.reset(); g.inventory.slots[0] = null;
     const m = g.spawnMob('night_stalker', 5, 42.01, 0.5);
     const hp0 = g.survival.health; step(120);
-    out.stalkerHurts = g.survival.health < hp0; out.stalkerHp = [hp0, g.survival.health];
+    out.stalkerHurts = g.survival.health < hp0; out.info_stalkerHp = [hp0, g.survival.health];
     // armadura reduce el daño
     m.removed = true; g.survival.reset(); g.inventory.armor[0] = makeStack('iron_helmet'); g.inventory.armor[1] = makeStack('iron_chestplate'); g.inventory.armor[2] = makeStack('iron_leggings'); g.inventory.armor[3] = makeStack('iron_boots');
     const m2 = g.spawnMob('night_stalker', 1.5, 42.01, 0.5); m2.atkCd = 0; g.survival.invuln = 0;
@@ -62,5 +62,5 @@ await withPage('index.html?autostart=survival&rd=3&seed=flat3&type=flat&mobs=all
     out.peacefulClears = g.entities.list.filter((e) => e.def && e.def.hp && e.type === 'obsidian_skeleton' && !e.removed).length === 0;
     return out;
   });
-  for (const [k, v] of Object.entries(r)) ok(k, v === true || (typeof v === 'number' && v > 0), JSON.stringify(v));
+  for (const [k, v] of Object.entries(r)) { if (k.startsWith('info_')) { console.log('INFO ' + k + ' ' + JSON.stringify(v)); continue; } ok(k, v === true || (typeof v === 'number' && v > 0), JSON.stringify(v)); }
 }, { readyFlag: '__ready', readyTimeout: 60000, w: 480, h: 270 });

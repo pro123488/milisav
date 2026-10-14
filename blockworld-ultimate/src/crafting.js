@@ -46,6 +46,25 @@ for (const [block, mat] of [['block_copper', 'copper_ingot'], ['block_iron', 'ir
   recipe(mat, 9, [[block, 1]], 'workbench', mat, 'Bloques');
 }
 
+// ── Fase 2: construcción avanzada, cuerda y comidas ──────────────
+for (const [mat, unlock] of [['planks', null], ['cobble', null], ['stonebricks', 'stonebricks'], ['bricks', 'bricks'], ['sandstone', 'sandstone']]) {
+  recipe(`stairs_${mat}`, 4, [[mat, 6]], 'workbench', unlock, 'Construcción');
+}
+recipe('ladder', 3, [['stick', 7]], 'workbench', null, 'Construcción');
+recipe('door_wood', 3, [['planks', 6]], 'workbench', null, 'Construcción');
+recipe('door_iron', 3, [['iron_ingot', 6]], 'workbench', 'iron_ingot', 'Construcción');
+recipe('trapdoor_wood', 2, [['planks', 6]], 'workbench', null, 'Construcción');
+recipe('fence_wood', 3, [['planks', 4], ['stick', 2]], 'workbench', null, 'Construcción');
+recipe('gate_wood', 1, [['stick', 4], ['planks', 2]], 'workbench', null, 'Construcción');
+recipe('wall_cobble', 6, [['cobble', 6]], 'workbench', null, 'Construcción');
+recipe('rope', 2, [['reed', 3]], 'hand', 'reed', 'Básicos');
+recipe('rope', 1, [['leather', 1]], 'hand', 'leather', 'Básicos');
+recipe('bowl', 4, [['planks', 3]], 'workbench', null, 'Comida');
+recipe('vegetable_stew', 1, [['bowl', 1], ['carrot', 1], ['baked_potato', 1], ['tomato', 1]], 'workbench', 'tomato', 'Comida');
+recipe('mushroom_stew', 1, [['bowl', 1], ['mushroom_dark', 1], ['mushroom_glow', 1]], 'workbench', 'mushroom_dark', 'Comida');
+recipe('salad', 1, [['bowl', 1], ['tomato', 1], ['carrot', 1], ['berries', 1]], 'workbench', 'tomato', 'Comida');
+recipe('corn_bread', 1, [['corn', 3]], 'workbench', 'corn', 'Comida');
+
 // Herramientas: cabeza + palos
 const HEAD_COST = { pickaxe: [3, 2], axe: [3, 2], shovel: [1, 2], sword: [2, 1], hoe: [2, 2] };
 for (const tier of TIER_ORDER) {
@@ -85,6 +104,7 @@ export const SMELTING = [
   { in: 'raw_fish', out: 'cooked_fish', time: 8 },
   { in: 'raw_venison', out: 'cooked_venison', time: 8 },
   { in: 'potato', out: 'baked_potato', time: 8 },
+  { in: 'corn', out: 'roasted_corn', time: 8 },
 ];
 const SMELT_BY_ID = new Map();
 for (const s of SMELTING) SMELT_BY_ID.set(Items.id(s.in), s);

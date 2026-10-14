@@ -75,7 +75,7 @@ export class HandRenderer {
     if (it.kind === 'block') {
       const b = Blocks.get(it.block);
       const shape = B_SHAPE[b.id];
-      if (shape === 2 || shape === 4) return { obj: this._spriteMesh(it, 0.55), kind: 'sprite' };
+      if (shape === 2 || shape === 4 || shape === 7) return { obj: this._spriteMesh(it, 0.55), kind: 'sprite' }; // plantas, antorchas y formas de cajas: su icono
       return { obj: this._blockMesh(b, this.game.wr.atlasTexture), kind: 'block' };
     }
     return { obj: this._spriteMesh(it, it.kind === 'tool' ? 0.46 : 0.42), kind: it.kind === 'tool' ? 'tool' : 'sprite' };

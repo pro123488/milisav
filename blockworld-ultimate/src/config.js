@@ -2,7 +2,7 @@
 // Cambiar CHUNK_SIZE / WORLD_HEIGHT / SEA_LEVEL rompe la compatibilidad de los mundos guardados.
 
 export const GAME_NAME = 'BLOCKWORLD ULTIMATE';
-export const VERSION = '0.1.0 (Fase 1)';
+export const VERSION = '0.2.0 (Fase 2)';
 /** Se guarda con cada mundo. Si cambia el generador, los chunks sin modificar se regenerarían distinto. */
 export const GENERATOR_VERSION = 1;
 

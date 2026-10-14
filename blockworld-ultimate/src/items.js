@@ -1,5 +1,6 @@
-// Registro de objetos. Los bloques colocables son objetos con id = id del bloque (1..255);
-// el resto empieza en 256. IDs persistentes: solo añadir al final de cada grupo.
+// Registro de objetos. Los bloques colocables son objetos con id = id del bloque si es < 256, o 16384 + id
+// para los bloques nuevos (Fase 2+, IDs de 16 bits); el resto de objetos empieza en 256.
+// IDs persistentes: solo añadir al final de cada grupo.
 import { BLOCKS, Blocks } from './blocks.js';
 
 /** Materiales de herramientas y armaduras originales. level = nivel de cosecha. */
@@ -49,11 +50,14 @@ export const DEFENSE_PER_POINT = 0.032;
 export const ITEMS = [];
 const byKey = new Map();
 
+/** ID del objeto que representa al bloque colocable `blockId`. */
+export const blockItemId = (blockId) => (blockId < 256 ? blockId : 16384 + blockId);
+
 // 1) Bloques colocables
 for (const b of BLOCKS) {
   if (!b || b.id === 0 || !b.placeable) continue;
-  const it = { id: b.id, key: b.key, name: b.name, stack: b.key === 'bed' ? 16 : 64, kind: 'block', block: b.id, icon: 'block:' + b.key };
-  ITEMS[b.id] = it;
+  const it = { id: blockItemId(b.id), key: b.key, name: b.name, stack: b.key === 'bed' ? 16 : 64, kind: 'block', block: b.id, icon: 'block:' + b.key };
+  ITEMS[it.id] = it;
   byKey.set(it.key, it);
 }
 
@@ -140,8 +144,25 @@ for (const a of ARMOR_ORDER) {
   });
 }
 
+// ── Fase 2 ───────────────────────────────────────────────────────
+// Puertas (colocan 2 bloques), cuerda para llevar animales, cuenco y comidas nuevas.
+item('door_wood', 'Puerta de madera', { stack: 16, kind: 'door', places: 'door_wood', fuel: 10 });
+item('door_iron', 'Puerta de hierro', { stack: 16, kind: 'door', places: 'door_iron' });
+item('rope', 'Cuerda', { kind: 'rope' });
+item('bowl', 'Cuenco', { fuel: 5 });
+item('tomato', 'Tomate', { plants: 'crop_tomato_0', food: { hunger: 3, sat: 1.8 }, kind: 'food' });
+item('corn', 'Mazorca de maíz', { plants: 'crop_corn_0', food: { hunger: 2, sat: 1.2 }, kind: 'food' });
+item('roasted_corn', 'Mazorca asada', { food: { hunger: 6, sat: 7.2 }, kind: 'food' });
+item('corn_bread', 'Pan de maíz', { food: { hunger: 5, sat: 6 }, kind: 'food' });
+item('vegetable_stew', 'Estofado de verduras', { stack: 1, food: { hunger: 10, sat: 12, returns: 'bowl' }, kind: 'food' });
+item('mushroom_stew', 'Sopa de hongos', { stack: 1, food: { hunger: 6, sat: 7.2, returns: 'bowl' }, kind: 'food' });
+item('salad', 'Ensalada fresca', { stack: 1, food: { hunger: 6, sat: 7, returns: 'bowl' }, kind: 'food' });
+
 // Combustibles de bloques
-const blockFuel = { planks: 15, log_oak: 15, log_dark: 15, log_jungle: 15, log_pine: 15, workbench: 15, chest: 15, slab_planks: 7, sapling_oak: 5, sapling_dark: 5, sapling_jungle: 5, sapling_pine: 5 };
+const blockFuel = {
+  planks: 15, log_oak: 15, log_dark: 15, log_jungle: 15, log_pine: 15, workbench: 15, chest: 15, slab_planks: 7, sapling_oak: 5, sapling_dark: 5, sapling_jungle: 5, sapling_pine: 5,
+  stairs_planks: 15, fence_wood: 15, gate_wood: 15, trapdoor_wood: 15, ladder: 5,
+};
 for (const [k, v] of Object.entries(blockFuel)) if (byKey.has(k)) byKey.get(k).fuel = v;
 
 // ─────────────────────────────────────────────────────────────────
@@ -158,7 +179,14 @@ export const Items = {
   },
   has(key) { return byKey.has(key); },
   all() { return ITEMS.filter(Boolean); },
-  forBlock(blockId) { return ITEMS[blockId] && ITEMS[blockId].block === blockId ? ITEMS[blockId] : null; },
+  forBlock(blockId) { const it = ITEMS[blockItemId(blockId)]; return it && it.block === blockId ? it : null; },
+  /** Objeto que obtiene "copiar bloque" (clic central): variantes → objeto base; puertas → objeto puerta. */
+  pickFor(blockId) {
+    const b = BLOCKS[blockId];
+    if (!b) return null;
+    if (b.pick) return byKey.get(b.pick) || null;
+    return this.forBlock(blockId);
+  },
 };
 
 /** Pila de objetos: {i:id, n:cantidad, d:desgaste usado} */

@@ -6,7 +6,7 @@ const ok = (name, cond, extra = '') => console.log((cond ? 'PASS ' : 'FAIL ') + 
 await withPage('index.html?rd=2', async (page) => {
   const ev = (f, a) => page.evaluate(f, a);
   await page.waitForSelector('text=Inicio rápido');
-  await page.evaluate(() => { const g = window.__game; g.renderer.setPixelRatio(0.3); g._resize(); });
+  await page.evaluate(() => { const g = window.__game; g.renderer.setPixelRatio(0.3); g._resize(); g.settings.sensitivity = 0; /* la cámara la fija la prueba: el ratón capturado no debe girarla */ });
   // Crear mundo desde el formulario
   await page.click('.menu-col >> text=Crear mundo');
   await page.fill('input[type=text] >> nth=0', 'Mundo de prueba');

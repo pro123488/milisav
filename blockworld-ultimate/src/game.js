@@ -18,6 +18,7 @@ import { ANIMALS, createAnimal } from './animals.js';
 import { MONSTERS, createMonster } from './monsters.js';
 import { Spawner } from './spawner.js';
 import { RandomTicks, tickFurnace } from './ticks.js';
+import { FluidSim, flowVector } from './fluids.js';
 import { HandRenderer } from './hand.js';
 import { UI } from './ui.js';
 import { openInventoryScreen, openWorkbenchScreen, openChestScreen, openFurnaceScreen, openPauseScreen, openDeathScreen, openControlsScreen, openAchievementsScreen } from './screens.js';
@@ -135,6 +136,7 @@ export class Game {
     this.entities = new EntityManager(this);
     this.mining = new Mining(this); this.building = new Building(this);
     this.hand = new HandRenderer(this); this.spawner = new Spawner(this); this.ticks = new RandomTicks(this);
+    this.fluids = new FluidSim(this);
     this.spawner.configure(meta, this.difficulty);
     this.inventory = new Inventory(); this.survival = new Survival(this);
     this.discovered = new Set(); this.achievements = new Set(); this.stats = { blocksBroken: 0, blocksPlaced: 0, mobsKilled: 0, deaths: 0 };
@@ -263,7 +265,7 @@ export class Game {
     else if (button === 2) { this.useCooldown = 0; this.useItem(true); }
     else if (button === 1 && this.mode === 'creative' && this.hit) {
       const id = this.world.getBlock(this.hit.x, this.hit.y, this.hit.z);
-      const it = Items.forBlock(id);
+      const it = Items.pickFor(id);
       if (it) {
         const inv = this.inventory;
         const have = inv.slots.findIndex((s, i) => i < 9 && s && s.i === it.id);
@@ -508,6 +510,7 @@ export class Game {
     m.hp = s.hp ?? m.hp;
     if (s.baby) m.setBaby(true);
     m.growAge = s.age || 0; m.tamed = !!s.tamed; m.trust = s.trust || 0; m.persistentFlag = !!s.pf; m.breedCd = s.love || 0;
+    if (s.leash && m.attachLeash) m.attachLeash(s.leash === 'p' ? 'player' : { x: s.leash[0], y: s.leash[1], z: s.leash[2] });
   }
 
   // ═════════════ Chunks generados: cofres y criaturas de estructuras ═════════════
@@ -555,6 +558,7 @@ export class Game {
         w.blockEntities.delete(k);
       }
     }
+    if (this.fluids) this.fluids.onBlockChange(x, y, z);
     this.queueUpdate(x, y, z);
     this.queueUpdate(x + 1, y, z); this.queueUpdate(x - 1, y, z); this.queueUpdate(x, y + 1, z); this.queueUpdate(x, y - 1, z); this.queueUpdate(x, y, z + 1); this.queueUpdate(x, y, z - 1);
   }
@@ -681,6 +685,17 @@ export class Game {
     const inv = this.inventory, stack = inv.getSelected();
     const it = stack ? Items.get(stack.i) : null;
     const p = this.player;
+    // Cuerda: atar / soltar animales
+    const et = this.entityTarget;
+    if (et && pressed && et.attachLeash && et.deathTime < 0) {
+      if (et.leash) { et.detachLeash(true); this.audio.play('leash', et.x, et.y, et.z); this.hand.swing(); return; }
+      if (it && it.kind === 'rope' && et.leashable) {
+        et.attachLeash('player');
+        if (this.mode !== 'creative') inv.consumeSelected(1);
+        this.audio.play('leash', et.x, et.y, et.z); this.hand.swing();
+        return;
+      }
+    }
     // Alimentar / domesticar criaturas
     if (this.entityTarget && stack && this.entityTarget.feed && this.entityTarget.feed(stack)) {
       const e = this.entityTarget;
@@ -689,11 +704,10 @@ export class Game {
       return;
     }
     let fluidHit = null;
-    if (it && it.kind === 'bucket') { const r = this._eyeRay(); fluidHit = raycastBlocks(this.world, r.ox, r.oy, r.oz, r.dx, r.dy, r.dz, this.reach, { fluids: true }); }
-    const did = this.building.use(this.hit, fluidHit, p.crouching);
+    if (it && it.kind === 'bucket') { const r = this._eyeRay(); fluidHit = raycastBlocks(this.world, r.ox, r.oy, r.oz, r.dx, r.dy, r.dz, this.reach, { fluids: it.key === 'bucket' ? 'source' : true }); }
+    const did = this.building.use(this.hit, fluidHit, p.crouching, pressed);
     this.useCooldown = 0.22;
     if (did) this.hand.swing();
-    void pressed;
   }
 
   beginEating() {
@@ -715,6 +729,12 @@ export class Game {
       const it = Items.get(stack.i);
       this.survival.eat(it);
       this.inventory.consumeSelected(1);
+      if (it.food.returns) { // el cuenco vuelve a la mano (o al inventario)
+        const back = { i: Items.id(it.food.returns), n: 1, d: 0 };
+        if (!this.inventory.slots[e.slot]) this.inventory.slots[e.slot] = back;
+        else { const rest = this.inventory.add(back); if (rest) this.dropItem(rest, this.player.x, this.player.y + 1, this.player.z); }
+      }
+      if (it.key === 'vegetable_stew') this.achieve('cocinero');
       this.audio.play('burp'); this.eating = null;
       this.onItemObtained(it.key);
     }
@@ -809,7 +829,7 @@ export class Game {
       bobY = Math.abs(Math.sin(this.bobPhase)) * 0.045 * k; roll = Math.sin(this.bobPhase) * 0.004 * k;
     }
     const look = p.lookDir();
-    const ex = p.x, ey = p.eyeY + bobY, ez = p.z;
+    const ex = p.x, ey = p.eyeY + bobY - p.stepSmooth, ez = p.z; // stepSmooth: suaviza la subida de escalones
     if (this.cameraMode === 0) {
       cam.position.set(ex, ey, ez);
       cam.rotation.set(p.pitch, p.yaw, roll);
@@ -854,6 +874,7 @@ export class Game {
     this.particles.update(dt);
     this.spawner.update(dt);
     this.ticks.update(dt);
+    this.fluids.update(dt);
     this.tickBlockEntities(dt);
     this.processBlockUpdates();
     this._structMobs();
@@ -931,4 +952,4 @@ export class Game {
     } finally { this.saving = false; }
   }
 }
-void moveEntity; void addToSlots; void makeStack;
+void moveEntity; void addToSlots; void makeStack; void flowVector;

@@ -3,7 +3,6 @@ import * as THREE from 'three';
 import { Blocks, B_FLUID, ID } from './blocks.js';
 import { Items, rollDrops } from './items.js';
 import { buildCrackCanvases } from './atlas.js';
-import { selectionBox } from './raycast.js';
 import { tileAverageColor } from './atlas.js';
 
 /** ¿Suelta objetos este bloque con esta herramienta? (nivel de cosecha suficiente y tipo correcto) */
@@ -54,7 +53,7 @@ export class Mining {
 
   _showOutline(hit) {
     if (!hit) { this.outline.visible = false; return; }
-    const b = selectionBox(hit.id);
+    const b = hit.box;
     const e = 0.004;
     this.outline.scale.set((b[3] - b[0]) + e * 2, (b[4] - b[1]) + e * 2, (b[5] - b[2]) + e * 2);
     this.outline.position.set(hit.x + (b[0] + b[3]) / 2, hit.y + (b[1] + b[4]) / 2, hit.z + (b[2] + b[5]) / 2);
@@ -108,12 +107,12 @@ export class Mining {
     if (this.stepAcc > 0.22) {
       this.stepAcc = 0;
       g.audio && g.audio.blockSound('dig', block.sound, hit.x + 0.5, hit.y + 0.5, hit.z + 0.5);
-      g.particles.emit(hit.x + 0.5 + hit.nx * 0.5, hit.y + 0.5 + hit.ny * 0.5, hit.z + 0.5 + hit.nz * 0.5, tileAverageColor(block.tiles[2]), 3, 1.6, 0.6);
+      g.particles.emit(hit.px ?? hit.x + 0.5, hit.py ?? hit.y + 0.5, hit.pz ?? hit.z + 0.5, tileAverageColor(block.tiles[2]), 3, 1.6, 0.6);
     }
     const stage = Math.min(9, Math.floor(this.progress * 10));
     this.crackMat.map = this.crackTex[stage];
     this.crackMat.needsUpdate = true;
-    const b = selectionBox(hit.id);
+    const b = hit.box;
     this.crackMesh.scale.set(b[3] - b[0], b[4] - b[1], b[5] - b[2]);
     this.crackMesh.position.set(hit.x + (b[0] + b[3]) / 2, hit.y + (b[1] + b[4]) / 2, hit.z + (b[2] + b[5]) / 2);
     this.crackMesh.visible = true;
@@ -136,7 +135,17 @@ export class Mining {
     const item = stack ? Items.get(stack.i) : null;
     const tool = item && item.tool;
     const creative = g.mode === 'creative';
-    const drops = (!creative && canHarvest(block, tool)) ? rollDrops(block.drops) : [];
+    // Puertas: se rompen las dos mitades a la vez y sueltan una sola puerta (según la mitad inferior)
+    let dropSpec = block.drops;
+    if (block.family === 'door') {
+      const oy = block.upper ? hit.y - 1 : hit.y + 1;
+      const other = Blocks.get(w.getBlock(hit.x, oy, hit.z));
+      if (other.family === 'door' && other.famBase === block.famBase && other.upper !== block.upper) {
+        if (block.upper) dropSpec = other.drops;
+        w.setBlock(hit.x, oy, hit.z, 0);
+      }
+    }
+    const drops = (!creative && canHarvest(block, tool)) ? rollDrops(dropSpec) : [];
     w.setBlock(hit.x, hit.y, hit.z, 0);
     const cx = hit.x + 0.5, cy = hit.y + 0.5, cz = hit.z + 0.5;
     for (const d of drops) g.dropItem({ i: d.id, n: d.n, d: 0 }, cx, cy, cz);

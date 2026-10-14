@@ -1,6 +1,9 @@
 // Guardado: IndexedDB para mundos y chunks modificados (compresión RLE), localStorage para opciones.
 // Si IndexedDB no está disponible (modo privado, etc.) se usa memoria y se avisa de que no se guardará.
-import { DEFAULT_SETTINGS, GENERATOR_VERSION, VERSION } from './config.js';
+import { DEFAULT_SETTINGS, GENERATOR_VERSION, VERSION, CHUNK_VOLUME } from './config.js';
+
+/** Formato de los chunks guardados: 1 = IDs de 8 bits (Fase 1), 2 = IDs de 16 bits (Fase 2+). */
+export const CHUNK_FORMAT = 2;
 
 const DB_NAME = 'blockworld-ultimate';
 const DB_VERSION = 1;
@@ -40,6 +43,35 @@ export function rleDecode(enc, size) {
     out.fill(v, o, Math.min(size, o + run)); o += run;
   }
   return out;
+}
+
+// ── RLE de 16 bits (formato 2): pares (ID, repeticiones 1..65535) en un Uint16Array ──
+export function rleEncode16(src) {
+  let buf = new Uint16Array(1024);
+  let o = 0, i = 0;
+  const n = src.length;
+  while (i < n) {
+    const v = src[i]; let run = 1;
+    while (i + run < n && src[i + run] === v && run < 65535) run++;
+    if (o + 2 > buf.length) { const nb = new Uint16Array(buf.length * 2); nb.set(buf); buf = nb; }
+    buf[o++] = v; buf[o++] = run; i += run;
+  }
+  return buf.slice(0, o);
+}
+export function rleDecode16(enc, size) {
+  const out = new Uint16Array(size);
+  let o = 0;
+  for (let i = 0; i + 1 < enc.length && o < size; i += 2) {
+    const v = enc[i], run = enc[i + 1];
+    out.fill(v, o, Math.min(size, o + run)); o += run;
+  }
+  return out;
+}
+/** Decodifica un registro de chunk guardado en cualquier formato (migra el formato 1 a 16 bits). */
+export function decodeChunkRecord(rec) {
+  if (!rec || !rec.b) return null;
+  if (rec.f === 2) return rleDecode16(rec.b, CHUNK_VOLUME);
+  return Uint16Array.from(rleDecode(rec.b, CHUNK_VOLUME));
 }
 
 function reqP(req) { return new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); }); }
@@ -130,8 +162,7 @@ class ChunkStore {
     let rec;
     if (!this.store.db) rec = this.store.memChunks.get(key);
     else rec = await reqP(this.store.db.transaction('chunks').objectStore('chunks').get(key));
-    if (!rec) return null;
-    return rleDecode(rec.b, 16 * 16 * 128);
+    return decodeChunkRecord(rec);
   }
   /** Encola la escritura (se agrupan en una sola transacción). Devuelve una promesa que se cumple al guardarse. */
   saveChunk(cx, cz, blocks) {
@@ -155,10 +186,10 @@ class ChunkStore {
   }
   async _flush(batch) {
     if (!batch.length) return;
-    if (!this.store.db) { for (const [k, v] of batch) this.store.memChunks.set(k, { b: rleEncode(v), v: GENERATOR_VERSION }); return; }
+    if (!this.store.db) { for (const [k, v] of batch) this.store.memChunks.set(k, { b: rleEncode16(v), f: CHUNK_FORMAT, v: GENERATOR_VERSION }); return; }
     const tx = this.store.db.transaction('chunks', 'readwrite');
     const os = tx.objectStore('chunks');
-    for (const [k, v] of batch) os.put({ b: rleEncode(v), v: GENERATOR_VERSION, game: VERSION }, k);
+    for (const [k, v] of batch) os.put({ b: rleEncode16(v), f: CHUNK_FORMAT, v: GENERATOR_VERSION, game: VERSION }, k);
     await txDone(tx);
   }
   async flush() { while (this.flushing) await this.flushing; }

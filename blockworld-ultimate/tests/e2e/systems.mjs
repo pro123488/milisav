@@ -3,7 +3,7 @@ import { withPage, frames } from '../../tools/pw.mjs';
 const ok = (name, cond, extra = '') => console.log((cond ? 'PASS ' : 'FAIL ') + name + (extra ? ' — ' + extra : ''));
 await withPage('index.html?autostart=survival&rd=3&seed=flat3&type=flat&mobs=all&structures=0', async (page) => {
   await page.waitForTimeout(500);
-  await page.evaluate(() => { const g = window.__game; g.renderer.setPixelRatio(0.25); g._resize(); });
+  await page.evaluate(() => { const g = window.__game; g.renderer.setPixelRatio(0.25); g._resize(); g.settings.sensitivity = 0; /* la cámara la fija la prueba: el ratón capturado no debe girarla */ });
   await page.click('#gl'); await frames(page, 3);
   const r = await page.evaluate(async () => {
     const g = window.__game, w = g.world, out = {};

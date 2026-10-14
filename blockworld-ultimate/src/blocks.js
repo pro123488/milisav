@@ -1,7 +1,13 @@
 // Registro de bloques basado en datos. Sin dependencias del DOM (se puede probar en Node).
 // Los IDs son PERSISTENTES (se guardan en los mundos): nunca reutilices ni reordenes, solo añade al final.
+// Desde la Fase 2 los chunks guardan IDs de 16 bits (hasta MAX_BLOCKS). Cada ESTADO de un bloque con
+// orientación o nivel (escaleras, puertas, fluidos...) es un ID propio dentro de una "familia".
+//
+// Rangos reservados: 0-100 Fase 1 · 101-299 Fase 2 (construcción, fluidos, cultivos) · 300-499 Fase 3 (aldeas)
+// · 500-699 Fase 4 (jefes) · 700-899 Fase 5 (Dimensión Oscura) · 900-1299 Fase 6 (maquinaria y transporte).
 //
 // Orden de caras en todo el motor: 0:+X 1:-X 2:+Y(arriba) 3:-Y(abajo) 4:+Z 5:-Z
+// Orientación horizontal (facing): 0 = Norte (−Z), 1 = Este (+X), 2 = Sur (+Z), 3 = Oeste (−X).
 
 /** @typedef {{id:number,key:string,name:string,tiles:string[],hardness:number,tool:?string,harvest:number,
  *  solid:boolean,opaque:boolean,cull:boolean,shape:string,height:number,light:number,atten:number,drops:any,
@@ -11,10 +17,12 @@
 export const TOOL_TYPES = ['pickaxe', 'axe', 'shovel', 'hoe', 'sword'];
 
 /** @type {Block[]} */
-export const BLOCKS = new Array(256).fill(null);
+export const MAX_BLOCKS = 4096;
+export const BLOCKS = new Array(MAX_BLOCKS).fill(null);
 const byKey = new Map();
 
 function def(id, key, name, o = {}) {
+  if (!(id >= 0 && id < MAX_BLOCKS)) throw new Error('ID de bloque fuera de rango: ' + id + ' ' + key);
   if (BLOCKS[id]) throw new Error('ID de bloque duplicado: ' + id + ' ' + key);
   if (byKey.has(key)) throw new Error('Clave de bloque duplicada: ' + key);
   let tiles = o.tiles ?? key;
@@ -24,7 +32,7 @@ function def(id, key, name, o = {}) {
     tiles = [tiles.east ?? side, tiles.west ?? side, top, bottom, tiles.south ?? side, tiles.north ?? side];
   }
   const shape = o.shape ?? 'cube';
-  const solid = o.solid ?? (shape === 'cube' || shape === 'slab' || shape === 'farmland');
+  const solid = o.solid ?? (shape === 'cube' || shape === 'slab' || shape === 'farmland' || shape === 'box');
   const opaque = o.opaque ?? (shape === 'cube');
   const b = {
     id, key, name, tiles,
@@ -54,6 +62,16 @@ function def(id, key, name, o = {}) {
     stage: o.stage ?? 0,
     next: o.next ?? null,             // siguiente etapa de crecimiento
     group: o.group ?? null,
+    // ── Fase 2: formas de cajas, orientación y estados ──
+    family: o.family ?? null,         // stairs | ladder | door | fence | wall | gate | trapdoor (ver shapes.js)
+    famBase: o.famBase ?? id,         // ID de la variante base de la familia
+    facing: o.facing ?? 0,            // 0 N, 1 E, 2 S, 3 O
+    top: o.top ?? 0,                  // escalera/trampilla en la mitad superior
+    open: o.open ?? 0,                // puerta/trampilla/puerta de valla abierta
+    upper: o.upper ?? 0,              // mitad superior de una puerta
+    level: o.level ?? 0,              // fluidos: 0 fuente, 1..7 corriente, 8 cayendo
+    climbable: o.climbable ?? false,  // escaleras de mano
+    pick: o.pick ?? null,             // objeto que da "copiar bloque" (clic central) si no es el propio bloque
   };
   BLOCKS[id] = b;
   byKey.set(key, b);
@@ -172,7 +190,7 @@ for (const [k, name, base, seedItem, harvestItem] of CROPS) {
 const plant = (id, key, name, o = {}) => def(id, key, name, {
   shape: 'cross', tiles: key, solid: false, opaque: false, atten: 0, hardness: 0, sound: 'plant', replaceable: true, plantOn: 'soil', group: 'plant', ...o,
 });
-plant(82, 'tall_grass', 'Hierba alta', { drops: [{ item: 'seed_wheat', chance: 0.12 }, { item: 'carrot', chance: 0.015 }, { item: 'potato', chance: 0.015 }] });
+plant(82, 'tall_grass', 'Hierba alta', { drops: [{ item: 'seed_wheat', chance: 0.12 }, { item: 'carrot', chance: 0.015 }, { item: 'potato', chance: 0.015 }, { item: 'tomato', chance: 0.012 }, { item: 'corn', chance: 0.012 }] });
 plant(83, 'fern', 'Helecho', { drops: [{ item: 'seed_wheat', chance: 0.08 }] });
 plant(84, 'flower_red', 'Amapola roja');
 plant(85, 'flower_yellow', 'Flor dorada');
@@ -194,6 +212,94 @@ plant(99, 'flower_pink', 'Peonía rosa');
 // ── Bloques de relleno para futuras fases ─────────────────────────
 def(100, 'lava_rock_bricks', 'Ladrillos volcánicos', { tiles: 'basalt_bricks', hardness: 3, tool: PICK, harvest: 2, sound: 'stone' });
 
+// ══════════════════════ FASE 2: construcción avanzada y mundo vivo ══════════════════════
+const DIR_SUFFIX = ['n', 'e', 's', 'o'];
+const copyOf = (key) => { const b = byKey.get(key); return { tiles: b.tiles.slice(), hardness: b.hardness, tool: b.tool, harvest: b.harvest, sound: b.sound }; };
+
+// Escaleras de bloque: 5 materiales × 4 orientaciones × (normal | invertida). ID = base + facing + 4·top.
+// La parte alta queda hacia `facing` (lejos del jugador que la coloca).
+export const STAIRS = [
+  ['planks', 'Escalera de tablones', 101], ['cobble', 'Escalera de adoquín', 109], ['stonebricks', 'Escalera de piedra tallada', 117],
+  ['bricks', 'Escalera de ladrillo', 125], ['sandstone', 'Escalera de arenisca', 133],
+];
+for (const [mat, name, base] of STAIRS) {
+  const baseKey = `stairs_${mat}`;
+  for (let top = 0; top < 2; top++) for (let f = 0; f < 4; f++) {
+    const id = base + f + 4 * top;
+    def(id, id === base ? baseKey : `${baseKey}_${DIR_SUFFIX[f]}${top ? '_inv' : ''}`, id === base ? name : `${name} (${DIR_SUFFIX[f].toUpperCase()}${top ? ', invertida' : ''})`, {
+      ...copyOf(mat), shape: 'box', family: 'stairs', famBase: base, facing: f, top, atten: 15, // dan sombra (techos)
+      placeable: id === base, drops: baseKey, pick: baseKey,
+    });
+  }
+}
+
+// Escalera de mano: facing = lado donde está el muro que la sujeta.
+for (let f = 0; f < 4; f++) {
+  def(141 + f, f === 0 ? 'ladder' : `ladder_${DIR_SUFFIX[f]}`, f === 0 ? 'Escalera de mano' : `Escalera de mano (${DIR_SUFFIX[f].toUpperCase()})`, {
+    tiles: 'ladder', shape: 'box', family: 'ladder', famBase: 141, facing: f, hardness: 0.4, tool: AXE, sound: 'wood',
+    climbable: true, plantOn: 'wall', placeable: f === 0, drops: 'ladder', pick: 'ladder',
+  });
+}
+
+// Puertas (2 bloques de alto). ID = base + facing + 4·abierta + 8·mitad superior.
+// facing = lado de la celda donde queda la hoja cerrada. El objeto que las coloca es door_wood / door_iron.
+for (const [kind, name, base, o] of [
+  ['wood', 'Puerta de madera', 145, { hardness: 3, tool: AXE, sound: 'wood' }],
+  ['iron', 'Puerta de hierro', 161, { hardness: 5, tool: PICK, harvest: 1, sound: 'metal' }],
+]) {
+  for (let upper = 0; upper < 2; upper++) for (let open = 0; open < 2; open++) for (let f = 0; f < 4; f++) {
+    const id = base + f + 4 * open + 8 * upper;
+    def(id, `door_${kind}_${DIR_SUFFIX[f]}${open ? '_abierta' : ''}${upper ? '_sup' : ''}`, `${name}${upper ? ' (mitad superior)' : ''}`, {
+      ...o, tiles: `door_${kind}_${upper ? 'upper' : 'lower'}`, shape: 'box', family: 'door', famBase: base, facing: f, open, upper,
+      interact: 'door', plantOn: upper ? 'door_upper' : 'door_lower', placeable: false, drops: upper ? null : `door_${kind}`, pick: `door_${kind}`,
+    });
+  }
+}
+
+// Vallas y muros (las conexiones con los vecinos se calculan al mallar y en la física).
+def(177, 'fence_wood', 'Valla de madera', { ...copyOf('planks'), shape: 'box', family: 'fence' });
+def(178, 'wall_cobble', 'Muro de adoquín', { ...copyOf('cobble'), shape: 'box', family: 'wall' });
+
+// Puerta de valla. ID = base + facing + 4·abierta (facing: hacia dónde se abren las hojas).
+for (let open = 0; open < 2; open++) for (let f = 0; f < 4; f++) {
+  const id = 179 + f + 4 * open;
+  def(id, id === 179 ? 'gate_wood' : `gate_wood_${DIR_SUFFIX[f]}${open ? '_abierta' : ''}`, 'Puerta de valla', {
+    ...copyOf('planks'), shape: 'box', family: 'gate', famBase: 179, facing: f, open, interact: 'gate',
+    placeable: id === 179, drops: 'gate_wood', pick: 'gate_wood', solid: !open,
+  });
+}
+
+// Trampilla de madera. ID = base + facing + 4·abierta + 8·arriba (facing: lado de la bisagra).
+for (let top = 0; top < 2; top++) for (let open = 0; open < 2; open++) for (let f = 0; f < 4; f++) {
+  const id = 187 + f + 4 * open + 8 * top;
+  def(id, id === 187 ? 'trapdoor_wood' : `trapdoor_wood_${DIR_SUFFIX[f]}${open ? '_abierta' : ''}${top ? '_arriba' : ''}`, 'Trampilla de madera', {
+    tiles: 'trapdoor_wood', hardness: 3, tool: AXE, sound: 'wood', shape: 'box', family: 'trapdoor', famBase: 187, facing: f, open, top,
+    interact: 'trapdoor', placeable: id === 187, drops: 'trapdoor_wood', pick: 'trapdoor_wood',
+  });
+}
+
+// Fluidos que fluyen: nivel 1..7 (agua) o 1..3 (lava) = distancia a la fuente; 8 = cayendo.
+const fluidBase = (fluid) => ({
+  shape: 'fluid', fluid, solid: false, opaque: false, cull: true, atten: 1, hardness: 1000, drops: null, placeable: false,
+  replaceable: true, targetable: false, sound: 'water', tiles: fluid, light: fluid === 'lava' ? 15 : 0,
+});
+for (let L = 1; L <= 7; L++) def(202 + L, `water_flow_${L}`, 'Agua (corriente)', { ...fluidBase('water'), level: L });
+def(210, 'water_fall', 'Agua (cascada)', { ...fluidBase('water'), level: 8 });
+for (let L = 1; L <= 3; L++) def(210 + L, `lava_flow_${L}`, 'Lava (corriente)', { ...fluidBase('lava'), level: L });
+def(214, 'lava_fall', 'Lava (cascada)', { ...fluidBase('lava'), level: 8 });
+
+// Nuevos cultivos (4 etapas): tomate y maíz.
+for (const [k, name, base, harvest] of [['tomato', 'Tomatera', 215, 'tomato'], ['corn', 'Maíz', 219, 'corn']]) {
+  for (let s = 0; s < 4; s++) {
+    const key = `crop_${k}_${s}`, ripe = s === 3;
+    def(base + s, key, `${name} (etapa ${s + 1}/4)`, {
+      shape: 'cross', tiles: key, solid: false, opaque: false, atten: 0, hardness: 0, sound: 'plant', placeable: false,
+      plantOn: 'farmland', drops: ripe ? { item: harvest, min: 2, max: 4 } : harvest, randomTick: !ripe, stage: s,
+      next: ripe ? null : `crop_${k}_${s + 1}`, group: 'crop', pick: harvest,
+    });
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────
 export const Blocks = {
   list: BLOCKS,
@@ -211,19 +317,21 @@ export const Blocks = {
 };
 
 /** Tablas planas para acceso rápido en bucles calientes (mesher, físicas, luz). */
-export const B_SOLID = new Uint8Array(256);
-export const B_OPAQUE = new Uint8Array(256);
-export const B_ATTEN = new Uint8Array(256);
-export const B_LIGHT = new Uint8Array(256);
-export const B_HEIGHT = new Float32Array(256);
-export const B_FLUID = new Uint8Array(256); // 0 no, 1 agua, 2 lava
-export const B_SHAPE = new Uint8Array(256); // 0 none,1 cube,2 cross,3 fluid,4 torch,5 slab,6 farmland
-export const B_REPLACEABLE = new Uint8Array(256);
-export const B_TARGET = new Uint8Array(256);
-export const B_TRANS = new Uint8Array(256);   // se dibuja en la pasada translúcida (agua, hielo, vidrio)
-export const B_CULLGRP = new Uint16Array(256); // bloques con el mismo grupo ocultan sus caras entre sí
-export const B_SOUND = new Array(256).fill('stone');
-export const SHAPE_ID = { none: 0, cube: 1, cross: 2, fluid: 3, torch: 4, slab: 5, farmland: 6 };
+export const B_SOLID = new Uint8Array(MAX_BLOCKS);
+export const B_OPAQUE = new Uint8Array(MAX_BLOCKS);
+export const B_ATTEN = new Uint8Array(MAX_BLOCKS);
+export const B_LIGHT = new Uint8Array(MAX_BLOCKS);
+export const B_HEIGHT = new Float32Array(MAX_BLOCKS);
+export const B_FLUID = new Uint8Array(MAX_BLOCKS); // 0 no, 1 agua, 2 lava
+export const B_FLUIDLVL = new Uint8Array(MAX_BLOCKS); // 0 fuente, 1..7 corriente, 8 cayendo
+export const B_SHAPE = new Uint8Array(MAX_BLOCKS); // ver SHAPE_ID
+export const B_REPLACEABLE = new Uint8Array(MAX_BLOCKS);
+export const B_TARGET = new Uint8Array(MAX_BLOCKS);
+export const B_TRANS = new Uint8Array(MAX_BLOCKS);   // se dibuja en la pasada translúcida (agua, hielo, vidrio)
+export const B_CULLGRP = new Uint16Array(MAX_BLOCKS); // bloques con el mismo grupo ocultan sus caras entre sí
+export const B_CLIMB = new Uint8Array(MAX_BLOCKS);   // trepable (escalera de mano)
+export const B_SOUND = new Array(MAX_BLOCKS).fill('stone');
+export const SHAPE_ID = { none: 0, cube: 1, cross: 2, fluid: 3, torch: 4, slab: 5, farmland: 6, box: 7 };
 for (const b of BLOCKS) {
   if (!b) continue;
   B_SOLID[b.id] = b.solid ? 1 : 0;
@@ -232,6 +340,8 @@ for (const b of BLOCKS) {
   B_LIGHT[b.id] = b.light;
   B_HEIGHT[b.id] = b.height;
   B_FLUID[b.id] = b.fluid === 'water' ? 1 : b.fluid === 'lava' ? 2 : 0;
+  B_FLUIDLVL[b.id] = b.level;
+  B_CLIMB[b.id] = b.climbable ? 1 : 0;
   B_SHAPE[b.id] = SHAPE_ID[b.shape] ?? 1;
   B_REPLACEABLE[b.id] = b.replaceable ? 1 : 0;
   B_TARGET[b.id] = b.targetable ? 1 : 0;
