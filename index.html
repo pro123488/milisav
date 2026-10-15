@@ -496,16 +496,25 @@ h1, h2, h3 { overflow-wrap: anywhere; }
 .chip { padding: 10px 20px; border-radius: var(--r-pill); border: 1.5px solid var(--lt-a10); background: var(--lt-card); font-weight: 700; font-size: .88rem; cursor: pointer; transition: all .2s; }
 .chip:hover { border-color: var(--lt-fg); }
 .chip[aria-pressed="true"] { background: var(--solid); border-color: var(--solid); color: var(--solid-fg); }
-.props { display: grid; gap: 22px; grid-template-columns: 1fr; }
+.props { display: flex; gap: 22px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 6px; padding: 12px 6px 30px; margin-inline: -6px; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.props:focus-visible { outline: 3px solid var(--ac-on-lt); outline-offset: 2px; border-radius: var(--r-lg); }
+.props-nav { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 4px; }
+.props-nav[hidden] { display: none; }
+.props-nav button { display: grid; place-items: center; width: 46px; height: 46px; border: 0; border-radius: var(--r-circle); background: var(--solid); color: var(--solid-fg); cursor: pointer; transition: opacity .2s, transform .2s; }
+.props-nav button:hover:not(:disabled) { transform: translateY(-2px); }
+.props-nav button:focus-visible { outline: 3px solid var(--ac-on-lt); outline-offset: 3px; }
+.props-nav button:disabled { opacity: .35; cursor: default; }
+.props-nav .icon { width: 22px; height: 22px; }
+.props-nav .prev .icon { transform: rotate(180deg); }
 .props:empty { display: none; }
-.prop { display: flex; flex-direction: column; overflow: hidden; background: var(--cl-bg); border: var(--cl-bw) solid var(--cl-line); border-radius: var(--r-lg); box-shadow: var(--cl-sh); transition: transform .3s, box-shadow .3s; }
+.prop { flex: 0 0 clamp(262px, 82vw, 360px); scroll-snap-align: start; display: flex; flex-direction: column; overflow: hidden; background: var(--cl-bg); border: var(--cl-bw) solid var(--cl-line); border-radius: var(--r-lg); box-shadow: var(--cl-sh); transition: transform .3s, box-shadow .3s; }
 .prop:hover { transform: translateY(var(--cl-lift)); box-shadow: var(--cl-sh-h); }
-.prop-media { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: linear-gradient(135deg, var(--dk-3), var(--dk)); }
-.prop-media img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s; }
+.prop-media { position: relative; aspect-ratio: 1 / 1; overflow: hidden; background: linear-gradient(135deg, var(--dk-3), var(--dk)); }
+.prop-media img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; object-position: center 40%; transition: transform .6s; }
 .prop:hover .prop-media img { transform: scale(1.06); }
 .prop-fallback { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ac-a50); }
 .prop-fallback .icon { width: 56px; height: 56px; }
-.prop-badges { position: absolute; left: 14px; top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+.prop-badges { z-index: 2; position: absolute; left: 14px; top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
 .badge { padding: 5px 12px; border-radius: var(--r-pill); background: var(--ac); color: var(--ac-ink); font-family: var(--label-font); font-size: .72rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
 .badge-dark { background: color-mix(in srgb, var(--dk) 85%, transparent); color: var(--ac-on-dk); backdrop-filter: blur(6px); }
 .prop-body { display: flex; flex-direction: column; gap: 10px; padding: 22px 22px 24px; flex: 1; }
@@ -516,6 +525,10 @@ h1, h2, h3 { overflow-wrap: anywhere; }
 .prop-loc .icon { color: var(--ac-on-lt); }
 .prop-feats { display: flex; flex-wrap: wrap; gap: 8px 18px; padding-top: 14px; margin-top: auto; border-top: 1px solid var(--lt-a10); color: var(--lt-muted); font-size: .86rem; font-weight: 600; }
 .prop-feats li { display: inline-flex; align-items: center; gap: 7px; }
+.prop-detail { margin: 0; color: var(--lt-muted); font-size: .88rem; line-height: 1.5; }
+.prop-link { align-self: flex-start; padding: 6px 0; font-size: .86rem; font-weight: 700; color: var(--ac-on-lt); text-underline-offset: 3px; }
+.props-more { margin-top: 32px; text-align: center; color: var(--lt-muted); }
+.props-more a { color: var(--ac-on-lt); font-weight: 700; text-underline-offset: 3px; }
 .prop-cta { margin-top: 6px; align-self: flex-start; padding: 11px 20px; font-size: .9rem; }
 .ig-empty { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; align-items: center; padding: clamp(26px, 5vw, 56px); border-radius: var(--r-xl); color: var(--dk-fg); background: radial-gradient(500px 300px at 90% 0%, var(--ac-a20), transparent 60%), linear-gradient(150deg, var(--dk-3), var(--dk) 65%); }
 .ig-empty[hidden] { display: none; }
@@ -628,7 +641,6 @@ h1, h2, h3 { overflow-wrap: anywhere; }
   .svc-row .chips { grid-column: 2; }
   .svc-row .b-link { grid-column: 3; grid-row: 1 / span 2; align-self: center; }
   .hero-visual { width: min(100%, 400px); }
-  .props { grid-template-columns: repeat(2, 1fr); }
   .testis { grid-template-columns: repeat(2, 1fr); }
   .perks { grid-template-columns: 1fr 1fr; }
   .field-row { grid-template-columns: 1fr 1fr; }
@@ -656,7 +668,6 @@ h1, h2, h3 { overflow-wrap: anywhere; }
   .sim-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 520px); gap: 90px; }
   .how-grid { grid-template-columns: .8fr 1.2fr; gap: 90px; }
   .how-aside { position: sticky; top: 110px; align-self: start; margin-bottom: 0; }
-  .props { grid-template-columns: repeat(3, 1fr); }
   .testis { grid-template-columns: repeat(3, 1fr); }
   .about { grid-template-columns: .9fr 1.1fr; gap: 90px; }
   .faq-grid { grid-template-columns: .85fr 1.15fr; gap: 80px; }
@@ -1157,7 +1168,12 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
       </header>
 
       <div class="filters" id="prop-filters" role="group" aria-label="Filtrar propiedades" hidden></div>
-      <div class="props" id="prop-list" aria-live="polite"></div>
+      <div class="props-nav" id="prop-nav" hidden>
+        <button type="button" class="prev" id="prop-prev" aria-label="Propiedades anteriores"><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+        <button type="button" class="next" id="prop-next" aria-label="Más propiedades"><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+      </div>
+      <div class="props" id="prop-list" aria-live="polite" role="region" aria-label="Propiedades disponibles: usa las flechas o desliza para ver más" tabindex="0"></div>
+      <p class="props-more" id="prop-more" hidden>Estas son algunas de nuestras propiedades. <a href="https://www.instagram.com/inmobiliariabosch/" target="_blank" rel="noopener">Mira todas en Instagram</a>.</p>
 
       <!-- Se muestra mientras no haya propiedades cargadas en DATOS (arriba, en la parte editable del script) -->
       <div class="ig-empty reveal" id="prop-empty">
@@ -1319,11 +1335,13 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
       Campos (solo "titulo" es obligatorio):
         titulo, operacion ("Venta" | "Alquiler"),
         tipo, ubicacion, precio (texto libre), habitaciones, banos,
-        area, imagen ("images/casa-1.jpg")
+        area, detalle (una línea con más datos), imagen ("images/casa-1.jpg"),
+        enlace (dirección de la publicación en Instagram, opcional)
       Ejemplo (quita los // para activarlo):
         // { titulo: "Casa de 3 habitaciones con patio", operacion: "Venta", tipo: "Casa",
         //   ubicacion: "Tu ciudad, barrio", precio: "$ 350.000.000", habitaciones: 3, banos: 2,
-        //   area: "120 m²", imagen: "images/casa-1.jpg" },
+        //   area: "120 m²", detalle: "Estrato 4 · Garaje doble", imagen: "images/casa-1.jpg",
+        //   enlace: "https://www.instagram.com/p/XXXXXXXXXXX/" },
 
    2) TESTIMONIOS: agrega testimonios REALES (con permiso). Mientras
       esté vacío, la sección no se muestra.
@@ -1340,6 +1358,169 @@ html[data-tarjetas="soft"] .b:hover { box-shadow: var(--cl-sh-h); }
       actualizarlas cada mes, cambia los números y la "fecha".
    ========================================================== */
 window.PROPIEDADES = [
+  {
+    titulo: "Apartamentos para estrenar con diseño bioclimático",
+    operacion: "Venta",
+    tipo: "Apartamento",
+    habitaciones: "2 o 3",
+    area: "205 y 485 m²",
+    detalle: "Una sola torre, 1 apartamento por piso · 4 parqueaderos y 2 depósitos · Spa, gimnasio, piscina y sky bar",
+    imagen: "images/prop-01-apartamentos-estreno.jpg",
+    enlace: "https://www.instagram.com/p/C0zS59JLuTC/",
+  },
+  {
+    titulo: "Residencias Mercedes-Benz en Brickell",
+    operacion: "Venta",
+    tipo: "Apartamento",
+    ubicacion: "Brickell, Miami",
+    habitaciones: "Estudio a 3",
+    detalle: "Dos torres de 67 pisos · Inversión de alta valorización y con beneficios tributarios",
+    imagen: "images/prop-02-mercedes-benz-miami.jpg",
+    enlace: "https://www.instagram.com/p/C9kdbtIuYTQ/",
+  },
+  {
+    titulo: "Apartamento exclusivo en Riomar",
+    operacion: "Venta",
+    tipo: "Apartamento",
+    ubicacion: "Riomar, Barranquilla",
+    precio: "$ 1.000.000.000",
+    habitaciones: 4,
+    banos: 5,
+    area: "460 m²",
+    detalle: "Terraza · Garaje cubierto para 2 vehículos · Vigilancia privada 24 horas",
+    imagen: "images/prop-03-riomar-460m2.jpg",
+    enlace: "https://www.instagram.com/p/C8xGmtWOXB_/",
+  },
+  {
+    titulo: "Casa en conjunto residencial en Villacampestre",
+    operacion: "Venta",
+    tipo: "Casa",
+    ubicacion: "Villacampestre, Barranquilla",
+    precio: "$ 800.000.000",
+    habitaciones: 3,
+    area: "148 m²",
+    detalle: "Administración $613.000 · Estudio con balcón · Patio y cuarto de servicio",
+    imagen: "images/prop-04-casa-villacampestre.jpg",
+    enlace: "https://www.instagram.com/p/DeaRDF0xzk8/",
+  },
+  {
+    titulo: "3 locales en Alto Prado",
+    operacion: "Venta",
+    tipo: "Local comercial",
+    ubicacion: "Alto Prado, Barranquilla",
+    precio: "$ 300.000.000",
+    area: "92 m²",
+    detalle: "Valor de negociación · Exentos de impuesto predial · Administración $800.426",
+    imagen: "images/prop-05-locales-alto-prado.jpg",
+    enlace: "https://www.instagram.com/p/DeXxdxxxbIW/",
+  },
+  {
+    titulo: "Apartamento remodelado en la Calle 93",
+    operacion: "Venta",
+    tipo: "Apartamento",
+    ubicacion: "Calle 93, Barranquilla",
+    habitaciones: 2,
+    banos: 2,
+    area: "68,35 m²",
+    detalle: "5.º piso con vista a la ciudad · Terraza de 20 m² · Cocina abierta tipo loft",
+    imagen: "images/prop-06-apto-calle-93.jpg",
+    enlace: "https://www.instagram.com/p/Ddr21NwBP9Y/",
+  },
+  {
+    titulo: "Propiedad de 800 m² en el norte de Barranquilla",
+    operacion: "Venta",
+    tipo: "Propiedad",
+    ubicacion: "Norte de Barranquilla",
+    precio: "$ 2.600.000.000",
+    area: "800 m²",
+    detalle: "Ideal para inversión, un proyecto inmobiliario, una familia numerosa o una empresa",
+    imagen: "images/prop-07-propiedad-norte-800m2.jpg",
+    enlace: "https://www.instagram.com/p/DdomBiMxfnV/",
+  },
+  {
+    titulo: "Apartamento con vista a la ciudad",
+    operacion: "Venta",
+    tipo: "Apartamento",
+    ubicacion: "Calle 86 con 42B, Barranquilla",
+    precio: "$ 430.000.000",
+    habitaciones: 2,
+    detalle: "Torre de 12 pisos · Administración $530.000 · Piscina, gimnasio y salón de eventos",
+    imagen: "images/prop-08-apto-calle-86.jpg",
+    enlace: "https://www.instagram.com/p/DdT7DeOx5Hj/",
+  },
+  {
+    titulo: "Apartamento dúplex en Villacountry",
+    operacion: "Venta",
+    tipo: "Dúplex",
+    ubicacion: "Villacountry, Barranquilla",
+    precio: "$ 600.000.000",
+    habitaciones: 3,
+    area: "172 m²",
+    detalle: "Piso 6 · Estrato 5 · 2 parqueaderos · Administración $1.015.000",
+    imagen: "images/prop-09-duplex-villacountry.jpg",
+    enlace: "https://www.instagram.com/p/DdHaQHsxloc/",
+  },
+  {
+    titulo: "Apartamento en el sector Boston",
+    operacion: "Venta",
+    tipo: "Apartamento",
+    ubicacion: "Boston, Barranquilla",
+    precio: "$ 230.000.000",
+    area: "79 m²",
+    detalle: "5.º piso · 1 parqueadero · Administración $250.000 · Libre de deudas",
+    imagen: "images/prop-10-apto-boston.jpg",
+    enlace: "https://www.instagram.com/p/DcRy8GNkZpY/",
+  },
+  {
+    titulo: "Casa en el barrio Santa Ana",
+    operacion: "Venta",
+    tipo: "Casa",
+    ubicacion: "Santa Ana, Barranquilla",
+    precio: "$ 780.000.000",
+    habitaciones: 4,
+    banos: 3,
+    area: "336 m²",
+    detalle: "Estrato 4 · Garaje doble · Terraza y patio · Se escuchan ofertas",
+    imagen: "images/prop-11-casa-santa-ana.jpg",
+    enlace: "https://www.instagram.com/p/DbyM03oxyV-/",
+  },
+  {
+    titulo: "Apartamento en Edificio Madeira",
+    operacion: "Venta",
+    tipo: "Apartamento",
+    ubicacion: "Paraíso, Barranquilla",
+    precio: "$ 480.000.000",
+    habitaciones: 3,
+    banos: 2,
+    area: "76 m²",
+    detalle: "4.º piso · Estrato 4 · Parqueadero privado · Edificio de 8 años",
+    imagen: "images/prop-12-apto-madeira.jpg",
+    enlace: "https://www.instagram.com/p/Dbld31jkaxf/",
+  },
+  {
+    titulo: "Apartamento en Edificio Puerto Real",
+    operacion: "Venta",
+    tipo: "Apartamento",
+    ubicacion: "Barranquilla",
+    precio: "$ 360.000.000",
+    habitaciones: 3,
+    banos: 2,
+    area: "71,54 m²",
+    detalle: "3.er piso · Estrato 3 · Parqueadero privado · Administración $300.000",
+    imagen: "images/prop-13-apto-puerto-real.jpg",
+    enlace: "https://www.instagram.com/p/DblcVecEevX/",
+  },
+  {
+    titulo: "Bodega sobre la Vía 40",
+    operacion: "Venta",
+    tipo: "Bodega",
+    ubicacion: "Vía 40, Barranquilla",
+    precio: "$ 4.800.000.000",
+    area: "1.115 m²",
+    detalle: "4 parqueaderos · Oficinas en dos pisos · Portón para camiones · Energía de 440 V",
+    imagen: "images/prop-14-bodega-via-40.jpg",
+    enlace: "https://www.instagram.com/p/DajKGXYkeGL/",
+  },
 ];
 window.TESTIMONIOS = [
 ];
@@ -1845,6 +2026,7 @@ window.BANCOS = {
       loc.appendChild(document.createTextNode(p.ubicacion));
       body.appendChild(loc);
     }
+    if (p.detalle) body.appendChild(el("p", "prop-detail", p.detalle));
 
     var feats = el("ul", "prop-feats");
     if (p.tipo) feats.appendChild(feat("i-key", p.tipo));
@@ -1861,9 +2043,39 @@ window.BANCOS = {
     cta.appendChild(document.createTextNode(" Consultar"));
     cta.setAttribute("aria-label", "Consultar: " + p.titulo);
     body.appendChild(cta);
+    if (p.enlace) {
+      var more = el("a", "prop-link", "Ver publicación en Instagram");
+      more.href = p.enlace; more.target = "_blank"; more.rel = "noopener";
+      more.setAttribute("aria-label", "Ver publicación en Instagram: " + p.titulo + " (se abre en una pestaña nueva)");
+      body.appendChild(more);
+    }
 
     art.appendChild(body);
     return art;
+  }
+
+  // Carrusel: flechas para pasar de una propiedad a otra (también se puede deslizar o usar las flechas del teclado).
+  var navBox = $("#prop-nav"), prevBtn = $("#prop-prev"), nextBtn = $("#prop-next");
+  function updateNav() {
+    if (!navBox) return;
+    var more = list.scrollWidth > list.clientWidth + 4;
+    navBox.hidden = !more;
+    prevBtn.disabled = list.scrollLeft <= 2;
+    nextBtn.disabled = list.scrollLeft + list.clientWidth >= list.scrollWidth - 2;
+  }
+  if (navBox) {
+    var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    [prevBtn, nextBtn].forEach(function (btn, i) {
+      btn.addEventListener("click", function () {
+        list.scrollBy({ left: (i ? 1 : -1) * Math.max(240, list.clientWidth * 0.85), behavior: reduceMotion.matches ? "auto" : "smooth" });
+      });
+    });
+    var ticking = false;
+    list.addEventListener("scroll", function () {
+      if (ticking) return; ticking = true;
+      window.requestAnimationFrame(function () { ticking = false; updateNav(); });
+    }, { passive: true });
+    window.addEventListener("resize", updateNav);
   }
 
   function render(filter) {
@@ -1874,10 +2086,13 @@ window.BANCOS = {
         return p.operacion === filter;
       })
       .forEach(function (p) { list.appendChild(card(p)); });
+    list.scrollLeft = 0;
+    updateNav();
   }
 
   if (items.length) {
     emptyBox.hidden = true;
+    var moreBox = $("#prop-more"); if (moreBox) moreBox.hidden = false;
     var filters = ["Todas"];
     ["Venta", "Alquiler"].forEach(function (op) {
       if (items.some(function (p) { return p.operacion === op; })) filters.push(op);

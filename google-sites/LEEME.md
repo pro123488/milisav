@@ -16,16 +16,16 @@ y sus datos adentro. Se ven igual que en `index.html` (el sitio en un solo archi
 | 05 | `05-simulador.html` | Simulador y tasas de banco | 2940 px · 1830 px | `#101338` |
 | 06 | `06-como-funciona.html` | Cómo funciona | 1550 px · 1110 px | `#ffffff` |
 | 07 | `07-tu-ejecutivo.html` | Tu ejecutivo | 1650 px · 1050 px | `#f3f2ff` |
-| 08 | `08-propiedades.html` | Propiedades | 1150 px · 950 px | `#ffffff` |
+| 08 | `08-propiedades.html` | Propiedades | 1360 px · 1500 px | `#ffffff` |
 | 09 | `09-testimonios.html` | Testimonios *(opcional)* | según el contenido | `#101338` |
 | 10 | `10-preguntas.html` | Preguntas frecuentes | 1160 px · 870 px | `#f3f2ff` |
 | 11 | `11-contacto.html` | Contacto | 1680 px · 1080 px | `#080a24` |
 | 12 | `12-pie.html` | Pie de página | 1160 px · 670 px | `#04051a` |
 
 - Las partes *opcionales* puedes omitirlas. Si no pegas la parte 09 (testimonios), no hace falta tocar nada más.
-- **Alto del bloque:** Google Sites usa un alto fijo para cada bloque. Usa el número de **celular** (el mayor) para que nada se
-  corte en ningún aparato: en computador sobrará un poco de espacio, pero tiene el mismo color y no se nota. Si prefieres que se
-  vea más ajustado en computador, usa el de computador (en celular aparecerá una barra para bajar dentro del bloque).
+- **Alto del bloque:** Google Sites usa un alto fijo para cada bloque. Usa el **mayor** de los dos números para que nada se
+  corte en ningún aparato: en el otro sobrará un poco de espacio, pero tiene el mismo color y no se nota. Si prefieres que se
+  vea más ajustado, usa el más pequeño (en el aparato que lo necesite aparecerá una barra para bajar dentro del bloque).
 - **Color de fondo:** si ves franjas de otro color a los lados de un bloque, ponle a esa sección de Google Sites el color de la tabla
   (en la sección: ícono de pintura → *Personalizado* → pega el código `#...`).
 
@@ -46,8 +46,10 @@ y sus datos adentro. Se ven igual que en `index.html` (el sitio en un solo archi
   Hazlo igual con `+573023104354` (el enlace para llamar, en las partes 11 y 12). Es el 302 310 4354 con el 57 de Colombia.
 - **Tasas de banco (parte 05):** al principio del código está `BANCOS`. Cambia los números cada mes y la `fecha`.
   Cada tasa es `[desde, hasta]` en % E.A.; `null` = el banco no ofrece esa modalidad. La página muestra las 3 más bajas.
-- **Propiedades (parte 08):** al principio del código está `PROPIEDADES`, con un ejemplo. Las fotos deben ser una dirección
-  completa (`https://...`), porque aquí no hay carpeta de imágenes. Al agregar propiedades, aumenta el alto del bloque.
+- **Propiedades (parte 08):** ya trae las 14 propiedades de Instagram, en un carrusel (flechas o deslizar). Al principio del código
+  está `PROPIEDADES`: para agregar una, copia un bloque `Ellipsis`, pégalo debajo y cambia los datos; para quitar una vendida,
+  borra su bloque completo. Las fotos están en la carpeta `images/` de GitHub y se llaman desde `IMAGENES`; para una foto nueva,
+  súbela a esa carpeta o usa cualquier dirección completa (`https://...`). Como es un carrusel, el alto del bloque casi no cambia.
 - **Testimonios (parte 09):** solo testimonios reales y con permiso. Si la usas, en la parte 10 (Preguntas) cambia
   `--parte-anterior` a `#101338` para que la diagonal encaje.
 - **Foto del ejecutivo (parte 07):** pega la dirección completa de la imagen en `FOTO_EJECUTIVO`.

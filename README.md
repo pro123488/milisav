@@ -62,8 +62,13 @@ Los formularios y el simulador toman el número automáticamente de esos enlaces
 
 En el bloque **`DATOS EDITABLES`** (cerca del final de `index.html`) hay instrucciones y ejemplos:
 
-- **`PROPIEDADES`**: agrega tus propiedades (las fotos van en la carpeta `images/`). Se crean solas las tarjetas y los
-  filtros (Venta, Alquiler). Mientras la lista esté vacía, la sección invita a ver las propiedades en Instagram.
+- **`PROPIEDADES`**: las propiedades que se muestran, en un carrusel con flechas. Ya trae **14 tomadas de las publicaciones
+  de Instagram** (@inmobiliariabosch), cada una con su foto de portada (carpeta `images/`), sus datos y un enlace a la
+  publicación. Para agregar una, copia un bloque `{ ... }` y cambia los datos (campos: `titulo`, `operacion`, `tipo`,
+  `ubicacion`, `precio`, `habitaciones`, `banos`, `area`, `detalle`, `imagen`, `enlace`); para quitar una vendida, borra su
+  bloque. Si mezclas Venta y Alquiler aparecen los filtros. Si la lista queda vacía, la sección invita a ver las
+  propiedades en Instagram. Los datos salen de lo que dicen las publicaciones: si un precio o un dato no aparece, es porque
+  la publicación no lo dice. Revisa que sigan disponibles.
   El servicio «Propiedades en Colombia y exterior» también lleva directo al Instagram.
 - **`TESTIMONIOS`**: agrega testimonios **reales** (con permiso de la persona). Mientras esté vacío, la sección no aparece.
 - **`SIM`**: valores iniciales del simulador (moneda, valor, porcentaje y plazo).
