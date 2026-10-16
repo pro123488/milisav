@@ -190,11 +190,21 @@ export function pieceToWorld(p, lx, lz) {
 const rotK = (p) => (p.facing - 2 + 4) % 4;
 
 // ── Distribución interior de cada pieza (camas y estaciones), compartida por el plan y la construcción ──
+const SMALL_STATIONS = ['barrel', 'loom', 'alchemy_table', 'lectern'];
+const LARGE_STATIONS = ['anvil', 'loom', 'barrel', 'alchemy_table', 'compost_bin'];
+/** Estación de trabajo de una casa (o null): casa pequeña la mitad de las veces, casa grande siempre. */
+function houseStation(p) {
+  if (p.type === 'house_small') return p.seed % 2 === 0 ? SMALL_STATIONS[(p.seed >>> 1) % SMALL_STATIONS.length] : null;
+  if (p.type === 'house_large') return LARGE_STATIONS[p.seed % LARGE_STATIONS.length];
+  return null;
+}
+const STATION_ID = () => ({ barrel: ID.BARREL, loom: ID.LOOM, alchemy_table: ID.ALCHEMY_TABLE, lectern: ID.LECTERN_S, anvil: ID.ANVIL_S, compost_bin: ID.COMPOST_BIN });
 function layoutOf(p) {
   const at = (lx, ly, lz) => { const [x, z] = pieceToWorld(p, lx, lz); return [x, p.y + ly, z]; };
+  const hs = houseStation(p);
   switch (p.type) {
-    case 'house_small': return { beds: [at(1, 1, 1)], stations: [] };
-    case 'house_large': return { beds: [at(1, 1, 1), at(5, 1, 1)], stations: [] };
+    case 'house_small': return { beds: [at(1, 1, 1)], stations: hs ? [{ pos: at(3, 1, 1), block: hs }] : [] };
+    case 'house_large': return { beds: [at(1, 1, 1), at(5, 1, 1)], stations: [{ pos: at(1, 1, 5), block: hs }] };
     case 'library': return { beds: [at(1, 1, 1)], stations: [{ pos: at(3, 1, 3), block: 'lectern' }] };
     case 'workshop': {
       const kinds = ['loom', 'barrel', 'alchemy_table'];
@@ -223,7 +233,7 @@ export function villagesNear(terrain, cx, cz, margin = 6) {
 export function villageFootprints(terrain, cx, cz) {
   const out = [];
   for (const v of villagesNear(terrain, cx, cz, 8)) {
-    for (const p of v.pieces) out.push([p.x0 - 1, p.z0 - 1, p.x1 + 1, p.z1 + 1]);
+    for (const p of v.pieces) out.push([p.x0 - 4, p.z0 - 4, p.x1 + 4, p.z1 + 4]); // margen: las copas no invaden las casas
     for (const r of v.roads) out.push([r[0] - 1, r[1] - 1, r[2] + 1, r[3] + 1]);
   }
   return out;
@@ -392,7 +402,8 @@ const BUILDERS = {
     door(P, 2, 4);
     P.fill(0, 4, 0, 4, 4, 4, 'ceil');
     P.roof(-1, -1, 5, 5, 4);
-    P.set(1, 1, 1, ID.BED); P.set(3, 1, 1, ID.WORKBENCH); P.set(3, 2, 1, ID.TORCH_N);
+    const hs = houseStation(P.p);
+    P.set(1, 1, 1, ID.BED); P.set(3, 1, 1, hs ? STATION_ID()[hs] : ID.WORKBENCH); P.set(3, 2, 1, ID.TORCH_N);
   },
   house_large(P) {
     P.site(9);
@@ -403,7 +414,7 @@ const BUILDERS = {
     P.fill(0, 4, 0, 6, 4, 6, 'ceil');
     P.roof(-1, -1, 7, 7, 4);
     P.set(1, 1, 1, ID.BED); P.set(5, 1, 1, ID.BED); P.chest(3, 1, 1, 'village');
-    P.set(1, 1, 5, ID.WORKBENCH); P.set(5, 1, 5, ID.FURNACE);
+    P.set(1, 1, 5, STATION_ID()[houseStation(P.p)]); P.set(5, 1, 5, ID.FURNACE); P.set(5, 1, 4, ID.WORKBENCH);
     P.set(3, 2, 1, ID.TORCH_N);
   },
   library(P) {

@@ -72,6 +72,11 @@ function def(id, key, name, o = {}) {
     level: o.level ?? 0,              // fluidos: 0 fuente, 1..7 corriente, 8 cayendo
     climbable: o.climbable ?? false,  // escaleras de mano
     pick: o.pick ?? null,             // objeto que da "copiar bloque" (clic central) si no es el propio bloque
+    // ── Fase 3 ──
+    boxes: o.boxes ?? null,           // modelo propio (family 'custom'): cajas en 1/16 orientadas al Norte
+    colBoxes: o.colBoxes ?? null,     // cajas de colisión del modelo propio (si difieren)
+    oriented: o.oriented ?? false,    // el modelo propio se gira según facing
+    container: o.container ?? 0,      // huecos de contenedor (cofre, barril)
   };
   BLOCKS[id] = b;
   byKey.set(key, b);
@@ -142,7 +147,7 @@ def(46, 'glass', 'Vidrio', { hardness: 0.3, sound: 'glass', opaque: false, cull:
 def(47, 'workbench', 'Mesa de trabajo', { tiles: { top: 'workbench_top', side: 'workbench_side', bottom: 'planks' }, hardness: 2.5, tool: AXE, sound: 'wood', interact: 'workbench' });
 def(48, 'furnace', 'Horno', { tiles: { top: 'furnace_top', side: 'furnace_side', south: 'furnace_front', bottom: 'furnace_top' }, hardness: 3.5, tool: PICK, harvest: 1, sound: 'stone', interact: 'furnace' });
 def(49, 'furnace_lit', 'Horno encendido', { tiles: { top: 'furnace_top', side: 'furnace_side', south: 'furnace_front_lit', bottom: 'furnace_top' }, hardness: 3.5, tool: PICK, harvest: 1, light: 13, drops: 'furnace', sound: 'stone', interact: 'furnace', placeable: false });
-def(50, 'chest', 'Cofre', { tiles: { top: 'chest_top', side: 'chest_side', south: 'chest_front', bottom: 'chest_top' }, hardness: 2.5, tool: AXE, sound: 'wood', interact: 'chest' });
+def(50, 'chest', 'Cofre', { tiles: { top: 'chest_top', side: 'chest_side', south: 'chest_front', bottom: 'chest_top' }, hardness: 2.5, tool: AXE, sound: 'wood', interact: 'chest', container: 27 });
 def(51, 'bed', 'Cama', { tiles: { top: 'bed_top', side: 'bed_side', bottom: 'planks' }, shape: 'slab', height: 0.5625, hardness: 0.3, sound: 'wood', interact: 'bed', opaque: false, atten: 0 });
 def(52, 'torch', 'Antorcha', { shape: 'torch', tiles: 'torch', solid: false, opaque: false, atten: 0, light: 14, hardness: 0.05, sound: 'wood', plantOn: 'torch' });
 def(53, 'torch_e', 'Antorcha de pared (+X)', { shape: 'torch', tiles: 'torch', solid: false, opaque: false, atten: 0, light: 14, hardness: 0.05, sound: 'wood', dir: 1, drops: 'torch', placeable: false, plantOn: 'torch' });
@@ -159,7 +164,7 @@ def(63, 'block_gold', 'Bloque de oro', { hardness: 4, tool: PICK, harvest: 2, so
 def(64, 'block_crystal', 'Bloque de cristal', { hardness: 5, tool: PICK, harvest: 3, sound: 'glass' });
 def(65, 'block_noctisite', 'Bloque de noctisita', { hardness: 12, tool: PICK, harvest: 4, sound: 'metal' });
 def(66, 'crystal_lamp', 'Lámpara de cristal', { hardness: 0.8, light: 15, sound: 'glass' });
-def(67, 'bookshelf_dummy', 'Reservado', { placeable: false, drops: null, hardness: 1 }); // reservado para fases futuras
+def(67, 'bookshelf', 'Librería', { tiles: { side: 'bookshelf', top: 'planks', bottom: 'planks' }, hardness: 1.5, tool: AXE, sound: 'wood', drops: { item: 'book', min: 1, max: 3 } }); // (Fase 3; antes reservado)
 
 // ── Agricultura ───────────────────────────────────────────────────
 def(68, 'farmland', 'Tierra arada', { tiles: { top: 'farmland_dry', side: 'dirt', bottom: 'dirt' }, shape: 'farmland', opaque: false, atten: 0, hardness: 0.6, tool: SHOVEL, drops: 'dirt', sound: 'dirt', soil: true, randomTick: true, placeable: false });
@@ -299,6 +304,37 @@ for (const [k, name, base, harvest] of [['tomato', 'Tomatera', 215, 'tomato'], [
     });
   }
 }
+
+// ══════════════════════ FASE 3: aldeas y comercio ══════════════════════
+def(300, 'path', 'Camino de tierra', { tiles: { top: 'path_top', side: 'path_side', bottom: 'dirt' }, shape: 'farmland', height: 0.9375, opaque: false, atten: 0, hardness: 0.6, tool: SHOVEL, drops: 'dirt', sound: 'dirt' });
+def(301, 'hay_bale', 'Paca de heno', { tiles: { top: 'hay_top', side: 'hay_side' }, hardness: 0.5, sound: 'plant' });
+def(302, 'barrel', 'Barril', { tiles: { top: 'barrel_top', side: 'barrel_side', bottom: 'barrel_bottom' }, hardness: 2.5, tool: AXE, sound: 'wood', interact: 'chest', container: 27 });
+// Modelos propios (cajas en 1/16, orientadas al Norte)
+const custom = (o) => ({ shape: 'box', family: 'custom', opaque: false, atten: 0, ...o });
+for (let f = 0; f < 4; f++) {
+  def(303 + f, f ? `anvil_${DIR_SUFFIX[f]}` : 'anvil', 'Yunque', custom({
+    tiles: { side: 'anvil', top: 'anvil_top' }, boxes: [[2, 0, 3, 14, 4, 13], [4, 4, 5, 12, 10, 11], [0, 10, 3, 16, 16, 13]],
+    oriented: true, facing: f, famBase: 303, hardness: 5, tool: PICK, harvest: 1, sound: 'metal', interact: 'anvil',
+    placeable: f === 0, drops: 'anvil', pick: 'anvil',
+  }));
+}
+def(307, 'lantern', 'Farol', custom({ tiles: { side: 'lantern', top: 'lantern_top' }, boxes: [[5, 0, 5, 11, 7, 11], [6, 7, 6, 10, 9, 10]], light: 15, hardness: 0.6, tool: PICK, sound: 'metal', plantOn: 'any' }));
+def(308, 'lantern_hanging', 'Farol colgante', custom({ tiles: { side: 'lantern', top: 'lantern_top' }, boxes: [[5, 1, 5, 11, 8, 11], [6, 8, 6, 10, 10, 10], [7, 10, 7, 9, 16, 9]], light: 15, hardness: 0.6, tool: PICK, sound: 'metal', plantOn: 'hang', placeable: false, drops: 'lantern', pick: 'lantern' }));
+def(309, 'compost_bin', 'Compostador', custom({ tiles: { side: 'compost_side', top: 'compost_top', bottom: 'planks' }, boxes: [[0, 0, 0, 16, 16, 2], [0, 0, 14, 16, 16, 16], [0, 0, 2, 2, 16, 14], [14, 0, 2, 16, 16, 14], [2, 0, 2, 14, 3, 14]], colBoxes: [[0, 0, 0, 16, 16, 16]], hardness: 0.6, tool: AXE, sound: 'wood', interact: 'compost' }));
+for (let f = 0; f < 4; f++) {
+  def(310 + f, f ? `lectern_${DIR_SUFFIX[f]}` : 'lectern', 'Atril', custom({
+    tiles: { side: 'lectern_side', top: 'lectern_top', bottom: 'planks' }, boxes: [[0, 0, 0, 16, 2, 16], [5, 2, 5, 11, 12, 11], [1, 12, 2, 15, 15, 14]],
+    oriented: true, facing: f, famBase: 310, hardness: 2.5, tool: AXE, sound: 'wood', interact: 'lectern', placeable: f === 0, drops: 'lectern', pick: 'lectern',
+  }));
+}
+def(314, 'loom', 'Telar', { tiles: { top: 'loom_top', side: 'loom_side', south: 'loom_front', bottom: 'planks' }, hardness: 2.5, tool: AXE, sound: 'wood' });
+def(315, 'alchemy_table', 'Mesa de alquimia', custom({
+  tiles: { side: 'alchemy_side', top: 'alchemy_top', bottom: 'cobble' }, light: 6,
+  boxes: [[0, 10, 0, 16, 14, 16], [1, 0, 1, 4, 10, 4], [12, 0, 1, 15, 10, 4], [1, 0, 12, 4, 10, 15], [12, 0, 12, 15, 10, 15], [6, 14, 6, 10, 16, 10]],
+  colBoxes: [[0, 0, 0, 16, 14, 16]], hardness: 2.5, tool: PICK, harvest: 1, sound: 'stone', interact: 'alchemy',
+}));
+def(316, 'bell', 'Campana', custom({ tiles: { side: 'bell', top: 'bell_top', bottom: 'bell_top' }, boxes: [[7, 0, 7, 9, 3, 9], [5, 3, 5, 11, 11, 11], [6, 11, 6, 10, 13, 10]], hardness: 3, tool: PICK, sound: 'metal', interact: 'bell' }));
+def(317, 'plaster', 'Yeso blanco', { hardness: 1.2, tool: PICK, harvest: 1, sound: 'stone' });
 
 // ─────────────────────────────────────────────────────────────────
 export const Blocks = {

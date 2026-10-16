@@ -7,6 +7,7 @@ import { clickSlot, shiftMove, collectToCursor, addToSlots, stackMax, countInSlo
 import { recipesFor, canCraft, maxCrafts, craft, countIngredient, TAGS, smeltRecipe, fuelTime, repairStack, repairMaterial } from './crafting.js';
 import { DEFAULT_KEYS } from './controls.js';
 import { ACHIEVEMENTS } from './achievements.js';
+import { PROFESSIONS, offersFor, canTrade, executeTrade, LEVEL_XP, MAX_LEVEL } from './trading.js';
 
 const KEY_LABEL = (c) => c.replace('Key', '').replace('Arrow', '↑↓←→'.charAt(['Up', 'Down', 'Left', 'Right'].findIndex((d) => c.endsWith(d))) || '').replace('Space', 'Espacio').replace('ShiftLeft', 'Shift').replace('ShiftRight', 'Shift').replace('Slash', '/');
 
@@ -233,7 +234,7 @@ export function openInventoryScreen(game) {
   if (creative) {
     // Catálogo con búsqueda y categorías
     const cat = creativeCatalog();
-    const tabs = [['Todo', () => true], ['Bloques', (i) => i.kind === 'block' || i.kind === 'door'], ['Herramientas', (i) => i.kind === 'tool'], ['Armaduras', (i) => i.kind === 'armor'], ['Comida', (i) => !!i.food], ['Materiales', (i) => i.kind === 'material' || i.kind === 'bucket' || i.kind === 'rope']];
+    const tabs = [['Todo', () => true], ['Bloques', (i) => i.kind === 'block' || i.kind === 'door'], ['Herramientas', (i) => i.kind === 'tool'], ['Armaduras', (i) => i.kind === 'armor'], ['Comida', (i) => !!i.food], ['Materiales', (i) => ['material', 'bucket', 'rope', 'fertilizer', 'compass', 'heal'].includes(i.kind)]];
     let filter = tabs[0][1], q = '';
     const bar = el('div', 'creative-bar');
     const tabBox = el('div', 'tabs');
@@ -337,6 +338,63 @@ export function openFurnaceScreen(game, be) {
     $('div', arrow).style.width = (rec ? Math.round((ex.cook / rec.time) * 100) : 0) + '%';
     for (const v of s.views) UI.paintSlot(v.el, v.slots[v.idx]);
   };
+  s.refresh();
+  return s;
+}
+
+// ── Comercio con aldeanos ────────────────────────────────────────
+const LEVEL_NAMES = ['', 'Aprendiz', 'Oficial', 'Maestro'];
+export function openTradeScreen(game, villager) {
+  const s = new SlotScreen(game, null, 'trade-screen');
+  const inv = game.inventory;
+  const P = PROFESSIONS[villager.prof];
+  const title = el('h2', null, { text: `${villager.vname} — ${P.name}` });
+  const lvl = el('div', 'trade-level');
+  const bar = el('div', 'xp-bar', null, el('div'));
+  const list = el('div', 'trade-list');
+  const fill = () => {
+    const st = villager.trade;
+    lvl.textContent = `Nivel ${st.level}: ${LEVEL_NAMES[st.level]}` + (st.level < MAX_LEVEL ? ` · experiencia ${st.xp}/${LEVEL_XP[st.level]}` : ' · nivel máximo');
+    $('div', bar).style.width = (st.level < MAX_LEVEL ? Math.min(100, Math.round((st.xp / LEVEL_XP[st.level]) * 100)) : 100) + '%';
+    list.innerHTML = '';
+    const rep = game.villageInfo ? ((game.villageInfo(villager.village) || {}).rep || 0) : 0;
+    if (rep < 0) list.append(el('div', 'dim', { text: 'Los aldeanos desconfían de ti: los precios han subido.' }));
+    for (const o of offersFor(st, rep)) {
+      const can = canTrade(o, inv.slots);
+      const sold = o.used >= o.max;
+      const row = el('div', 'offer' + (can ? '' : ' no') + (sold ? ' sold' : ''));
+      const give = el('div', 'o-give');
+      for (const [k, n] of o.give) {
+        const it = Items.get(k);
+        const have = countInSlots(inv.slots, it.id);
+        give.append(el('span', 'ing' + (have >= n ? '' : ' miss'), { title: it.name }, el('img', null, { src: getItemIconURL(it) }), `${n}`));
+      }
+      const out = Items.get(o.get[0]);
+      row.append(give, el('span', 'o-arrow', { text: '→' }), el('div', 'o-get', { title: out.name }, el('img', null, { src: getItemIconURL(out) }), el('span', null, { text: `${o.get[1]} ${out.name}` })),
+        el('span', 'o-uses', { text: sold ? 'agotado' : `${o.max - o.used}` }));
+      row.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const r = executeTrade(st, o, inv.slots);
+        if (!r.ok) { game.ui.toast(r.reason); game.audio && game.audio.play('deny'); return; }
+        game.audio && game.audio.play('craft');
+        game.onItemObtained(out.key);
+        game.achieve('comercio');
+        if (r.levelUp) {
+          game.ui.toast(`${villager.vname} sube a ${LEVEL_NAMES[st.level]}: nuevas ofertas`);
+          game.audio && game.audio.play('levelup');
+          game.particles && game.particles.emit(villager.x, villager.y + 2, villager.z, 0x66dd66, 12, 2);
+          if (st.level >= MAX_LEVEL) game.achieve('maestro');
+        }
+        s.refresh();
+      });
+      list.append(row);
+    }
+  };
+  s.onRefresh = fill;
+  s.onShift = (slots, idx) => s.shiftFromPlayer(slots, idx);
+  s.panel.append(title, lvl, bar, list, el('h3', null, { text: 'Inventario' }), s.playerInventory());
+  villager.talk = 1e9;
+  s.afterClose = () => { villager.talk = 0; };
   s.refresh();
   return s;
 }

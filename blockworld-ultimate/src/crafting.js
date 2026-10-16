@@ -65,6 +65,24 @@ recipe('mushroom_stew', 1, [['bowl', 1], ['mushroom_dark', 1], ['mushroom_glow',
 recipe('salad', 1, [['bowl', 1], ['tomato', 1], ['carrot', 1], ['berries', 1]], 'workbench', 'tomato', 'Comida');
 recipe('corn_bread', 1, [['corn', 3]], 'workbench', 'corn', 'Comida');
 
+// ── Fase 3: aldeas ───────────────────────────────────────────────
+recipe('paper', 3, [['reed', 3]], 'hand', 'reed', 'Básicos');
+recipe('book', 1, [['paper', 3], ['leather', 1]], 'hand', 'paper', 'Básicos');
+recipe('bookshelf', 1, [['planks', 6], ['book', 3]], 'workbench', 'book', 'Aldea');
+recipe('hay_bale', 1, [['wheat', 9]], 'workbench', 'wheat', 'Aldea');
+recipe('wheat', 9, [['hay_bale', 1]], 'hand', 'hay_bale', 'Aldea');
+recipe('barrel', 1, [['planks', 6], ['slab_planks', 2]], 'workbench', null, 'Aldea');
+recipe('anvil', 1, [['block_iron', 3], ['iron_ingot', 4]], 'workbench', 'iron_ingot', 'Aldea');
+recipe('lantern', 2, [['iron_ingot', 4], ['torch', 1]], 'workbench', 'iron_ingot', 'Aldea');
+recipe('compost_bin', 1, [['slab_planks', 7]], 'workbench', null, 'Aldea');
+recipe('lectern', 1, [['slab_planks', 4], ['bookshelf', 1]], 'workbench', 'bookshelf', 'Aldea');
+recipe('loom', 1, [['planks', 2], ['rope', 2]], 'workbench', 'rope', 'Aldea');
+recipe('alchemy_table', 1, [['cobble', 3], ['crystal_shard', 1], ['glass', 2]], 'workbench', 'crystal_shard', 'Aldea');
+recipe('bell', 1, [['gold_ingot', 5], ['stick', 2]], 'workbench', 'gold_ingot', 'Aldea');
+recipe('plaster', 4, [['clay_ball', 2], ['sand', 2]], 'workbench', 'clay_ball', 'Aldea');
+recipe('bandage', 2, [['paper', 2], ['mushroom_glow', 1]], 'workbench', 'paper', 'Aldea');
+recipe('village_compass', 1, [['iron_ingot', 4], ['crystal_shard', 1], ['sun_coin', 1]], 'workbench', 'sun_coin', 'Aldea');
+
 // Herramientas: cabeza + palos
 const HEAD_COST = { pickaxe: [3, 2], axe: [3, 2], shovel: [1, 2], sword: [2, 1], hoe: [2, 2] };
 for (const tier of TIER_ORDER) {

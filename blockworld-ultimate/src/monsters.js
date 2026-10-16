@@ -193,11 +193,29 @@ export class Monster extends Mob {
   }
 
   think(dt) {
-    const g = this.game, p = g.player, def = this.def, w = this.world;
+    const g = this.game, def = this.def, w = this.world;
     // Reglas globales de despawn
     if (g.difficulty === 'peaceful' || g.meta.mobs !== 'all') { this.removed = true; return; }
     this.atkCd -= dt; this.attackAnim = Math.max(0, this.attackAnim - dt);
     this.soundTimer -= dt;
+    // Objetivo: el jugador o, si está más cerca, un aldeano (solo los que atacan cuerpo a cuerpo por tierra)
+    let p = g.player;
+    if (!def.ranged && !def.flying && !def.burrow && !def.guard) {
+      this._tgtCd = (this._tgtCd || 0) - dt;
+      if (this._tgtCd <= 0) {
+        this._tgtCd = 0.5;
+        const pd = (g.mode !== 'creative' && !g.survival.dead) ? Math.hypot(p.x - this.x, p.z - this.z) : Infinity;
+        let best = null, bd = Math.min(pd, def.detect * 0.8);
+        for (const e of g.entities.list) {
+          if (!e.isVillager || e.removed || e.deathTime >= 0) continue;
+          const d = Math.hypot(e.x - this.x, e.z - this.z);
+          if (d < bd) { bd = d; best = e; }
+        }
+        this._villTarget = best;
+      }
+      if (this._villTarget && !this._villTarget.removed && this._villTarget.deathTime < 0) p = this._villTarget;
+    }
+    const isPlayer = p === g.player;
     const dx = p.x - this.x, dz = p.z - this.z, dy = (p.y + 0.9) - (this.y + this.h * 0.5);
     const dist = Math.hypot(dx, dz), dist3 = Math.hypot(dx, dy, dz);
     if (this.soundTimer <= 0 && dist < 28) { this.soundTimer = 8 + Math.random() * 14; this.sound(); }
@@ -211,7 +229,7 @@ export class Monster extends Mob {
         if (this.burn >= 1) { this.burn = 0; this.hp -= 2; this.hurtTime = 0.3; g.particles.emit(this.x, this.y + this.h * 0.6, this.z, 0xff7a20, 5, 1.5); if (this.hp <= 0) this.die(null); }
       }
     }
-    const target = g.mode !== 'creative' && !g.survival.dead;
+    const target = isPlayer ? g.mode !== 'creative' && !g.survival.dead : true;
     const canSee = target && dist3 < def.detect * (p.crouching ? 0.6 : 1) * (g.sky.atm.sunH < 0 ? 1.15 : 1);
 
     // ── Guardián: se queda cerca de su origen
@@ -252,8 +270,10 @@ export class Monster extends Mob {
       if (dist < def.reach && Math.abs(dy) < 1.8 && this.atkCd <= 0 && this._hasLineOfSight(p)) {
         this.atkCd = def.cooldown;
         this.attackAnim = 0.35;
-        const hurt = g.survival.damage(def.dmg, 'mob', this);
-        if (hurt && def.ignite) g.survival.fire = Math.max(g.survival.fire, def.ignite);
+        if (isPlayer) {
+          const hurt = g.survival.damage(def.dmg, 'mob', this);
+          if (hurt && def.ignite) g.survival.fire = Math.max(g.survival.fire, def.ignite);
+        } else p.hurt(def.dmg, this.x, this.z, 1, this);
         this.sound();
       }
     } else {

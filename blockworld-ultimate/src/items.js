@@ -158,10 +158,19 @@ item('vegetable_stew', 'Estofado de verduras', { stack: 1, food: { hunger: 10, s
 item('mushroom_stew', 'Sopa de hongos', { stack: 1, food: { hunger: 6, sat: 7.2, returns: 'bowl' }, kind: 'food' });
 item('salad', 'Ensalada fresca', { stack: 1, food: { hunger: 6, sat: 7, returns: 'bowl' }, kind: 'food' });
 
+// ── Fase 3 ───────────────────────────────────────────────────────
+item('sun_coin', 'Moneda de sol');
+item('fertilizer', 'Abono', { kind: 'fertilizer' });
+item('paper', 'Papel');
+item('book', 'Libro', { fuel: 10 });
+item('bandage', 'Venda', { kind: 'heal', heal: 6, stack: 16 });
+item('village_compass', 'Brújula de aldeas', { kind: 'compass', stack: 1 });
+
 // Combustibles de bloques
 const blockFuel = {
   planks: 15, log_oak: 15, log_dark: 15, log_jungle: 15, log_pine: 15, workbench: 15, chest: 15, slab_planks: 7, sapling_oak: 5, sapling_dark: 5, sapling_jungle: 5, sapling_pine: 5,
   stairs_planks: 15, fence_wood: 15, gate_wood: 15, trapdoor_wood: 15, ladder: 5,
+  bookshelf: 15, barrel: 15, compost_bin: 15, lectern: 15, loom: 15, hay_bale: 10,
 };
 for (const [k, v] of Object.entries(blockFuel)) if (byKey.has(k)) byKey.get(k).fuel = v;
 
@@ -218,7 +227,7 @@ export function rollDrops(spec, rng = Math.random) {
 
 /** Objetos que aparecen en el inventario creativo (todos los colocables y no colocables). */
 export function creativeCatalog() {
-  const hidden = new Set(['air', 'bookshelf_dummy', 'dandelion_dummy']);
+  const hidden = new Set(['air', 'dandelion_dummy']);
   return Items.all().filter((it) => !hidden.has(it.key));
 }
 

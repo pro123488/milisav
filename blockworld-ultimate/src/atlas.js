@@ -381,6 +381,43 @@ P.trapdoor_wood = (g, r) => {
   g.hline(1, 14, 7, d); g.hline(1, 14, 8, shade(c, 0.85));
 };
 
+// ── Fase 3: aldeas ──
+P.path_top = (g, r) => { g.noise(rgb(150, 122, 74), 6, r); g.specks(rgb(120, 96, 58), r, 22); g.specks(rgb(178, 150, 100), r, 12); };
+P.path_side = (g, r) => { dirtBase(g, r); for (let x = 0; x < N; x++) { g.set(x, 0, rgb(150, 122, 74)); if (r() < 0.5) g.set(x, 1, rgb(140, 112, 68)); } for (let x = 0; x < N; x++) g.set(x, 15, [0, 0, 0, 0]); };
+P.hay_top = (g, r) => { g.noise(rgb(200, 170, 70), 8, r); for (let k = 0; k < 18; k++) { const x = r() * 16, y = r() * 16; g.line(x, y, x + (r() - 0.5) * 6, y + (r() - 0.5) * 6, rgb(222, 196, 96)); } g.rect(0, 0, 15, 0, rgb(150, 110, 40)); g.rect(0, 15, 15, 15, rgb(150, 110, 40)); };
+P.hay_side = (g, r) => { for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) g.set(x, y, add(rgb(206, 176, 76), (r() - 0.5) * 22 + ((x * 7 + y) % 5 === 0 ? -20 : 0))); for (const y of [3, 12]) g.hline(0, 15, y, rgb(140, 40, 34)); };
+P.barrel_side = (g, r) => { for (let x = 0; x < N; x++) { const f = x % 4 === 0 ? 0.75 : 1; for (let y = 0; y < N; y++) g.set(x, y, shade(add(rgb(132, 92, 52), (r() - 0.5) * 10), f)); } for (const y of [2, 13]) { g.hline(0, 15, y, rgb(70, 70, 76)); g.hline(0, 15, y + 1, rgb(110, 110, 118)); } };
+P.barrel_top = (g, r) => { g.noise(rgb(146, 104, 60), 6, r); g.rect(0, 0, 15, 15, rgb(0, 0, 0, 0)); g.noise(rgb(146, 104, 60), 6, r); g.circle(7.5, 7.5, 7.6, rgb(70, 70, 76)); g.circle(7.5, 7.5, 6.4, rgb(146, 104, 60)); for (let y = 3; y < 13; y += 3) g.hline(3, 12, y, rgb(112, 78, 42)); g.rect(6, 6, 9, 9, rgb(60, 40, 22)); };
+P.barrel_bottom = (g, r) => { P.barrel_top(g, r); };
+P.anvil = (g, r) => { g.noise(rgb(74, 76, 82), 5, r); g.hline(0, 15, 0, rgb(120, 122, 130)); g.specks(rgb(54, 56, 62), r, 14); g.specks(rgb(100, 102, 110), r, 8); };
+P.anvil_top = (g, r) => { g.noise(rgb(86, 88, 94), 4, r); g.rect(2, 2, 13, 13, rgb(104, 106, 114)); g.specks(rgb(130, 132, 140), r, 6); };
+P.lantern = (g, r) => {
+  g.fill([0, 0, 0, 0]);
+  g.rect(5, 9, 10, 15, rgb(40, 40, 46)); g.rect(6, 10, 9, 14, rgb(255, 196, 80)); g.rect(7, 11, 8, 13, rgb(255, 244, 190));
+  g.rect(6, 7, 9, 8, rgb(52, 52, 60)); g.hline(5, 10, 9, rgb(70, 70, 78)); void r;
+};
+P.lantern_top = (g, r) => { g.fill([0, 0, 0, 0]); g.rect(5, 5, 10, 10, rgb(40, 40, 46)); g.rect(6, 6, 9, 9, rgb(70, 70, 78)); g.rect(7, 7, 8, 8, rgb(255, 210, 110)); void r; };
+P.compost_side = (g, r) => { P.planks(g, r); for (let x = 0; x < N; x += 5) g.vline(x, 0, 15, rgb(96, 66, 36)); };
+P.compost_top = (g, r) => { g.noise(rgb(80, 60, 40), 6, r); g.specks(rgb(70, 110, 44), r, 20); g.specks(rgb(48, 34, 22), r, 14); };
+P.lectern_side = (g, r) => { P.planks(g, r); g.rect(4, 0, 11, 15, rgb(150, 108, 60)); g.vline(4, 0, 15, rgb(110, 76, 42)); g.vline(11, 0, 15, rgb(110, 76, 42)); };
+P.lectern_top = (g, r) => { g.noise(rgb(162, 120, 70), 5, r); g.rect(2, 3, 13, 12, rgb(232, 224, 200)); g.vline(7, 3, 12, rgb(170, 150, 120)); for (let y = 5; y < 12; y += 2) { g.hline(3, 6, y, rgb(120, 110, 100)); g.hline(9, 12, y, rgb(120, 110, 100)); } };
+P.loom_side = (g, r) => { P.planks(g, r); g.rect(2, 2, 13, 13, rgb(0, 0, 0, 0)); g.noise(rgb(150, 108, 62), 4, r); for (let x = 3; x < 13; x += 2) g.vline(x, 2, 13, rgb(220, 210, 190)); g.rect(0, 0, 15, 1, rgb(110, 76, 42)); g.rect(0, 14, 15, 15, rgb(110, 76, 42)); };
+P.loom_front = (g, r) => { P.loom_side(g, r); g.rect(4, 6, 11, 9, rgb(190, 60, 90)); g.rect(5, 7, 10, 8, rgb(230, 120, 140)); };
+P.loom_top = (g, r) => { P.planks(g, r); g.rect(3, 4, 12, 11, rgb(210, 200, 180)); for (let y = 5; y < 11; y += 2) g.hline(4, 11, y, rgb(190, 60, 90)); };
+P.alchemy_side = (g, r) => { P.cobble(g, r); g.rect(0, 0, 15, 5, rgb(96, 98, 106)); g.hline(0, 15, 5, rgb(60, 62, 70)); };
+P.alchemy_top = (g, r) => { g.noise(rgb(110, 112, 120), 5, r); g.rect(6, 6, 9, 9, rgb(80, 220, 210)); g.set(7, 7, rgb(220, 255, 250)); g.circle(3, 12, 1.5, rgb(200, 80, 200)); g.circle(12, 3, 1.5, rgb(240, 180, 60)); };
+P.bell = (g, r) => { g.fill([0, 0, 0, 0]); g.rect(5, 5, 10, 13, rgb(226, 180, 50)); g.rect(5, 12, 10, 13, rgb(180, 132, 30)); g.vline(6, 5, 11, rgb(255, 236, 140)); g.rect(6, 3, 9, 4, rgb(200, 150, 40)); g.rect(7, 13, 8, 15, rgb(90, 70, 50)); void r; };
+P.bell_top = (g, r) => { g.fill([0, 0, 0, 0]); g.rect(5, 5, 10, 10, rgb(226, 180, 50)); g.rect(6, 6, 9, 9, rgb(250, 220, 110)); void r; };
+P.plaster = (g, r) => { g.noise(rgb(236, 232, 222), 4, r); g.specks(rgb(218, 212, 200), r, 16); g.specks(rgb(250, 248, 242), r, 8); };
+P.bookshelf = (g, r) => {
+  P.planks(g, r);
+  const cols = [rgb(150, 40, 40), rgb(40, 80, 150), rgb(40, 120, 60), rgb(160, 120, 40), rgb(100, 50, 120), rgb(60, 60, 70)];
+  for (const y0 of [1, 9]) {
+    g.rect(1, y0, 14, y0 + 5, rgb(60, 40, 22));
+    for (let x = 1; x <= 14;) { const w = 1 + (r() < 0.4 ? 1 : 0); const c = cols[Math.floor(r() * cols.length)]; const h = 4 + (r() < 0.5 ? 1 : 0); g.rect(x, y0 + 6 - h, Math.min(14, x + w - 1), y0 + 5, c); g.set(x, y0 + 6 - h + 1, add(c, 60)); x += w + (r() < 0.2 ? 1 : 0); }
+  }
+};
+
 // Vegetación (con transparencia)
 function blade(g, x, y0, y1, c) { for (let y = y0; y <= y1; y++) g.set(x, y, c); }
 P.tall_grass = (g, r) => {
@@ -670,6 +707,12 @@ function sprites(key) {
     cooked_fish: () => { g.ellipse(7, 8, 5.5, 3.5, hex('#b8783c')); g.poly([[11, 8], [15, 4], [15, 12]], hex('#8a542a')); g.set(4, 7, hex('#201408')); g.line(5, 10, 10, 10, hex('#e0b070')); g.line(4, 9, 8, 6, hex('#d29a58')); },
     raw_venison: () => { g.poly([[2, 6], [7, 3], [13, 5], [14, 10], [9, 13], [3, 11]], hex('#a8344a')); g.poly([[3, 6], [7, 4], [10, 5], [6, 8]], hex('#c85468')); g.line(5, 10, 11, 8, hex('#e8b8c0')); },
     cooked_venison: () => { g.poly([[2, 6], [7, 3], [13, 5], [14, 10], [9, 13], [3, 11]], hex('#6a3a30')); g.poly([[3, 6], [7, 4], [10, 5], [6, 8]], hex('#94584a')); g.line(5, 10, 11, 8, hex('#3e1e18')); },
+    sun_coin: () => { g.circle(8, 8, 6, hex('#e8b830')); g.circle(8, 8, 4.6, hex('#ffd860')); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; g.set(8 + Math.cos(a) * 3, 8 + Math.sin(a) * 3, hex('#c88a10')); } g.circle(8, 8, 1.6, hex('#fff2b0')); g.set(6, 5, hex('#ffffff')); },
+    fertilizer: () => { g.poly([[3, 6], [13, 6], [12, 14], [4, 14]], hex('#8a6a40')); g.poly([[3, 6], [13, 6], [11, 3], [5, 3]], hex('#a8844e')); g.ellipse(8, 5, 4, 1.4, hex('#5a3c20')); for (const [x, y] of [[6, 4], [9, 5], [8, 4]]) g.set(x, y, hex('#6ab040')); g.line(5, 9, 11, 9, hex('#6a4c28')); },
+    paper: () => { g.poly([[3, 2], [12, 2], [13, 14], [4, 14]], hex('#f0ead8')); for (let y = 5; y < 13; y += 2) g.line(5, y, 11, y, hex('#c8c0a8')); g.line(12, 2, 13, 14, hex('#cfc6ae')); },
+    book: () => { g.poly([[3, 3], [12, 2], [13, 13], [4, 14]], hex('#8a3030')); g.poly([[4, 4], [12, 3], [12, 4], [4, 5]], hex('#b84848')); g.line(4, 13, 13, 12, hex('#f0ead8')); g.line(4, 12, 12, 11, hex('#f0ead8')); g.rect(7, 6, 9, 8, hex('#e8c050')); },
+    bandage: () => { g.poly([[2, 9], [9, 2], [14, 7], [7, 14]], hex('#f2eee4')); g.line(4, 9, 9, 4, hex('#d8d0c0')); g.line(7, 12, 12, 7, hex('#d8d0c0')); g.rect(7, 7, 9, 9, hex('#d84040')); },
+    village_compass: () => { g.circle(8, 8, 6.5, hex('#9a9ca4')); g.circle(8, 8, 5.2, hex('#e8e2d0')); g.line(8, 8, 11, 4, hex('#d83030')); g.line(8, 8, 5, 12, hex('#3050a0')); g.set(8, 8, hex('#202020')); g.set(8, 3, hex('#5a7a3c')); g.set(13, 8, hex('#5a7a3c')); },
     door_wood: () => doorItem(g, 'door_wood'),
     door_iron: () => doorItem(g, 'door_iron'),
     rope: () => { for (let k = 0; k < 3; k++) g.ellipse(8, 5 + k * 3, 5 - k, 2, hex('#c8a46a')); for (let k = 0; k < 3; k++) g.ellipse(8, 5 + k * 3, 3 - k, 1, [0, 0, 0, 0]); g.line(8, 12, 11, 15, hex('#b08a50')); g.line(4, 5, 12, 5, hex('#e0c08a')); },

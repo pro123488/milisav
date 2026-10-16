@@ -5,6 +5,7 @@ import { CHUNK_SIZE as CS, WORLD_HEIGHT as WH, SEA_LEVEL as SEA } from './config
 import { ID } from './blocks.js';
 import { hash2, hash3, mulberry32 } from './noise.js';
 import { BIOME } from './biomes.js';
+import { chunkInVillage } from './villages.js';
 
 const REGION = 5; // chunks por región; como mucho una estructura de superficie por región
 
@@ -25,6 +26,16 @@ export const LOOT = {
     { item: 'gold_ingot', min: 2, max: 6, w: 7 }, { item: 'iron_ingot', min: 2, max: 6, w: 6 }, { item: 'crystal_shard', min: 2, max: 5, w: 5 },
     { item: 'raw_noctisite', min: 1, max: 2, w: 1.2 }, { item: 'iron_chestplate', min: 1, max: 1, w: 1.5 }, { item: 'gold_pickaxe', min: 1, max: 1, w: 2 },
     { item: 'cooked_beef', min: 3, max: 6, w: 4 }, { item: 'crystal_lamp', min: 1, max: 2, w: 2 }, { item: 'iron_helmet', min: 1, max: 1, w: 1.5 },
+  ],
+  village: [
+    { item: 'bread', min: 1, max: 4, w: 6 }, { item: 'sun_coin', min: 1, max: 4, w: 5 }, { item: 'wheat', min: 2, max: 7, w: 5 },
+    { item: 'apple', min: 1, max: 3, w: 4 }, { item: 'tomato', min: 1, max: 4, w: 3 }, { item: 'corn', min: 1, max: 4, w: 3 },
+    { item: 'paper', min: 1, max: 4, w: 2 }, { item: 'torch', min: 2, max: 6, w: 4 }, { item: 'rope', min: 1, max: 2, w: 2 },
+  ],
+  smithy: [
+    { item: 'iron_ingot', min: 1, max: 5, w: 7 }, { item: 'coal', min: 2, max: 8, w: 6 }, { item: 'sun_coin', min: 1, max: 3, w: 4 },
+    { item: 'iron_pickaxe', min: 1, max: 1, w: 2 }, { item: 'iron_sword', min: 1, max: 1, w: 1.5 }, { item: 'iron_helmet', min: 1, max: 1, w: 1.5 },
+    { item: 'gold_ingot', min: 1, max: 2, w: 2 }, { item: 'bread', min: 1, max: 3, w: 3 },
   ],
   dungeon: [
     { item: 'iron_ingot', min: 1, max: 5, w: 6 }, { item: 'copper_ingot', min: 2, max: 7, w: 6 }, { item: 'gold_ingot', min: 1, max: 3, w: 3 },
@@ -90,7 +101,8 @@ function planFor(terrain, cx, cz) {
     const oy = 12 + Math.floor(hash2(cx, cz, seed + 9002) * 26);
     return { type: 'dungeon', ox, oz, oy, foot: [ox - 1, oz - 1, ox + 7, oz + 7] };
   }
-  // Superficie: una por región
+  // Superficie: una por región (y nunca dentro de una aldea)
+  if (chunkInVillage(terrain, cx, cz)) return null;
   const rx = Math.floor(cx / REGION), rz = Math.floor(cz / REGION);
   if (hash2(rx, rz, seed + 7001) > 0.6) return null;
   const pcx = rx * REGION + 1 + Math.floor(hash2(rx, rz, seed + 7002) * (REGION - 2));

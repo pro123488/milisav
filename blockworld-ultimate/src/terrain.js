@@ -5,6 +5,7 @@ import { ID } from './blocks.js';
 import { Simplex, hash2, hash3, mulberry32, clamp, lerp, smoothstep } from './noise.js';
 import { BIOME, BIOMES } from './biomes.js';
 import { placeStructures, structureFootprints } from './structures.js';
+import { placeVillages, villageFootprints } from './villages.js';
 
 const BX = (lx, y, lz) => lx + (lz << 4) + (y << 8);
 const TOPID = {};   // biome id → [top, filler, depth]
@@ -368,9 +369,13 @@ export class Terrain {
     }
 
     // ── Estructuras (antes de árboles) ──
-    const foot = this.structures ? structureFootprints(this, cx, cz) : [];
+    const foot = this.structures ? structureFootprints(this, cx, cz).concat(villageFootprints(this, cx, cz)) : [];
     let sx = { chests: [], mobs: [] };
-    if (this.structures) sx = placeStructures(this, blocks, cx, cz);
+    if (this.structures) {
+      sx = placeStructures(this, blocks, cx, cz);
+      const vx = placeVillages(this, blocks, cx, cz); // aldeas (varios chunks, deterministas)
+      sx.chests = sx.chests.concat(vx.chests); sx.mobs = sx.mobs.concat(vx.mobs);
+    }
 
     // ── Árboles y flora ──
     if (type !== 'flat' || true) this._decorate(blocks, cx, cz, cols, heights, foot);

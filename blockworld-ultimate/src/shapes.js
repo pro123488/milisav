@@ -7,8 +7,8 @@
 import { BLOCKS, MAX_BLOCKS, B_OPAQUE, B_SOLID, B_SHAPE, B_HEIGHT, SHAPE_ID } from './blocks.js';
 
 export const FACING_VEC = [[0, -1], [1, 0], [0, 1], [-1, 0]];
-export const FAM = { NONE: 0, STAIRS: 1, LADDER: 2, DOOR: 3, FENCE: 4, WALL: 5, GATE: 6, TRAPDOOR: 7 };
-const FAM_BY_NAME = { stairs: FAM.STAIRS, ladder: FAM.LADDER, door: FAM.DOOR, fence: FAM.FENCE, wall: FAM.WALL, gate: FAM.GATE, trapdoor: FAM.TRAPDOOR };
+export const FAM = { NONE: 0, STAIRS: 1, LADDER: 2, DOOR: 3, FENCE: 4, WALL: 5, GATE: 6, TRAPDOOR: 7, CUSTOM: 8 };
+const FAM_BY_NAME = { stairs: FAM.STAIRS, ladder: FAM.LADDER, door: FAM.DOOR, fence: FAM.FENCE, wall: FAM.WALL, gate: FAM.GATE, trapdoor: FAM.TRAPDOOR, custom: FAM.CUSTOM };
 
 /** Familia de forma por ID de bloque (0 = sin familia: cubo y formas clásicas). */
 export const B_FAMILY = new Uint8Array(MAX_BLOCKS);
@@ -68,6 +68,16 @@ pre('fenceArm', FENCE_ARM_N); pre('fenceArmCol', [FENCE_ARM_COL_N]); pre('fenceA
 pre('wallArm', [WALL_ARM_N]); pre('wallArmCol', [WALL_ARM_COL_N]);
 
 export const FULL_BOX = [0, 0, 0, 1, 1, 1];
+
+// Modelos propios (family 'custom'): el bloque define `boxes` (en 1/16, orientadas al Norte) y opcionalmente
+// `colBoxes` para la colisión; se giran según su `facing`. Yunque, farol, atril, campana, mesa de alquimia...
+const CUSTOM_R = new Array(MAX_BLOCKS).fill(null), CUSTOM_C = new Array(MAX_BLOCKS).fill(null);
+for (const b of BLOCKS) {
+  if (!b || b.family !== 'custom') continue;
+  const sc = (list) => rotAll(list.map((q) => q.map(p)), b.facing);
+  CUSTOM_R[b.id] = sc(b.boxes);
+  CUSTOM_C[b.id] = b.solid ? sc(b.colBoxes || b.boxes) : [];
+}
 const FULL = [FULL_BOX];
 const EMPTY = [];
 
@@ -123,6 +133,7 @@ export function renderBoxes(id, mask = 0) {
     case FAM.WALL: return MASKED.wallR[mask & 15];
     case FAM.GATE: return PRE[b.open ? 'gateOpen' : 'gateClosed'][b.facing];
     case FAM.TRAPDOOR: return b.open ? PRE.panel[b.facing] : (b.top ? TRAP_TOP : TRAP_BOTTOM);
+    case FAM.CUSTOM: return CUSTOM_R[id];
     default: return FULL;
   }
 }
@@ -135,6 +146,7 @@ export function collisionBoxes(id, mask = 0) {
     case FAM.FENCE: return MASKED.fenceC[mask & 15];
     case FAM.WALL: return MASKED.wallC[mask & 15];
     case FAM.GATE: return b.open ? EMPTY : PRE.gateCol[b.facing];
+    case FAM.CUSTOM: return CUSTOM_C[id];
     default: return BASE_COL[id];
   }
 }
@@ -147,6 +159,7 @@ export function selectionBoxes(id, mask = 0) {
     case FAM.FENCE: return MASKED.fenceS[mask & 15];
     case FAM.WALL: return MASKED.wallR[mask & 15];
     case FAM.GATE: return PRE.gateSel[b.facing]; // abierta o cerrada: la franja central (fácil de apuntar para cerrarla)
+    case FAM.CUSTOM: return CUSTOM_R[id];
     default: return BASE_SEL[id];
   }
 }
@@ -172,6 +185,26 @@ export function boxesBounds(boxes) {
   const r = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
   for (const b of boxes) for (let i = 0; i < 3; i++) { r[i] = Math.min(r[i], b[i]); r[i + 3] = Math.max(r[i + 3], b[i + 3]); }
   return r;
+}
+
+/**
+ * Gira 90°·k (N→E→S→O) un bloque orientado: escaleras, puertas, escaleras de mano, puertas de valla,
+ * trampillas, modelos propios con orientación y antorchas de pared. Los demás no cambian.
+ * (Lo usan las estructuras al construir piezas giradas.)
+ */
+export function rotateBlockId(id, k) {
+  k &= 3;
+  if (!k) return id;
+  const b = BLOCKS[id];
+  if (!b) return id;
+  if (b.dir) { // antorchas de pared: dir 1:+X 2:−X 3:+Z 4:−Z (lado del soporte); id = antorcha + dir
+    const f = [0, 1, 3, 2, 0][b.dir];
+    return id - b.dir + [4, 1, 3, 2][(f + k) & 3];
+  }
+  const fam = B_FAMILY[id];
+  if (!fam || fam === FAM.FENCE || fam === FAM.WALL) return id;
+  if (fam === FAM.CUSTOM && !b.oriented) return id;
+  return id - b.facing + ((b.facing + k) & 3);
 }
 
 /** Dirección horizontal (0..3) más parecida a un vector (x, z). */

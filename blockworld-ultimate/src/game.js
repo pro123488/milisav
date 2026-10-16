@@ -19,9 +19,12 @@ import { MONSTERS, createMonster } from './monsters.js';
 import { Spawner } from './spawner.js';
 import { RandomTicks, tickFurnace } from './ticks.js';
 import { FluidSim, flowVector } from './fluids.js';
+import { VILLAGE_MOBS, createVillageMob } from './villagers.js';
+import { villageAt, nearestVillage } from './villages.js';
+import { PROFESSION_BY_STATION, villagerName } from './trading.js';
 import { HandRenderer } from './hand.js';
 import { UI } from './ui.js';
-import { openInventoryScreen, openWorkbenchScreen, openChestScreen, openFurnaceScreen, openPauseScreen, openDeathScreen, openControlsScreen, openAchievementsScreen } from './screens.js';
+import { openInventoryScreen, openWorkbenchScreen, openChestScreen, openFurnaceScreen, openPauseScreen, openDeathScreen, openControlsScreen, openAchievementsScreen, openTradeScreen } from './screens.js';
 import { AudioEngine } from './audio.js';
 import { raycastBlocks } from './raycast.js';
 import { chunkKey } from './chunk.js';
@@ -141,6 +144,7 @@ export class Game {
     this.inventory = new Inventory(); this.survival = new Survival(this);
     this.discovered = new Set(); this.achievements = new Set(); this.stats = { blocksBroken: 0, blocksPlaced: 0, mobsKilled: 0, deaths: 0 };
     this.sleeping = new Map(); this.structQueue = []; this.structDone = new Set(meta.structDone || []);
+    this.villages = new Map(Object.entries(meta.villages || {})); this._villageTimer = 0; this._compassTimer = 0;
     this._buildAvatar();
     const saved = meta.player;
     let sx, sz;
@@ -470,7 +474,7 @@ export class Game {
 
   // ═════════════ Criaturas ═════════════
   spawnMob(key, x, y, z) {
-    const m = ANIMALS[key] ? createAnimal(this, key) : MONSTERS[key] ? createMonster(this, key) : null;
+    const m = ANIMALS[key] ? createAnimal(this, key) : MONSTERS[key] ? createMonster(this, key) : VILLAGE_MOBS[key] ? createVillageMob(this, key) : null;
     if (!m) return null;
     m.setPos(x, y, z);
     this.entities.add(m);
@@ -478,7 +482,7 @@ export class Game {
   }
   mobKilled(mob, source) {
     if (MONSTERS[mob.type]) { this.stats.mobsKilled++; this.achieve('monstruo'); }
-    void source;
+    if (mob.isVillager && (source === this.player || mob.lastHitBy === this.player)) this.villageReputation(mob.village, -20, mob);
   }
   sleepEntity(e) {
     if (!e.persistent || e.removed) return;
@@ -511,6 +515,7 @@ export class Game {
     if (s.baby) m.setBaby(true);
     m.growAge = s.age || 0; m.tamed = !!s.tamed; m.trust = s.trust || 0; m.persistentFlag = !!s.pf; m.breedCd = s.love || 0;
     if (s.leash && m.attachLeash) m.attachLeash(s.leash === 'p' ? 'player' : { x: s.leash[0], y: s.leash[1], z: s.leash[2] });
+    if (s.vd && m.initFromData) m.initFromData(s.vd);
   }
 
   // ═════════════ Chunks generados: cofres y criaturas de estructuras ═════════════
@@ -543,7 +548,98 @@ export class Game {
       if (!this.world.isLoaded(Math.floor(m.x), Math.floor(m.z))) continue;
       this.structQueue.splice(i, 1);
       this.structDone.add(m.key);
-      if (this.meta.mobs === 'all' && this.difficulty !== 'peaceful') this.spawnMob(m.type, m.x, m.y + 0.01, m.z);
+      // aldeanos, guardianes y animales de corral aparecen aunque no haya monstruos
+      const friendly = !MONSTERS[m.type];
+      const allowed = friendly ? this.meta.mobs !== 'none' : this.meta.mobs === 'all' && this.difficulty !== 'peaceful';
+      if (!allowed) continue;
+      const mob = this.spawnMob(m.type, m.x, m.y + 0.01, m.z);
+      if (mob && m.data) {
+        if (mob.initFromData) mob.initFromData(m.data);
+        if (m.data.pen) mob.persistentFlag = true;
+      }
+    }
+  }
+
+  // ═════════════ Aldeas: registro, reputación, alarma, oficios ═════════════
+  /** Datos persistentes de la aldea `id` ("rx,rz"): {x,y,z,name,rep,found,alarm}. */
+  villageInfo(id) {
+    if (!id || !this.world) return null;
+    let v = this.villages.get(id);
+    if (!v) {
+      const [rx, rz] = id.split(',').map(Number);
+      const plan = villageAt(this.world.terrain, rx, rz);
+      if (!plan) return null;
+      const r = mulberry32((hash3(rx, 0, rz, this.world.seed) * 4294967296) >>> 0);
+      v = { x: plan.x, y: plan.y, z: plan.z, name: villagerName(r) + ['vega', 'monte', 'llano', 'fuente', 'roble'][Math.floor(r() * 5)], rep: 0, found: false, alarm: 0 };
+      this.villages.set(id, v);
+    }
+    return v;
+  }
+  villageReputation(id, delta) {
+    const v = this.villageInfo(id);
+    if (!v) return;
+    v.rep = Math.max(-100, Math.min(100, v.rep + delta));
+    if (delta < 0 && v.rep <= -30 && !v.warned) { v.warned = true; this.ui.toast(`Los habitantes de ${v.name} ya no confían en ti`); }
+  }
+  villageAlarm(id) { const v = id ? this.villages.get(id) : null; return !!v && v.alarm > this.playTime; }
+  /** Campana: los aldeanos de la aldea más cercana se refugian en casa durante 30 s. */
+  ringBell(x, y, z) {
+    const plan = nearestVillage(this.world.terrain, x, z, 1);
+    this.audio.play('bell', x + 0.5, y + 0.5, z + 0.5);
+    if (!plan || Math.hypot(plan.x - x, plan.z - z) > 80) return;
+    const v = this.villageInfo(plan.id);
+    v.alarm = this.playTime + 30;
+    this.ui.toast(`¡La campana de ${v.name} da la alarma! Los aldeanos se refugian`);
+  }
+  showVillageInfo(x, z) {
+    const plan = nearestVillage(this.world.terrain, x, z, 1);
+    if (!plan || Math.hypot(plan.x - x, plan.z - z) > 80) { this.ui.toast('Este atril no pertenece a ninguna aldea'); return; }
+    const v = this.villageInfo(plan.id);
+    const people = this.entities.count((e) => e.isVillager && e.village === plan.id);
+    const rep = v.rep >= 20 ? 'te aprecian' : v.rep <= -30 ? 'desconfían de ti' : 'te tratan con normalidad';
+    this.ui.toast(`Registro de ${v.name}: ${people} aldeanos cerca; ${rep} (reputación ${v.rep}).`, 5000);
+  }
+  /** Al colocar una estación de trabajo, un aldeano sin oficio cercano la adopta. */
+  onWorkstationPlaced(x, y, z, id) {
+    const b = Blocks.get(id);
+    const key = b.family === 'custom' && b.oriented ? Blocks.get(b.famBase).key : b.key;
+    const prof = PROFESSION_BY_STATION[key];
+    if (!prof || !this.entities) return;
+    let best = null, bd = 16;
+    for (const e of this.entities.list) {
+      if (!e.isVillager || e.removed || e.prof !== 'none') continue;
+      const d = Math.hypot(e.x - x - 0.5, e.z - z - 0.5);
+      if (d < bd) { bd = d; best = e; }
+    }
+    if (best) { best.setProfession(prof, [x, y, z]); this.ui.toast(`${best.vname} ahora trabaja como ${best.displayName.split('(')[1].replace(')', '').toLowerCase()}`); }
+  }
+  /** Descubrimiento de aldeas cercanas y brújula. */
+  _updateVillages(dt) {
+    const p = this.player, terrain = this.world.terrain;
+    this._villageTimer -= dt;
+    if (this._villageTimer <= 0) {
+      this._villageTimer = 2;
+      const plan = nearestVillage(terrain, p.x, p.z, 1);
+      if (plan && Math.hypot(plan.x - p.x, plan.z - p.z) < 64) {
+        const v = this.villageInfo(plan.id);
+        if (!v.found) { v.found = true; this.ui.centerMessage(`Aldea de ${v.name}`, 3500); this.achieve('aldea'); }
+      }
+    }
+    this._compassTimer -= dt;
+    if (this._compassTimer <= 0) {
+      this._compassTimer = 0.5;
+      const it = this.inventory.selectedItem();
+      if (it && it.kind === 'compass') {
+        const plan = nearestVillage(terrain, p.x, p.z, 6);
+        if (plan) {
+          const v = this.villageInfo(plan.id);
+          const dx = plan.x - p.x, dz = plan.z - p.z, d = Math.round(Math.hypot(dx, dz));
+          const ang = Math.atan2(dx, -dz); // 0 = Norte
+          const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
+          const dir = dirs[((Math.round(ang / (Math.PI / 4)) % 8) + 8) % 8];
+          this.ui.setCompass(d < 12 ? `🧭 Estás en ${v.name}` : `🧭 ${v.name}: ${d} m al ${dir}`);
+        } else this.ui.setCompass('🧭 No hay aldeas en 1000 m');
+      } else this.ui.setCompass(null);
     }
   }
 
@@ -685,8 +781,14 @@ export class Game {
     const inv = this.inventory, stack = inv.getSelected();
     const it = stack ? Items.get(stack.i) : null;
     const p = this.player;
-    // Cuerda: atar / soltar animales
+    // Aldeanos: comerciar
     const et = this.entityTarget;
+    if (et && pressed && et.isVillager && et.deathTime < 0) {
+      if (et.prof === 'none') { this.ui.toast(`${et.vname} no tiene oficio. Coloca una estación de trabajo libre cerca.`); return; }
+      this._openScreen(openTradeScreen(this, et));
+      return;
+    }
+    // Cuerda: atar / soltar animales
     if (et && pressed && et.attachLeash && et.deathTime < 0) {
       if (et.leash) { et.detachLeash(true); this.audio.play('leash', et.x, et.y, et.z); this.hand.swing(); return; }
       if (it && it.kind === 'rope' && et.leashable) {
@@ -878,6 +980,7 @@ export class Game {
     this.tickBlockEntities(dt);
     this.processBlockUpdates();
     this._structMobs();
+    this._updateVillages(dt);
     this.audio.update(dt, this.sky.atm.day);
     // bioma actual
     this._biomeTimer -= dt;
@@ -942,6 +1045,7 @@ export class Game {
       };
       meta.time = this.time; meta.playTime = this.playTime; meta.sleeping = sleeping; meta.be = be;
       meta.structDone = [...this.structDone]; meta.genVersion = GENERATOR_VERSION; meta.gameVersion = VERSION;
+      meta.villages = Object.fromEntries(this.villages);
       await this.world.saveModified();
       if (this.chunkStore) await this.chunkStore.flush();
       await this.store.putWorld(meta);

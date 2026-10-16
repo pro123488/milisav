@@ -43,6 +43,7 @@ export function supportOk(world, x, y, z, id) {
       const up = Blocks.get(world.getBlock(x, y + 1, z));
       return !!B_STURDY[world.getBlock(x, y - 1, z)] && up.family === 'door' && up.upper === 1 && up.famBase === b.famBase;
     }
+    case 'hang': return !!B_SOLID[world.getBlock(x, y + 1, z)]; // farol colgante: algo sólido encima
     case 'door_upper': {
       const lo = Blocks.get(world.getBlock(x, y - 1, z));
       return lo.family === 'door' && lo.upper === 0 && lo.famBase === b.famBase;
@@ -51,7 +52,7 @@ export function supportOk(world, x, y, z, id) {
   }
 }
 
-export const isContainerBlock = (id) => id === ID.CHEST || id === ID.FURNACE || id === ID.FURNACE_LIT;
+export const isContainerBlock = (id) => !!BLOCKS[id] && (BLOCKS[id].container > 0 || id === ID.FURNACE || id === ID.FURNACE_LIT);
 
 /** ID del estado de una familia con otros valores (facing/open/top/upper). */
 export function familyState(baseId, { facing = 0, open = 0, top = 0, upper = 0 } = {}) {
@@ -123,6 +124,7 @@ export class Building {
         if (hit.ny === 0) return familyState(blk.famBase, { facing: facingFromVector(-hit.nx, -hit.nz), top: fy > 0.5 ? 1 : 0 });
         return familyState(blk.famBase, { facing: lf, top: hit.ny === -1 ? 1 : 0 });
       }
+      case FAM.CUSTOM: return blk.oriented ? blk.famBase + ((lf + 2) % 4) : blk.id; // mira hacia el jugador
       default: return blk.id;
     }
   }
@@ -147,6 +149,8 @@ export class Building {
       else if (hit.nx === -1) id = ID.TORCH_E;
       else if (hit.nz === 1) id = ID.TORCH_N;
       else id = ID.TORCH_S;
+    } else if (id === ID.LANTERN && hit.ny === -1) {
+      id = ID.LANTERN_HANGING; // bajo un bloque: farol colgante
     } else if (blk.family) {
       id = this._orient(blk, hit);
       if (id < 0) return null;
@@ -214,8 +218,52 @@ export class Building {
     // 3) Comida: se come manteniendo pulsado (lo gestiona el juego)
     if (item.food && !item.plants) { g.beginEating(); return false; }
 
+    // Venda: cura al instante
+    if (item.kind === 'heal') {
+      if (!pressed) return false;
+      const sv = g.survival;
+      if (sv.health >= sv.maxHealth) { g.ui.toast('Ya tienes la salud completa'); return false; }
+      sv.health = Math.min(sv.maxHealth, sv.health + (item.heal || 4));
+      if (g.mode !== 'creative') inv.consumeSelected(1);
+      g.audio && g.audio.play('pickup'); g.particles.emit(g.player.x, g.player.y + 1.2, g.player.z, 0xff6a6a, 8, 1.4);
+      return true;
+    }
+
     if (!hit) { if (item.food) g.beginEating(); return false; }
     const b = Blocks.get(hit.id);
+
+    // Abono: adelanta un cultivo, intenta hacer crecer un brote o hace brotar flores en el césped
+    if (item.kind === 'fertilizer' && pressed) {
+      let used = false;
+      if (b.group === 'crop' && b.next) { w.setBlock(hit.x, hit.y, hit.z, Blocks.id(b.next)); used = true; }
+      else if (b.key.startsWith('sapling_')) { used = true; if (Math.random() < 0.45 && g.ticks) g.ticks.growTree(hit.x, hit.y, hit.z, b.key.slice(8)); }
+      else if (hit.id === ID.GRASS || hit.id === ID.GRASS_LUSH) {
+        used = true;
+        for (let k = 0; k < 10; k++) {
+          const x = hit.x + Math.floor(Math.random() * 5) - 2, z = hit.z + Math.floor(Math.random() * 5) - 2;
+          if (w.getBlock(x, hit.y, z) === hit.id && w.getBlock(x, hit.y + 1, z) === 0) w.setBlock(x, hit.y + 1, z, Math.random() < 0.7 ? ID.TALL_GRASS : [ID.FLOWER_RED, ID.FLOWER_YELLOW, ID.FLOWER_BLUE][k % 3]);
+        }
+      }
+      if (used) {
+        g.particles.emit(hit.x + 0.5, hit.y + 0.8, hit.z + 0.5, 0x66dd55, 10, 1.5);
+        if (g.mode !== 'creative') inv.consumeSelected(1);
+        g.achieve && g.achieve('abono');
+        return true;
+      }
+      return false;
+    }
+
+    // Pala sobre césped/tierra: camino
+    if (item.tool && item.tool.type === 'shovel' && pressed && (b.key.startsWith('grass') || hit.id === ID.DIRT) && hit.id !== ID.GRASS_SNOW && hit.ny === 1) {
+      if (g.mode === 'adventure') return false;
+      const above = w.getBlock(hit.x, hit.y + 1, hit.z);
+      if (above !== 0 && !B_REPLACEABLE[above]) return false;
+      if (above !== 0) w.setBlock(hit.x, hit.y + 1, hit.z, 0);
+      w.setBlock(hit.x, hit.y, hit.z, ID.PATH);
+      g.audio && g.audio.blockSound('dig', 'dirt', hit.x, hit.y, hit.z);
+      if (g.mode !== 'creative') inv.damageSelected(1);
+      return true;
+    }
 
     // 4) Azada
     if (item.tool && item.tool.type === 'hoe') {
@@ -256,6 +304,7 @@ export class Building {
       if (!plan) return false;
       w.setBlock(plan.x, plan.y, plan.z, plan.id);
       if (plan.door) { w.setBlock(plan.x, plan.y + 1, plan.z, plan.upperId); g.achieve && g.achieve('hogar'); }
+      if (g.onWorkstationPlaced) g.onWorkstationPlaced(plan.x, plan.y, plan.z, plan.id);
       g.audio && g.audio.blockSound('place', plan.block.sound, plan.x + 0.5, plan.y + 0.5, plan.z + 0.5);
       if (g.mode !== 'creative') inv.consumeSelected(1);
       g.stats && g.stats.blocksPlaced++;
@@ -278,6 +327,11 @@ export class Building {
         g.audio && g.audio.blockSound('break', 'plant', hit.x, hit.y, hit.z);
         return true;
       }
+      case 'anvil': g.openCrafting('workbench'); return true; // el yunque repara (pantalla de la mesa)
+      case 'compost': return this.useCompost(hit);
+      case 'bell': if (g.ringBell) g.ringBell(hit.x, hit.y, hit.z); return true;
+      case 'lectern': if (g.showVillageInfo) { g.showVillageInfo(hit.x, hit.z); return true; } return false;
+      case 'alchemy': if (g.openAlchemy) { g.openAlchemy(hit.x, hit.y, hit.z); return true; } return false;
       case 'door': return this.toggleDoor(hit.x, hit.y, hit.z);
       case 'gate': return this.toggleGate(hit.x, hit.y, hit.z);
       case 'trapdoor': return this.toggleTrapdoor(hit.x, hit.y, hit.z);
@@ -286,6 +340,23 @@ export class Building {
   }
 
   _denied() { this.game.audio && this.game.audio.play('deny'); }
+
+  /** Compostador: los restos vegetales tienen probabilidad de convertirse en abono. */
+  useCompost(hit) {
+    const g = this.game, inv = g.inventory, st = inv.getSelected();
+    const it = st ? Items.get(st.i) : null;
+    const CHANCE = { seed_wheat: 0.3, wheat: 0.5, carrot: 0.5, potato: 0.5, tomato: 0.5, corn: 0.5, apple: 0.6, berries: 0.4, bread: 0.8, tall_grass: 0.3, fern: 0.3, reed: 0.4, hay_bale: 0.9 };
+    let chance = it ? CHANCE[it.key] : undefined;
+    if (it && chance === undefined) { const bb = it.block !== undefined ? BLOCKS[it.block] : null; if (bb && (bb.group === 'leaves' || bb.group === 'plant' || bb.key.startsWith('sapling'))) chance = 0.3; }
+    if (!chance) { g.ui.toast('Pon restos vegetales en el compostador para hacer abono'); return true; }
+    if (g.mode !== 'creative') inv.consumeSelected(1);
+    g.particles.emit(hit.x + 0.5, hit.y + 1, hit.z + 0.5, 0x7a5a30, 4, 1);
+    if (Math.random() < chance) {
+      g.dropItem({ i: Items.id('fertilizer'), n: 1, d: 0 }, hit.x + 0.5, hit.y + 1.1, hit.z + 0.5, 0.5);
+      g.audio && g.audio.play('pickup', hit.x, hit.y, hit.z);
+    } else g.audio && g.audio.blockSound('place', 'plant', hit.x, hit.y, hit.z);
+    return true;
+  }
 
   /** Abre/cierra una puerta (las dos mitades). Devuelve false si el nuevo estado chocaría con alguien. */
   toggleDoor(x, y, z, wantOpen = null) {

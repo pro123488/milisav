@@ -1,13 +1,13 @@
 {
   "name": "blockworld-ultimate",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "BLOCKWORLD ULTIMATE - juego original de bloques, supervivencia y construcción",
   "type": "module",
   "private": true,
   "scripts": {
     "start": "node tools/serve.mjs",
-    "test": "node tests/run.mjs && node --import ./tests/support/hooks.mjs tests/fase2.mjs",
-    "test:e2e": "node tests/e2e/ui-crafting.mjs && node tests/e2e/furnace-chest-death.mjs && node tests/e2e/save-load.mjs && node tests/e2e/systems.mjs && node tests/e2e/creatures.mjs && node tests/e2e/fase2.mjs"
+    "test": "node tests/run.mjs && node --import ./tests/support/hooks.mjs tests/fase2.mjs && node --import ./tests/support/hooks.mjs tests/fase3.mjs",
+    "test:e2e": "node tests/e2e/ui-crafting.mjs && node tests/e2e/furnace-chest-death.mjs && node tests/e2e/save-load.mjs && node tests/e2e/systems.mjs && node tests/e2e/creatures.mjs && node tests/e2e/fase2.mjs && node tests/e2e/fase3.mjs"
   },
   "license": "UNLICENSED"
 }

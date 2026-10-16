@@ -125,6 +125,7 @@ export class AudioEngine {
       case 'door': this._tone({ dur: 0.16, type: 'triangle', freq: 150 * p, to: 95, gain: 0.35 }, sp); this._noise({ dur: 0.1, type: 'bandpass', freq: 700 * p, q: 2, gain: 0.3 }, sp); break;
       case 'door_metal': this._tone({ dur: 0.3, type: 'square', freq: 210 * p, to: 160, gain: 0.18 }, sp); this._noise({ dur: 0.12, type: 'bandpass', freq: 2600, q: 3, gain: 0.25 }, sp); break;
       case 'fizz': this._noise({ dur: 0.45, type: 'highpass', freq: 2200, sweep: 0.5, gain: 0.35 }, sp); break;
+      case 'bell': [0, 0.45, 0.9].forEach((t) => setTimeout(() => { this._tone({ dur: 1.1, type: 'sine', freq: 660 * p, to: 652, gain: 0.3 }, sp); this._tone({ dur: 0.9, type: 'sine', freq: 1650 * p, gain: 0.12 }, sp); }, t * 1000)); break;
       case 'leash': this._noise({ dur: 0.08, type: 'bandpass', freq: 1500 * p, q: 1.5, gain: 0.35 }, sp); break;
       case 'deny': this._tone({ dur: 0.12, type: 'square', freq: 180, to: 140, gain: 0.12 }, { g: 1, pan: 0 }); break;
       // criaturas

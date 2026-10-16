@@ -20,4 +20,9 @@ export const ACHIEVEMENTS = [
   { id: 'hogar', name: 'Hogar, dulce hogar', desc: 'Coloca una puerta' },
   { id: 'pastor', name: 'Pastor', desc: 'Ata un animal a una valla con una cuerda' },
   { id: 'cocinero', name: 'Buen provecho', desc: 'Cómete un estofado de verduras' },
+  // Fase 3
+  { id: 'aldea', name: 'Vecinos', desc: 'Descubre una aldea' },
+  { id: 'comercio', name: 'Trato hecho', desc: 'Comercia con un aldeano' },
+  { id: 'maestro', name: 'Maestro artesano', desc: 'Lleva a un aldeano al nivel de maestro' },
+  { id: 'abono', name: 'Abono natural', desc: 'Usa abono en un cultivo, un brote o el césped' },
 ];

@@ -3,6 +3,7 @@ import { Items, makeStack } from './items.js';
 import { ANIMALS } from './animals.js';
 import { MONSTERS } from './monsters.js';
 import { GAMEMODE_NAMES, DIFFICULTY_NAMES } from './config.js';
+import { nearestVillage } from './villages.js';
 
 const norm = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
 
@@ -13,7 +14,7 @@ const TIME_ALIAS = { amanecer: 0.0, manana: 0.1, dia: 0.15, mediodia: 0.25, tard
 export const COMMAND_HELP = [
   '/modo <supervivencia|creativo|aventura>', '/tiempo <amanecer|dia|mediodia|atardecer|noche|medianoche|0-1>', '/dar <objeto> [cantidad]',
   '/tp <x> <y> <z>', '/curar', '/matar', '/invocar <criatura>', '/dificultad <pacifico|facil|normal|dificil>', '/semilla', '/spawn', '/limpiar',
-  '/guardar', '/bestiario', '/objetos [texto]',
+  '/guardar', '/bestiario', '/objetos [texto]', '/localizar aldea',
 ];
 
 function findItem(q) {
@@ -86,6 +87,13 @@ export function runCommand(game, line) {
       const d = p.lookDir();
       const m = game.spawnMob(k, p.x + d.x * 3, p.y + 0.5, p.z + d.z * 3);
       return m ? `Invocado: ${all[k].name}` : 'No se pudo invocar.';
+    }
+    case 'localizar': case 'locate': {
+      if (!/^aldea|village/.test(norm(args[0] || ''))) return 'Uso: /localizar aldea';
+      const v = nearestVillage(game.world.terrain, p.x, p.z, 8);
+      if (!v) return 'No hay aldeas en 1300 bloques a la redonda.';
+      const info = game.villageInfo(v.id);
+      return `Aldea de ${info.name} en ${v.x}, ${v.y + 1}, ${v.z} (a ${Math.round(Math.hypot(v.x - p.x, v.z - p.z))} bloques)`;
     }
     case 'bestiario': return 'Animales: ' + Object.values(ANIMALS).map((d) => d.name).join(', ') + '. Monstruos: ' + Object.values(MONSTERS).map((d) => `${d.name} (amenaza ${d.threat})`).join(', ');
     default: return `Comando desconocido: ${cmdRaw}. Escribe /ayuda`;

@@ -152,6 +152,17 @@ table.keys td { padding: 5px 8px; border-bottom: 1px solid #ffffff12; } table.ke
 .cursor-item { position: fixed; left: 0; top: 0; pointer-events: none; z-index: 100; width: 40px; height: 40px; }
 .cursor-item .icon { width: 36px; height: 36px; filter: drop-shadow(2px 3px 0 #0008); } .cursor-item .count { position: absolute; right: 0; bottom: 0; font: 800 13px var(--ui-font); text-shadow: 1px 1px 0 #000; }
 .tooltip { position: fixed; z-index: 120; pointer-events: none; background: #0a0f18f2; border: 2px solid #5b3e9c; border-radius: 5px; padding: 6px 10px; font-size: 13px; line-height: 1.4; max-width: 280px; }
+.trade-screen .panel { min-width: 460px; }
+.trade-level { color: var(--acc2); font-size: 13px; margin: -4px 0 4px; }
+.xp-bar { height: 6px; background: var(--bg0); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+.xp-bar > div { height: 100%; width: 0; background: linear-gradient(90deg, #5fd35f, #b6f06a); }
+.trade-list { display: flex; flex-direction: column; gap: 4px; max-height: 280px; overflow: auto; background: var(--bg0); border: 2px solid var(--line); border-radius: 6px; padding: 6px; margin-bottom: 8px; }
+.offer { display: flex; align-items: center; gap: 10px; padding: 4px 8px; background: var(--bg2); border: 2px solid var(--line); border-radius: 6px; cursor: pointer; }
+.offer:hover { border-color: var(--acc); background: var(--bg3); } .offer.no { opacity: .55; } .offer.sold { opacity: .35; text-decoration: line-through; }
+.o-give, .o-get { display: flex; align-items: center; gap: 6px; } .o-give img, .o-get img { width: 26px; height: 26px; image-rendering: pixelated; }
+.o-arrow { color: var(--acc2); font-weight: 800; } .o-uses { margin-left: auto; font-size: 12px; color: var(--dim, #aab); }
+.hud-compass { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); padding: 4px 12px; background: rgba(10,12,20,.55); border-radius: 6px; font: 600 13px var(--ui-font); color: #f2e6c0; pointer-events: none; }
+.hud-compass.hidden { display: none; }
 .craft-panel { display: flex; flex-direction: column; gap: 8px; min-width: 330px; max-width: 420px; }
 .craft-bar { display: flex; justify-content: space-between; font-size: 13px; } .chk { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
 .recipe-list { display: flex; flex-direction: column; gap: 4px; max-height: 300px; overflow: auto; padding-right: 4px; background: var(--bg0); border: 2px solid var(--line); border-radius: 6px; padding: 6px; }

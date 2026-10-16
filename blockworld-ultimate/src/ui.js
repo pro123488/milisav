@@ -75,6 +75,13 @@ export class UI {
     this.chatLines = [];
     this._buildHotbar();
     this.tooltip = el('div', 'tooltip hidden'); document.body.append(this.tooltip);
+    this.compassEl = el('div', 'hud-compass hidden'); this.hud.append(this.compassEl);
+  }
+  /** Texto de la brújula de aldeas (null = ocultar). */
+  setCompass(text) {
+    if (!text) { this.compassEl.classList.add('hidden'); return; }
+    if (this.compassEl.textContent !== text) this.compassEl.textContent = text;
+    this.compassEl.classList.remove('hidden');
   }
 
   // ── Utilidades ──
