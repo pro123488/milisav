@@ -1,4 +1,4 @@
-# BLOCKWORLD ULTIMATE — Fase 2 (construcción avanzada y mundo vivo)
+# BLOCKWORLD ULTIMATE — Fase 3 (aldeas y comercio)
 
 Videojuego **original** de bloques, supervivencia, construcción y exploración que se ejecuta en el navegador
 (HTML + CSS + JavaScript + three.js/WebGL). Todo el contenido —texturas, iconos, modelos, sonidos, música,
@@ -6,7 +6,8 @@ criaturas, nombres— se **genera por código** y es propio: no hay recursos, c�
 
 > La **Fase 1** dejó un videojuego funcional de punta a punta (menú → crear mundo → jugar → guardar → continuar).
 > La **Fase 2** añade bloques con forma y orientación (escaleras, puertas, vallas…), fluidos que fluyen, cultivos y
-> comidas nuevas y la cuerda para llevar animales. Más abajo hay una tabla **honesta** de lo que está implementado y de
+> comidas nuevas y la cuerda para llevar animales. La **Fase 3** añade aldeas generadas con aldeanos que trabajan,
+> duermen y comercian con una moneda propia, y un guardián que las defiende. Más abajo hay una tabla **honesta** de lo que está implementado y de
 > lo que queda para fases posteriores; el plan completo está en [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Cómo ejecutarlo
@@ -30,11 +31,12 @@ Opciones de depuración por URL: `?autostart=survival|creative|adventure|peacefu
 ### Pruebas automáticas
 
 ```bash
-npm test                        # 43 + 32 pruebas de lógica: terreno, luz, inventario, crafteo, física, raycast, mallado,
-                                #   guardado, formas (escaleras, puertas, vallas), fluidos, colocación (tests/run.mjs y tests/fase2.mjs)
+npm test                        # 43 + 32 + 19 pruebas de lógica: terreno, luz, inventario, crafteo, física, raycast, mallado,
+                                #   guardado, formas, fluidos, colocación, aldeas sin costuras, A*, comercio, aldeanos
 node tests/e2e/save-load.mjs    # pruebas E2E en Chromium (requieren Playwright: npm i -D playwright, o PW_MODULES=ruta/node_modules)
 npm run test:e2e                # ciclo completo: menú→mundo→crafteo→horno→cofre→muerte→guardar→continuar, cultivos, criaturas,
-                                #   y la Fase 2 con ratón/teclado reales (puerta, escaleras, agua, cuerda, iconos)
+                                #   la Fase 2 con ratón/teclado reales (puerta, escaleras, agua, cuerda, iconos) y la Fase 3
+                                #   (aldea, aldeanos, comercio con la interfaz, campana, guardián, brújula)
 node tools/mapdump.mjs semilla normal mapa.png 4096 16   # PNG de biomas + estadísticas del generador
 node tools/chunkstats.mjs semilla normal 6               # tiempos de generación y distribución de bloques
 ```
@@ -50,6 +52,7 @@ node tools/chunkstats.mjs semilla normal 6               # tiempos de generació
 | Colocar / usar / abrir puertas / comer (mantener) | Clic derecho (las puertas cambian solo con un clic nuevo) |
 | Escalera de mano: subir / sujetarse | Avanzar contra ella o `Espacio` / `C` |
 | Cuerda: atar un animal / atarlo a una valla / soltarlo | Clic derecho al animal con la cuerda / a la valla / al animal atado |
+| Comerciar con un aldeano | Clic derecho al aldeano y clic en una oferta |
 | Copiar el bloque apuntado (Creativo) | Clic central |
 | Ranura de la barra rápida | `1`–`9` o rueda |
 | Inventario y fabricación | `E` |
@@ -59,7 +62,7 @@ node tools/chunkstats.mjs semilla normal 6               # tiempos de generació
 | Chat y comandos (`/ayuda`) | `T` o `/` |
 | Pausa | `Esc` |
 
-## Qué está implementado (Fases 1 y 2)
+## Qué está implementado (Fases 1, 2 y 3)
 
 Leyenda: ✅ hecho y probado · 🟡 hecho de forma simplificada · ❌ no implementado todavía.
 
@@ -89,8 +92,12 @@ Leyenda: ✅ hecho y probado · 🟡 hecho de forma simplificada · ❌ no imple
 | Estructuras | ✅ | Cabañas abandonadas (Fase 2: con puerta y alero de escaleras), ruinas del bosque/jungla con guardián, templos del desierto enterrados con obelisco y pozo con escalera de mano, mazmorras subterráneas; cofres con botín. |
 | Guardado | ✅ | IndexedDB (chunks modificados comprimidos con RLE de 16 bits —formato 2, con migración del formato 1—, inventario, cofres/hornos, criaturas persistentes, hora, posición, logros) + autoguardado cada 30 s; opciones en localStorage. |
 | Audio | ✅ | 100 % procedural (WebAudio): sonidos por material, criaturas, interfaz y música ambiental generativa; volúmenes ajustables. |
-| Logros | 🟡 | 19 logros básicos (Fase 2: puerta, atar un animal, estofado). |
-| Dimensiones, aldeas, comercio, jefes, maquinaria/automatización, raíles/vagonetas/barcos, multijugador, móvil/táctil | ❌ | Fases posteriores (ver `docs/PLAN.md`). |
+| **Aldeas** (Fase 3) | ✅ | Generadas en llanuras, bosques, desiertos/mesetas, regiones nevadas y junglas (estilo propio por bioma), ocupan varios chunks sin costuras: pozo con campana y farol, calles de camino con farolas, casas con puerta, camas y tejado a cuatro aguas, granjas con riego, corrales con animales, herrerías con botín, bibliotecas, talleres y torres de vigía con escalera de mano. `/localizar aldea` y la brújula de aldeas. |
+| **Aldeanos** (Fase 3) | ✅ | Seis oficios según su estación de trabajo (granjero/compostador, herrero/yunque, erudito/atril, tejedor/telar, pescador/barril, curandero/mesa de alquimia); de día trabajan y pasean, de noche vuelven a su cama abriendo y cerrando puertas (A*), huyen de los monstruos y se refugian al sonar la campana. Un aldeano sin oficio adopta la estación libre que coloques cerca. |
+| **Comercio** (Fase 3) | ✅ | Moneda propia (**Moneda de sol**); 3 niveles de ofertas por oficio que se desbloquean con experiencia, se agotan y se reponen al amanecer; la mala reputación (golpear o matar aldeanos) sube los precios y enfada al guardián. |
+| **Guardián de piedra** (Fase 3) | ✅ | Uno por aldea: patrulla, ataca a los monstruos cercanos y se vuelve contra el jugador si este ataca a la aldea. Los monstruos nocturnos persiguen también a los aldeanos. |
+| Logros | 🟡 | 23 logros (Fase 2: puerta, atar un animal, estofado; Fase 3: aldea, comercio, maestro, abono). |
+| Dimensiones, jefes, maquinaria/automatización, raíles/vagonetas/barcos, multijugador, móvil/táctil | ❌ | Fases posteriores (ver `docs/PLAN.md`). |
 
 ## Estructura del proyecto
 
@@ -102,6 +109,8 @@ src/game.js                      Orquestador: bucle, interacción, guardado, est
 src/world.js · chunk.js          Chunks, streaming, mallado con presupuesto, físicas de acceso
 src/shapes.js                    Formas de cajas (render/colisión/selección) de escaleras, puertas, vallas…
 src/fluids.js                    Agua y lava que fluyen
+src/villages.js · villagers.js   Aldeas (plan de varios chunks), aldeanos y guardián
+src/navigation.js · trading.js   Búsqueda de caminos A*; oficios, ofertas y comercio
 src/terrain.js · biomes.js       Generador procedural y definición de biomas
 src/structures.js                Estructuras y botines
 src/terrain.worker.js            Generación fuera del hilo principal
@@ -133,6 +142,9 @@ docs/                            Plan de fases y especificaciones
   se queda quieto al recargar el mundo hasta que cambia un bloque vecino; el agua se extiende igual en todas direcciones
   (no busca el hueco más cercano); desde una losa se puede saltar encima de una valla (1,27 + 0,5 > 1,5); la luz del cielo
   atraviesa losas, puertas y vallas, pero no las escaleras (dan sombra).
+- **Fase 3 — límites conocidos:** los aldeanos no se reproducen; solo aparecen una vez por aldea (al acercarse) y se guardan
+  con el mundo; los mundos creados antes de la Fase 3 avisan de que el generador cambió (las aldeas solo aparecen en
+  terreno no guardado y pueden quedar cortadas junto a zonas ya modificadas); la mesa de alquimia aún no destila (Fase 4).
 
 ## Nota sobre el encargo
 

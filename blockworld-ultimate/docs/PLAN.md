@@ -47,9 +47,9 @@ pruebas E2E en Chromium, revisión adversarial, commit y push en la rama `claude
 
 ## Estado
 - [x] Fase 1 — juego jugable (commit 11072e3).
-- [ ] Fase 2.0
-- [ ] Fase 2
-- [ ] Fase 3
+- [x] Fase 2.0 — IDs de 16 bits, guardado v2, atlas 32×32 (commit 79c938e).
+- [x] Fase 2 — escaleras, puertas, vallas, muros, trampillas, fluidos, cuerda, cultivos (commit 79c938e).
+- [x] Fase 3 — aldeas, aldeanos, comercio, guardián.
 - [ ] Fase 4
 - [ ] Fase 5
 - [ ] Fase 6
