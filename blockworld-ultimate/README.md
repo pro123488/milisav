@@ -1,11 +1,13 @@
-# BLOCKWORLD ULTIMATE — Fase 1 (jugable)
+# BLOCKWORLD ULTIMATE — Fase 2 (construcción avanzada y mundo vivo)
 
 Videojuego **original** de bloques, supervivencia, construcción y exploración que se ejecuta en el navegador
 (HTML + CSS + JavaScript + three.js/WebGL). Todo el contenido —texturas, iconos, modelos, sonidos, música,
 criaturas, nombres— se **genera por código** y es propio: no hay recursos, código ni nombres de otros juegos.
 
-> Esto es la **Fase 1**: un videojuego funcional de punta a punta (menú → crear mundo → jugar → guardar → continuar),
-> no una maqueta. Más abajo hay una tabla **honesta** de lo que está implementado y de lo que queda para fases posteriores.
+> La **Fase 1** dejó un videojuego funcional de punta a punta (menú → crear mundo → jugar → guardar → continuar).
+> La **Fase 2** añade bloques con forma y orientación (escaleras, puertas, vallas…), fluidos que fluyen, cultivos y
+> comidas nuevas y la cuerda para llevar animales. Más abajo hay una tabla **honesta** de lo que está implementado y de
+> lo que queda para fases posteriores; el plan completo está en [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Cómo ejecutarlo
 
@@ -28,9 +30,11 @@ Opciones de depuración por URL: `?autostart=survival|creative|adventure|peacefu
 ### Pruebas automáticas
 
 ```bash
-node tests/run.mjs              # 41 pruebas de lógica: terreno, luz, inventario, crafteo, física, raycast, mallado, guardado
+npm test                        # 43 + 32 pruebas de lógica: terreno, luz, inventario, crafteo, física, raycast, mallado,
+                                #   guardado, formas (escaleras, puertas, vallas), fluidos, colocación (tests/run.mjs y tests/fase2.mjs)
 node tests/e2e/save-load.mjs    # pruebas E2E en Chromium (requieren Playwright: npm i -D playwright, o PW_MODULES=ruta/node_modules)
-npm run test:e2e                # ciclo completo: menú→mundo→crafteo→horno→cofre→muerte→guardar→continuar, cultivos, criaturas
+npm run test:e2e                # ciclo completo: menú→mundo→crafteo→horno→cofre→muerte→guardar→continuar, cultivos, criaturas,
+                                #   y la Fase 2 con ratón/teclado reales (puerta, escaleras, agua, cuerda, iconos)
 node tools/mapdump.mjs semilla normal mapa.png 4096 16   # PNG de biomas + estadísticas del generador
 node tools/chunkstats.mjs semilla normal 6               # tiempos de generación y distribución de bloques
 ```
@@ -43,7 +47,9 @@ node tools/chunkstats.mjs semilla normal 6               # tiempos de generació
 | Agacharse (no caes de los bordes) / bajar al volar | `C` |
 | Mirar | Ratón (la sensibilidad se ajusta en Opciones) |
 | Romper / atacar | Clic izquierdo (mantener) |
-| Colocar / usar / abrir / comer (mantener) | Clic derecho |
+| Colocar / usar / abrir puertas / comer (mantener) | Clic derecho (las puertas cambian solo con un clic nuevo) |
+| Escalera de mano: subir / sujetarse | Avanzar contra ella o `Espacio` / `C` |
+| Cuerda: atar un animal / atarlo a una valla / soltarlo | Clic derecho al animal con la cuerda / a la valla / al animal atado |
 | Copiar el bloque apuntado (Creativo) | Clic central |
 | Ranura de la barra rápida | `1`–`9` o rueda |
 | Inventario y fabricación | `E` |
@@ -53,7 +59,7 @@ node tools/chunkstats.mjs semilla normal 6               # tiempos de generació
 | Chat y comandos (`/ayuda`) | `T` o `/` |
 | Pausa | `Esc` |
 
-## Qué está implementado en la Fase 1
+## Qué está implementado (Fases 1 y 2)
 
 Leyenda: ✅ hecho y probado · 🟡 hecho de forma simplificada · ❌ no implementado todavía.
 
@@ -61,30 +67,30 @@ Leyenda: ✅ hecho y probado · 🟡 hecho de forma simplificada · ❌ no imple
 |---|---|---|
 | **3. Menú principal** | ✅ | Jugar, Crear mundo, Continuar mundo, Seleccionar mundo, 4 modos de inicio rápido (Supervivencia, Creativo, Aventura, Pacífico), Opciones, Controles, Créditos; panorama 3D de fondo. Todos los botones hacen algo real. |
 | Creación de mundos | ✅ | Nombre, semilla (texto o número), tipo (Normal, Montañoso, Archipiélago, Superplano), dificultad, tamaño/límites (infinito, 1024, 512, 256), estructuras sí/no, criaturas (todas/solo animales/ninguna), modo de juego, comandos, conservar inventario. Lista de mundos guardados con borrado. |
-| **4. Bloques** | ✅ | ~100 bloques originales con datos (dureza, herramienta, nivel de cosecha, sonido, luz, drops…) y texturas procedurales 16×16 propias: tierra, 5 céspedes, piedra, arena, grava, arcilla, barro, nieve, hielo, 4 troncos, hojas, roca profunda, 6 minerales (carbón, cobre, hierro, oro, **cristal**, **noctisita** rara), basalto, vidrio volcánico, arenisca, ladrillos, losas, bloques de metal, lámpara de cristal, cristales de cueva… |
+| **4. Bloques** | ✅ | ~120 bloques originales (222 IDs contando orientaciones y estados) con datos (dureza, herramienta, nivel de cosecha, sonido, luz, drops…) y texturas procedurales 16×16 propias: tierra, 5 céspedes, piedra, arena, grava, arcilla, barro, nieve, hielo, 4 troncos, hojas, roca profunda, 6 minerales (carbón, cobre, hierro, oro, **cristal**, **noctisita** rara), basalto, vidrio volcánico, arenisca, ladrillos, losas, bloques de metal, lámpara de cristal, cristales de cueva… **Fase 2:** escaleras de 5 materiales (4 orientaciones, normales e invertidas), escalera de mano, puertas de madera y de hierro (2 bloques), trampilla, valla de madera, muro de adoquín y puerta de valla, con modelos de cajas, iconos isométricos y texturas propias. |
 | **5. Terreno procedural** | ✅ | Ruido simplex con semilla: océanos, costas/playas, llanuras, colinas, montañas (crestas), valles, **ríos**, **lagos**, **cuevas** (cuevas amplias + túneles), **barrancos**, **mesetas y cañones** áridos, bosques, desiertos, regiones heladas con lagos congelados, pantanos, junglas, **volcanes con lava**. Mismo mundo con la misma semilla y versión del generador (`GENERATOR_VERSION`). |
-| **6. Chunks y optimización** | ✅ | Chunks 16×16×128; terreno generado en un **Web Worker** (con alternativa por tiempo si no hay Workers); mallas combinadas con caras ocultas, **AO** y **luz suave por vértice**; mallado con presupuesto de tiempo por fotograma; carga progresiva por distancia, descarga conservando cambios, remallado local al editar; partículas instanciadas; frustum culling. |
+| **6. Chunks y optimización** | ✅ | Chunks 16×16×128 con **IDs de 16 bits** (hasta 4096 bloques; los mundos de la Fase 1 se migran solos al cargarlos); terreno generado en un **Web Worker** (con alternativa por tiempo si no hay Workers); mallas combinadas con caras ocultas, **AO** y **luz suave por vértice**; mallado con presupuesto de tiempo por fotograma; carga progresiva por distancia, descarga conservando cambios, remallado local al editar; partículas instanciadas; frustum culling. |
 | Iluminación | ✅ | Luz de cielo + luz de bloque (0–15) con propagación entre chunks y actualización incremental al poner/quitar bloques; antorchas y cristales iluminan. |
-| **7. Movimiento** | ✅ | Primera persona, gravedad, salto (altura independiente de los FPS), correr, agacharse con protección de bordes, natación, vuelo creativo, autosalto, daño por caída, colisiones AABB sin atravesar terreno ni quedar atrapado, sensibilidad/FOV ajustables, **cámara en 3ª persona** (`V`). |
+| **7. Movimiento** | ✅ | Primera persona, gravedad, salto (altura independiente de los FPS), correr, agacharse con protección de bordes, natación, vuelo creativo, autosalto, daño por caída, colisiones con las cajas reales de cada bloque sin atravesar terreno ni quedar atrapado, sensibilidad/FOV ajustables, **cámara en 3ª persona** (`V`). **Fase 2:** se suben escaleras y losas andando (escalones de 0,6, con la cámara suavizada), escaleras de mano trepables sin daño por caída, vallas y muros de 1,5 que no se saltan, corrientes de agua que arrastran. |
 | **8. Romper bloques** | ✅ | Raycast de vóxeles con cajas reales (losas, antorchas, plantas), alcance limitado, progreso con grietas, tiempo según dureza/herramienta/nivel de cosecha (p. ej. piedra: 7,5 s a mano, 1,1 s pico de madera, 0,4 s pico de hierro), desgaste, drops. |
-| **9. Colocar bloques** | ✅ | Cara apuntada, comprobaciones (alcance, hueco libre, no dentro del jugador, soporte), vista previa, antorchas de pared, losas, gravedad de arena/grava. |
+| **9. Colocar bloques** | ✅ | Cara apuntada, comprobaciones (alcance, hueco libre, no dentro del jugador ni de criaturas con las cajas reales, soporte), vista previa con la forma real, antorchas de pared, losas, gravedad de arena/grava. **Fase 2:** orientación según la mirada, escaleras invertidas al apuntar a la mitad superior, escaleras de mano solo en paredes completas, puertas que abren/cierran sus dos mitades y no se cierran sobre nadie. |
 | **10. Inventario** | ✅ | Barra de 9 + 27 huecos + 4 de armadura, pilas, mover/dividir/mayús+clic/doble clic, soltar y recoger del suelo, cursor con objeto. La lógica es pura y está probada con una prueba de "no se duplican objetos". |
-| **11. Crafteo** | ✅/🟡 | Recetas basadas en datos (ingredientes, cantidades, resultado, estación, condición de desbloqueo), mesa de trabajo, horno con combustible y tiempo. ❌ **Puertas y escaleras** (aún no hay bloques con orientación). |
+| **11. Crafteo** | ✅ | Recetas basadas en datos (ingredientes, cantidades, resultado, estación, condición de desbloqueo), mesa de trabajo, horno con combustible y tiempo. **Fase 2:** escaleras, puertas, trampillas, vallas, muros, puertas de valla, escaleras de mano, cuerda, cuenco y comidas. |
 | **12. Herramientas/armas/armaduras** | ✅ | 7 materiales (madera, piedra, cobre, hierro, oro, cristal, noctisita) × pico/hacha/pala/espada/azada; 6 conjuntos de armadura; estadísticas distintas (oro: rápido y frágil); **reparación** en la mesa de trabajo. |
 | **13–14. Supervivencia y día/noche** | ✅ | Salud, hambre/saturación, recuperación, caída, ahogamiento, lava/fuego, cactus, vacío, armadura, muerte y reaparición (regla de conservar inventario configurable); ciclo de 20 min con amanecer/mañana/mediodía/tarde/atardecer/noche, sol, luna, estrellas, nubes y reloj; la noche siempre es jugable. |
 | **15. Biomas** | ✅ | 12 biomas con aspecto, flora, árboles y criaturas propios (bosque templado y oscuro, desierto, mesetas, montañas, nevada, jungla, pantano, costa, océano, llanura, volcánica). |
-| **16. Fluidos** | 🟡 | Agua y lava **estáticas** (sin propagación): nadar, ahogarse, lava dañina, cubos para recoger/colocar. Sin flujo para no gastar rendimiento (se podrá añadir con límite de actualizaciones). |
+| **16. Fluidos** | ✅ | **Fase 2:** agua (7 bloques) y lava (3 bloques) que fluyen con niveles y superficie inclinada, cascadas, se secan al quitar la fuente, agua "infinita" entre dos fuentes, lava + agua → vidrio volcánico/adoquín/piedra, arrastran plantas y antorchas (que sueltan su objeto) y se detienen en puertas; presupuesto de actualizaciones por fotograma. Nadar, ahogarse, lava dañina, cubos (solo recogen fuentes). |
 | **17. Plantas y árboles** | ✅ | 6 tipos de árbol, flores, helechos, hongos (incl. luminosos), cactos, arbustos de bayas; **replantar** brotes que crecen en árboles. |
 | **18. Animales** | ✅ | 7 especies originales (bóvido de pradera, cerdo de bosque, ave de montaña, zorro de cristal, tortuga de río, pez luminoso, ciervo de niebla) con modelos animados, hábitat, vagar/pastar/descansar/huir/seguir. |
-| **19. Agricultura** | ✅ | Azada → tierra arada, semillas, hidratación por agua cercana, 4 etapas de crecimiento (solo con luz), cosecha, replantado; trigo, zanahoria, papa, bayas. Los cultivos se guardan. 🟡 Crecen solo con el chunk cargado. |
-| **20. Cría y domesticación** | ✅/🟡 | Alimentar, modo "amor", crías que crecen, enfriamiento y topes de población; domesticar al zorro con pescado; los animales criados/domesticados persisten. ❌ Objetos para transportar animales; los corrales se hacen con bloques (aún no hay vallas). |
+| **19. Agricultura** | ✅ | Azada → tierra arada, semillas, hidratación por agua cercana, 4 etapas de crecimiento (solo con luz), cosecha, replantado; trigo, zanahoria, papa, bayas y (Fase 2) **tomate y maíz**, con comidas nuevas: mazorca asada, pan de maíz, estofado de verduras, sopa de hongos y ensalada (devuelven el cuenco). Los cultivos se guardan. 🟡 Crecen solo con el chunk cargado. |
+| **20. Cría y domesticación** | ✅/🟡 | Alimentar, modo "amor", crías que crecen, enfriamiento y topes de población; domesticar al zorro con pescado; los animales criados/domesticados persisten. **Fase 2:** la **cuerda** lleva animales (te siguen, tiran y se rompe a 14 bloques) y los ata a vallas; los animales atados o alimentados no desaparecen. |
 | **21. Monstruos y combate** | ✅ | 7 criaturas hostiles originales (acechador nocturno, murciélago cavernario, gólem de barro, guardián de ruinas, esqueleto de obsidiana —ataque a distancia—, devorador de arena —emboscada—, bestia volcánica), persecución, ataques, retroceso, recompensas, aparición controlada por bioma/luz/dificultad, se queman con el sol. |
 | **22. Jefes** | ❌ | **No implementados** (ver nota al final). |
-| Estructuras | ✅ | Cabañas abandonadas, ruinas del bosque/jungla con guardián, templos del desierto enterrados con obelisco, mazmorras subterráneas; cofres con botín. |
-| Guardado | ✅ | IndexedDB (chunks modificados comprimidos con RLE, inventario, cofres/hornos, criaturas persistentes, hora, posición, logros) + autoguardado cada 30 s; opciones en localStorage. |
+| Estructuras | ✅ | Cabañas abandonadas (Fase 2: con puerta y alero de escaleras), ruinas del bosque/jungla con guardián, templos del desierto enterrados con obelisco y pozo con escalera de mano, mazmorras subterráneas; cofres con botín. |
+| Guardado | ✅ | IndexedDB (chunks modificados comprimidos con RLE de 16 bits —formato 2, con migración del formato 1—, inventario, cofres/hornos, criaturas persistentes, hora, posición, logros) + autoguardado cada 30 s; opciones en localStorage. |
 | Audio | ✅ | 100 % procedural (WebAudio): sonidos por material, criaturas, interfaz y música ambiental generativa; volúmenes ajustables. |
-| Logros | 🟡 | 16 logros básicos. |
-| Dimensiones, aldeas, comercio, jefes, maquinaria/automatización, transporte, multijugador, móvil/táctil | ❌ | Fases posteriores. |
+| Logros | 🟡 | 19 logros básicos (Fase 2: puerta, atar un animal, estofado). |
+| Dimensiones, aldeas, comercio, jefes, maquinaria/automatización, raíles/vagonetas/barcos, multijugador, móvil/táctil | ❌ | Fases posteriores (ver `docs/PLAN.md`). |
 
 ## Estructura del proyecto
 
@@ -94,6 +100,8 @@ vendor/three.module.min.js       three.js r160 (MIT)
 src/main.js                      Arranque, menús ↔ partidas
 src/game.js                      Orquestador: bucle, interacción, guardado, estados
 src/world.js · chunk.js          Chunks, streaming, mallado con presupuesto, físicas de acceso
+src/shapes.js                    Formas de cajas (render/colisión/selección) de escaleras, puertas, vallas…
+src/fluids.js                    Agua y lava que fluyen
 src/terrain.js · biomes.js       Generador procedural y definición de biomas
 src/structures.js                Estructuras y botines
 src/terrain.worker.js            Generación fuera del hilo principal
@@ -109,7 +117,8 @@ src/entities.js · animals.js · monsters.js · spawner.js
 src/ui.js · screens.js · menus.js
 src/save.js · audio.js · commands.js · achievements.js · hand.js · config.js · noise.js
 tools/                           Servidor, benchmarks, generador de mapas, utilidades de pruebas
-tests/run.mjs                    Pruebas automáticas
+tests/run.mjs · tests/fase2.mjs  Pruebas automáticas (Node); tests/e2e/ en Chromium
+docs/                            Plan de fases y especificaciones
 ```
 
 ## Decisiones de diseño y límites conocidos
@@ -119,13 +128,17 @@ tests/run.mjs                    Pruebas automáticas
 - Los **monstruos de estructuras** aparecen una vez por estructura (se recuerda en el guardado).
 - El audio necesita un gesto del usuario (el primer clic) por política de los navegadores.
 - Pensado para **ratón y teclado** en escritorio; sin soporte táctil.
+- **Fase 2 — límites conocidos:** las puertas tienen la bisagra siempre en el mismo lado (sin puertas dobles); la puerta de
+  hierro se abre a mano hasta que exista la energía (Fase 6); los fluidos solo avanzan en chunks cargados y un flujo a medias
+  se queda quieto al recargar el mundo hasta que cambia un bloque vecino; el agua se extiende igual en todas direcciones
+  (no busca el hueco más cercano); desde una losa se puede saltar encima de una valla (1,27 + 0,5 > 1,5); la luz del cielo
+  atraviesa losas, puertas y vallas, pero no las escaleras (dan sombra).
 
 ## Nota sobre el encargo
 
 El texto del encargo llegaba **cortado en la sección 22 (Jefes: «Cada jefe debe tener: Historia. Arena…»)**. Las secciones posteriores
-(dimensiones, aldeas, comercio, maquinaria, logros avanzados, etc.) no se han recibido, así que no se han implementado ni se afirma nada sobre ellas.
-Hoja de ruta propuesta: **Fase 2** (escaleras/puertas/vallas, flujo de fluidos limitado, más cultivos y comida, transporte de animales),
-**Fase 3** (aldeas y comercio), **Fase 4** (jefes y arenas), **Fase 5** (dimensiones), **Fase 6** (maquinaria/automatización).
+no se recibieron; las fases siguientes se basan en la hoja de ruta propuesta (`docs/PLAN.md`): **Fase 3** (aldeas y comercio),
+**Fase 4** (jefes y arenas), **Fase 5** (dimensiones), **Fase 6** (maquinaria, automatización y transporte).
 
 ## Licencias
 

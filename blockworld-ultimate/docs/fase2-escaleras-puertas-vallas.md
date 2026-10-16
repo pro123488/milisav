@@ -103,3 +103,30 @@ raycast a una escalera devuelve la caja correcta, mallado sin NaN y con caras es
 válidas, pintores de tiles presentes, colocación orientada y apertura de puertas con el mundo real.
 E2E (Chromium): colocar y abrir una puerta con el ratón, subir escaleras andando, valla que detiene
 al jugador, captura de pantalla.
+
+---
+
+## Anexo: diseño implementado (sustituye a lo anterior donde no coincida)
+
+La revisión de diseño detectó que el texto de arriba se escribió para IDs de 8 bits. Lo que se implementó:
+
+- **IDs de 16 bits** (`MAX_BLOCKS = 4096`, `Uint16Array` en chunks, worker, mallador y guardado). El guardado usa RLE de
+  16 bits (registro `{b, f: 2}`); los chunks de la Fase 1 (`f` ausente) se decodifican con el RLE de 8 bits y se convierten.
+  Los objetos de bloques con ID ≥ 256 usan el ID de objeto `16384 + id` (`blockItemId`).
+- Rangos reservados: 101–299 Fase 2 · 300–499 Fase 3 · 500–699 Fase 4 · 700–899 Fase 5 · 900–1299 Fase 6.
+- Una sola forma `box` (`SHAPE_ID.box = 7`) y una tabla `B_FAMILY` (stairs, ladder, door, fence, wall, gate, **trapdoor**).
+  Trampillas 187–202: `base + facing + 4·abierta + 8·arriba`; cerrada = losa de 3/16 abajo o arriba; abierta = hoja vertical
+  en el lado `facing` (bisagra), sin poder trepar.
+- Fluidos 203–214 (agua 1..7 y cascada; lava 1..3 y cascada) y cultivos 215–222 (tomate, maíz).
+- **Física**: `boxCollides` y `sweep` recorren la capa inferior solo para bloques con colisión de 1,5 (`B_TALLCOL`) y comprueban
+  solape real en los 3 ejes. Subida de escalones por subpaso (subir, avanzar, bajar; se acepta si avanza más y no termina
+  encima de una valla/muro); al aceptarse no se marcan `hitX/hitZ`. `stepHeight` = 0,6 para jugador y criaturas, 0 para objetos.
+- **Escaleras** con `atten 15` (dan sombra); sus caras interiores usan la luz más alta de las celdas vecinas.
+- Superficie de fluidos con alturas por esquina compartidas entre celdas vecinas (sin huecos).
+- **Soportes**: `B_STURDY` (cubo sólido completo) para antorchas de pared, escaleras de mano y suelo de puertas.
+- **Puertas**: se rompen las dos mitades a la vez y sueltan una puerta (nada en creativo, respeta el nivel de herramienta).
+  Las interacciones solo se disparan con un clic nuevo (no al mantener). Abrir/cerrar se rechaza si la nueva forma chocaría
+  con el jugador o una criatura. Los monstruos necesitan línea de visión por cajas de colisión para atacar o disparar.
+- **Arena/grava** que cae sobre una forma de cajas se suelta como objeto.
+- **Puerta de valla**: la selección es la franja central también abierta (fácil de cerrar).
+- No se sube `GENERATOR_VERSION`: solo cambian detalles dentro de estructuras que caben en un chunk.
