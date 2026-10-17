@@ -91,6 +91,14 @@ recipe('geode_heart', 1, [['crystal_shard', 6], ['cave_crystal', 2], ['gold_ingo
 recipe('tide_pearl', 1, [['scute', 3], ['raw_fish', 4], ['crystal_shard', 2]], 'workbench', 'scute', 'Ofrendas');
 recipe('eternal_ember', 1, [['obsidian', 2], ['coal', 6], ['iron_ingot', 4]], 'workbench', 'obsidian', 'Ofrendas');
 
+// ── Fase 5: Dimensión Oscura ─────────────────────────────────────
+recipe('portal_core', 1, [['noctisite_ingot', 4], ['crystal_shard', 4], ['obsidian', 1]], 'workbench', 'noctisite_ingot', 'Dimensión Oscura');
+recipe('umbral_key', 1, [['essence_forest', 1], ['essence_crystal', 1], ['essence_tide', 1], ['essence_ember', 1], ['noctisite_ingot', 2]], 'workbench', 'essence_forest', 'Dimensión Oscura');
+recipe('sovereign_sigil', 1, [['shadow_shard', 6], ['noctisite_ingot', 2], ['heart_crystal', 1]], 'workbench', 'shadow_shard', 'Dimensión Oscura');
+recipe('umbral_bricks', 4, [['umbral_stone', 4]], 'workbench', 'umbral_stone', 'Dimensión Oscura');
+recipe('umbral_brick_carved', 2, [['umbral_bricks', 2], ['shadow_shard', 1]], 'workbench', 'umbral_bricks', 'Dimensión Oscura');
+recipe('planks', 3, [['fungus_stem', 1]], 'hand', 'fungus_stem', 'Básicos');
+
 // Herramientas: cabeza + palos
 const HEAD_COST = { pickaxe: [3, 2], axe: [3, 2], shovel: [1, 2], sword: [2, 1], hoe: [2, 2] };
 for (const tier of TIER_ORDER) {
@@ -131,6 +139,8 @@ export const SMELTING = [
   { in: 'raw_venison', out: 'cooked_venison', time: 8 },
   { in: 'potato', out: 'baked_potato', time: 8 },
   { in: 'corn', out: 'roasted_corn', time: 8 },
+  { in: 'fungus_slice', out: 'roasted_fungus', time: 8 },
+  { in: 'umbral_stone', out: 'umbral_bricks', time: 8 },
 ];
 const SMELT_BY_ID = new Map();
 for (const s of SMELTING) SMELT_BY_ID.set(Items.id(s.in), s);

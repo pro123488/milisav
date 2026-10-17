@@ -18,9 +18,10 @@ export const COMMAND_HELP = [
   '/modo <supervivencia|creativo|aventura>', '/tiempo <amanecer|dia|mediodia|atardecer|noche|medianoche|0-1>', '/dar <objeto> [cantidad]',
   '/tp <x> <y> <z>', '/curar', '/matar', '/invocar <criatura>', '/dificultad <pacifico|facil|normal|dificil>', '/semilla', '/spawn', '/limpiar',
   '/guardar', '/bestiario', '/objetos [texto]', '/localizar aldea', '/localizar santuario [bosque|cristal|mar|fuego]',
-  '/efecto <efecto> [segundos] [nivel] | /efecto limpiar', '/jefe <bosque|cristal|mar|fuego>',
+  '/efecto <efecto> [segundos] [nivel] | /efecto limpiar', '/jefe <bosque|cristal|mar|fuego|soberano>',
+  '/localizar ciudadela', '/dimension <normal|oscura>',
 ];
-const SHRINE_ALIAS = { bosque: 'bosque', guardian: 'bosque', forest: 'bosque', cristal: 'cristal', coloso: 'cristal', crystal: 'cristal', mar: 'mar', reina: 'mar', marea: 'mar', sea: 'mar', fuego: 'fuego', titan: 'fuego', volcan: 'fuego', fire: 'fuego' };
+const SHRINE_ALIAS = { soberano: 'soberano', sovereign: 'soberano',  bosque: 'bosque', guardian: 'bosque', forest: 'bosque', cristal: 'cristal', coloso: 'cristal', crystal: 'cristal', mar: 'mar', reina: 'mar', marea: 'mar', sea: 'mar', fuego: 'fuego', titan: 'fuego', volcan: 'fuego', fire: 'fuego' };
 
 function findItem(q) {
   const n = norm(q).replace(/\s+/g, '_');
@@ -94,6 +95,12 @@ export function runCommand(game, line) {
       return m ? `Invocado: ${all[k].name}` : 'No se pudo invocar.';
     }
     case 'localizar': case 'locate': {
+      if (/^ciudadela|citadel/.test(norm(args[0] || ''))) {
+        if (game.dimension !== 'dark') return 'La Ciudadela del Soberano está en la Dimensión Oscura.';
+        const a = game.world.terrain.citadelAltar();
+        return `Ciudadela del Soberano: trono en ${a.x}, ${a.y}, ${a.z} (a ${Math.round(Math.hypot(a.x - p.x, a.z - p.z))} bloques)`;
+      }
+      if (game.dimension === 'dark') return 'En la Dimensión Oscura no hay aldeas ni santuarios. Prueba /localizar ciudadela.';
       if (/^santuario|shrine|jefe/.test(norm(args[0] || ''))) {
         const type = args[1] ? SHRINE_ALIAS[norm(args[1])] : null;
         if (args[1] && !type) return 'Uso: /localizar santuario [bosque|cristal|mar|fuego]';
@@ -109,6 +116,14 @@ export function runCommand(game, line) {
       return `Aldea de ${info.name} en ${v.x}, ${v.y + 1}, ${v.z} (a ${Math.round(Math.hypot(v.x - p.x, v.z - p.z))} bloques)`;
     }
     case 'bestiario': if (game.openBestiary) { setTimeout(() => game.openBestiary(), 0); return 'Abriendo el bestiario (tecla B).'; } return 'Animales: ' + Object.values(ANIMALS).map((d) => d.name).join(', ') + '. Monstruos: ' + Object.values(MONSTERS).map((d) => `${d.name} (amenaza ${d.threat})`).join(', ');
+    case 'dimension': case 'dimensión': {
+      const a = norm(args[0] || '');
+      const t = /^oscura|dark|umbr/.test(a) ? 'dark' : /^normal|mundo|overworld/.test(a) ? 'overworld' : null;
+      if (!t) return 'Uso: /dimension <normal|oscura>';
+      if (t === game.dimension) return 'Ya estás en esa dimensión.';
+      game.travel(t);
+      return t === 'dark' ? 'Viajando a la Dimensión Oscura…' : 'Volviendo al mundo normal…';
+    }
     case 'efecto': case 'effect': {
       const fx = game.survival.effects;
       const a0 = norm(args[0] || '');
@@ -121,8 +136,8 @@ export function runCommand(game, line) {
     }
     case 'jefe': case 'boss': {
       const type = SHRINE_ALIAS[norm(args[0] || '')];
-      if (!type) return 'Uso: /jefe <bosque|cristal|mar|fuego>';
-      const key = SHRINE_TYPES[type].boss;
+      if (!type) return 'Uso: /jefe <bosque|cristal|mar|fuego|soberano>';
+      const key = type === 'soberano' ? 'sovereign' : SHRINE_TYPES[type].boss;
       const d = p.lookDir();
       const m = game.summonBoss(key, Math.floor(p.x + d.x * 8), Math.floor(p.y), Math.floor(p.z + d.z * 8));
       return m ? `¡${BOSSES[key].name} despierta!` : 'No se pudo invocar.';

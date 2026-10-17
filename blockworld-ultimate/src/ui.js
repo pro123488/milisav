@@ -185,7 +185,8 @@ export class UI {
     const atm = g.sky.atm;
     const p = g.player;
     const biome = g.world.terrain ? biomeName(g.currentBiome ?? 2) : '';
-    this.topRight.innerHTML = `<div class="clock">${clockString(g.time)} · ${phaseName(g.time)}</div><div class="biome">${biome}</div><div class="mode">${GAMEMODE_NAMES[g.mode]}${g.difficulty === 'peaceful' ? ' · Pacífico' : ''}</div>`;
+    const clock = g.dimension === 'dark' ? 'Dimensión Oscura · penumbra eterna' : `${clockString(g.time)} · ${phaseName(g.time)}`;
+    this.topRight.innerHTML = `<div class="clock">${clock}</div><div class="biome">${biome}</div><div class="mode">${GAMEMODE_NAMES[g.mode]}${g.difficulty === 'peaceful' ? ' · Pacífico' : ''}</div>`;
     if (this.debug) {
       const hit = g.hit;
       const lines = [
@@ -275,6 +276,8 @@ export class UI {
       heart_crystal: 'Clic derecho: +1 corazón máximo (hasta 20)', root_staff: 'Clic derecho: las raíces inmovilizan a los enemigos cercanos y te regeneran (15 s de recarga)',
       prism_blade: 'Cada cuatro golpes libera un anillo de esquirlas', coral_crown: 'Respiras bajo el agua mientras la llevas puesta',
       titan_hammer: 'Rompe zonas de 3×3 bloques de piedra y minerales', snowball: 'Clic derecho: lánzala (enfría al Titán Volcánico)',
+      umbral_key: 'Clic derecho en un Núcleo de portal rodeado de 8 bloques de vidrio volcánico para abrirlo', portal_core: 'Rodéalo de vidrio volcánico (3×3) y actívalo con la Llave umbría',
+      eclipse_scepter: 'Clic derecho: dispara un proyectil de sombra', shadow_shard: 'Lo sueltan las criaturas de la Dimensión Oscura',
     };
     if (it.kind === 'summon') lines.push(`<span class="fx-line">Ofrenda: despierta a un jefe en su altar</span>`);
     if (DESC[it.key]) lines.push(`<span class="dim">${DESC[it.key]}</span>`);

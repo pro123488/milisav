@@ -6,6 +6,7 @@ import { Chunk, chunkKey, TICKABLE } from './chunk.js';
 import { Lighting } from './lighting.js';
 import { meshChunk } from './mesher.js';
 import { Terrain } from './terrain.js';
+import { DarkTerrain } from './darkterrain.js';
 import { B_SOLID, B_FLUID } from './blocks.js';
 import { collisionBoxes as shapeCollision, needsMask, connectMask, B_TALLCOL } from './shapes.js';
 
@@ -55,7 +56,8 @@ export class World {
     this.size = o.size || 0; // 0 = infinito
     this.renderDistance = o.renderDistance ?? 6;
     this.store = o.store || null;
-    this.terrain = new Terrain(this.seed, { type: this.type, structures: this.structures });
+    this.dimension = o.dimension || 'overworld';
+    this.terrain = this.dimension === 'dark' ? new DarkTerrain(this.seed, { structures: this.structures }) : new Terrain(this.seed, { type: this.type, structures: this.structures });
     this.chunks = new Map();
     this.lighting = new Lighting(this);
     this.blockEntities = new Map();
@@ -81,7 +83,7 @@ export class World {
   }
 
   _startGen() {
-    const opts = { type: this.type, structures: this.structures };
+    const opts = { type: this.type, structures: this.structures, dimension: this.dimension };
     const onResult = (r) => this.incoming.push(r);
     const fallback = () => {
       if (this.gen && this.gen.mode === 'sync') return;

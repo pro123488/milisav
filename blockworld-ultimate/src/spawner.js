@@ -15,7 +15,7 @@ const pickWeighted = (table) => {
   return entries[entries.length - 1][0];
 };
 const DAY_SPAWN = new Set(['sand_devourer', 'mud_golem', 'volcano_beast', 'obsidian_skeleton']);
-const GROUND_OK = new Set([ID.GRASS, ID.GRASS_LUSH, ID.GRASS_DRY, ID.GRASS_SWAMP, ID.GRASS_SNOW, ID.DIRT, ID.SAND, ID.RED_SAND, ID.SNOW, ID.MUD, ID.STONE, ID.BASALT, ID.ASH, ID.SANDSTONE, ID.RED_SANDSTONE, ID.GRAVEL, ID.CLAY]);
+const GROUND_OK = new Set([ID.GRASS, ID.GRASS_LUSH, ID.GRASS_DRY, ID.GRASS_SWAMP, ID.GRASS_SNOW, ID.DIRT, ID.SAND, ID.RED_SAND, ID.SNOW, ID.MUD, ID.STONE, ID.BASALT, ID.ASH, ID.SANDSTONE, ID.RED_SANDSTONE, ID.GRAVEL, ID.CLAY, ID.UMBRAL_MOSS, ID.UMBRAL_STONE]);
 const MONSTER_CAP = { easy: 6, normal: 12, hard: 18, peaceful: 0 };
 
 export class Spawner {
@@ -145,10 +145,11 @@ export class Spawner {
     if (w.getSky(x, y, z) > 2 || w.getBlockLight(x, y, z) > 4) return false;
     const r = Math.random();
     let key;
-    if (r < 0.4) key = 'cave_bat';
+    if (g.dimension === 'dark') key = r < 0.45 ? 'shade_wraith' : 'void_crawler'; // cavernas de las islas umbrías
+    else if (r < 0.4) key = 'cave_bat';
     else if (y < 38 && r < 0.65) key = 'obsidian_skeleton';
     else key = 'night_stalker';
-    if (key !== 'cave_bat' && (!B_SOLID[below] || B_FAMILY[below])) return false; // ni sobre vallas, escaleras o puertas
+    if (key !== 'cave_bat' && key !== 'shade_wraith' && (!B_SOLID[below] || B_FAMILY[below])) return false; // ni sobre vallas, escaleras o puertas
     if (B_FLUID[below]) return false;
     return !!g.spawnMob(key, x + 0.5, y + 0.01, z + 0.5);
   }

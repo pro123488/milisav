@@ -62,6 +62,18 @@ export const ANIMALS = {
       P('tail', [0.2, 0.04, 0.3], [0, 0.34, 0.38], '#3f5878', { pivot: [0, 0.34, 0.25] }),
     ],
   },
+  lumen_moth: {
+    key: 'lumen_moth', name: 'Polilla lumínica', category: 'volador', hp: 3, speed: 1.8, fleeMul: 1.5, w: 0.4, h: 0.4, flying: true, canJump: false,
+    food: ['fungus_slice'], domestic: false, breeds: false, sound: 'chirp', cap: 8, skittish: 4,
+    drops: [{ item: 'shadow_shard', min: 0, max: 1, chance: 0.25 }],
+    model: () => [
+      P('body', [0.14, 0.14, 0.34], [0, 0.22, 0], '#3a2a52'),
+      P('glow', [0.12, 0.1, 0.12], [0, 0.22, 0.16], '#9af6ff', { emissive: true }),
+      P('head', [0.12, 0.12, 0.12], [0, 0.26, -0.2], '#4a3a62', { pivot: [0, 0.24, -0.16] }),
+      P('wingL', [0.4, 0.03, 0.3], [-0.26, 0.26, 0], '#c8a0ff', { pivot: [-0.07, 0.26, 0], emissive: true }),
+      P('wingR', [0.4, 0.03, 0.3], [0.26, 0.26, 0], '#c8a0ff', { pivot: [0.07, 0.26, 0], emissive: true }),
+    ],
+  },
   crystal_fox: {
     key: 'crystal_fox', name: 'Zorro de cristal', category: 'raro', hp: 8, speed: 2.0, fleeMul: 2.6, w: 0.55, h: 0.7, jump: 8.6,
     food: ['raw_fish', 'cooked_fish'], domestic: false, breeds: false, tameTrust: 3, skittish: 9, sound: 'yip', cap: 4,

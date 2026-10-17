@@ -34,4 +34,8 @@ export const ACHIEVEMENTS = [
   { id: 'jefe_titan', name: 'Forja apagada', desc: 'Derrota al Titán Volcánico' },
   { id: 'cazajefes', name: 'Leyenda viva', desc: 'Derrota a los cuatro jefes del mundo' },
   { id: 'vitalidad', name: 'Corazón de hierro', desc: 'Usa un Cristal vital para ganar un corazón' },
+  // Fase 5
+  { id: 'portal', name: 'Al otro lado', desc: 'Cruza un portal umbrío hasta la Dimensión Oscura' },
+  { id: 'ciudadela', name: 'Torres en la penumbra', desc: 'Encuentra la Ciudadela del Soberano' },
+  { id: 'jefe_soberano', name: 'Fin de la noche', desc: 'Derrota al Soberano de la Dimensión Oscura' },
 ];

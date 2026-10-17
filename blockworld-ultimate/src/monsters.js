@@ -170,6 +170,53 @@ export const MONSTERS = {
       P('legR', [0.14, 0.5, 0.14], [0.1, 0.25, 0], '#2a1618', { pivot: [0.1, 0.5, 0] }),
     ],
   },
+  // ── Fase 5: criaturas de la Dimensión Oscura ──
+  shade_wraith: {
+    key: 'shade_wraith', name: 'Espectro umbrío', threat: 3, hp: 18, speed: 2.6, chase: 3.4, dmg: 4, reach: 1.5, detect: 26, w: 0.8, h: 1.6, flying: true, canJump: false,
+    habitat: 'Dimensión Oscura', sound: 'screech', cooldown: 1.4, inflict: ['weakness', 6, 1],
+    drops: [{ item: 'shadow_shard', min: 0, max: 2 }],
+    model: () => [
+      P('body', [0.6, 0.9, 0.4], [0, 0.85, 0], '#2a1a3a', { color2: '#1a1028' }),
+      P('head', [0.5, 0.5, 0.5], [0, 1.5, 0], '#3a2a52', { pivot: [0, 1.3, 0] }),
+      P('eyeL', [0.1, 0.06, 0.04], [-0.12, 1.52, -0.26], '#e8c0ff', { pivot: [0, 1.3, 0], parent: 'head', emissive: true }),
+      P('eyeR', [0.1, 0.06, 0.04], [0.12, 1.52, -0.26], '#e8c0ff', { pivot: [0, 1.3, 0], parent: 'head', emissive: true }),
+      P('wingL', [0.7, 0.8, 0.06], [-0.6, 0.95, 0.15], '#1a1028', { pivot: [-0.25, 1.1, 0.15] }),
+      P('wingR', [0.7, 0.8, 0.06], [0.6, 0.95, 0.15], '#1a1028', { pivot: [0.25, 1.1, 0.15] }),
+      P('tail', [0.3, 0.5, 0.3], [0, 0.2, 0.05], '#2a1a3a'),
+    ],
+  },
+  void_crawler: {
+    key: 'void_crawler', name: 'Reptador del vacío', threat: 3, hp: 26, speed: 2.2, chase: 3.8, dmg: 5, reach: 1.7, detect: 22, w: 1.0, h: 0.8, knockRes: 0.3,
+    habitat: 'Dimensión Oscura', sound: 'rattle', cooldown: 1.1, jump: 8.6,
+    drops: [{ item: 'shadow_shard', min: 1, max: 2 }, { item: 'raw_noctisite', min: 0, max: 1, chance: 0.2 }],
+    model: () => [
+      P('body', [0.9, 0.45, 1.2], [0, 0.5, 0], '#2a2236', { color2: '#16101e' }),
+      P('head', [0.7, 0.4, 0.5], [0, 0.55, -0.8], '#3a2e4a', { pivot: [0, 0.5, -0.55] }),
+      P('eyeL', [0.1, 0.08, 0.04], [-0.18, 0.62, -1.06], '#b070ff', { pivot: [0, 0.5, -0.55], parent: 'head', emissive: true }),
+      P('eyeR', [0.1, 0.08, 0.04], [0.18, 0.62, -1.06], '#b070ff', { pivot: [0, 0.5, -0.55], parent: 'head', emissive: true }),
+      P('spine', [0.2, 0.2, 1.0], [0, 0.82, 0], '#8e5be0', { emissive: true }),
+      P('leg_fl', [0.14, 0.5, 0.14], [-0.55, 0.25, -0.4], '#16101e', { pivot: [-0.55, 0.5, -0.4] }),
+      P('leg_fr', [0.14, 0.5, 0.14], [0.55, 0.25, -0.4], '#16101e', { pivot: [0.55, 0.5, -0.4] }),
+      P('leg_bl', [0.14, 0.5, 0.14], [-0.55, 0.25, 0.4], '#16101e', { pivot: [-0.55, 0.5, 0.4] }),
+      P('leg_br', [0.14, 0.5, 0.14], [0.55, 0.25, 0.4], '#16101e', { pivot: [0.55, 0.5, 0.4] }),
+    ],
+  },
+  umbral_sentinel: {
+    key: 'umbral_sentinel', name: 'Centinela umbrío', threat: 4, hp: 60, speed: 1.0, chase: 2.2, dmg: 8, reach: 2.1, detect: 14, w: 1.0, h: 2.4, knockRes: 0.9, guard: 14,
+    habitat: 'Ciudadela del Soberano y ruinas umbrías', sound: 'rumble', cooldown: 1.5, noDespawn: true,
+    drops: [{ item: 'shadow_shard', min: 2, max: 4 }, { item: 'noctisite_ingot', min: 0, max: 1, chance: 0.35 }],
+    model: () => [
+      P('torso', [0.9, 1.0, 0.55], [0, 1.6, 0], '#3a2e4a', { pivot: [0, 1.6, 0] }),
+      P('rune', [0.3, 0.3, 0.04], [0, 1.65, -0.3], '#b070ff', { pivot: [0, 1.6, 0], parent: 'torso', emissive: true }),
+      P('head', [0.55, 0.55, 0.55], [0, 2.4, 0], '#4a3a5e', { pivot: [0, 2.15, 0] }),
+      P('eyeL', [0.12, 0.05, 0.04], [-0.13, 2.42, -0.29], '#e8c0ff', { pivot: [0, 2.15, 0], parent: 'head', emissive: true }),
+      P('eyeR', [0.12, 0.05, 0.04], [0.13, 2.42, -0.29], '#e8c0ff', { pivot: [0, 2.15, 0], parent: 'head', emissive: true }),
+      P('armL', [0.32, 1.1, 0.32], [-0.64, 1.5, 0], '#2a2236', { pivot: [-0.64, 2.05, 0] }),
+      P('armR', [0.32, 1.1, 0.32], [0.64, 1.5, 0], '#2a2236', { pivot: [0.64, 2.05, 0] }),
+      P('legL', [0.36, 1.1, 0.38], [-0.24, 0.55, 0], '#221a2e', { pivot: [-0.24, 1.1, 0] }),
+      P('legR', [0.36, 1.1, 0.38], [0.24, 0.55, 0], '#221a2e', { pivot: [0.24, 1.1, 0] }),
+    ],
+  },
 };
 
 /** Proyectil (fragmento de obsidiana). */
@@ -322,6 +369,7 @@ export class Monster extends Mob {
           const hurt = g.survival.damage(def.dmg, 'mob', this);
           if (hurt && def.ignite && !g.survival.effects.has('fire_resistance')) g.survival.fire = Math.max(g.survival.fire, def.ignite);
           if (hurt && def.poison) g.survival.effects.add('poison', def.poison, 1);
+          if (hurt && def.inflict) g.survival.effects.add(def.inflict[0], def.inflict[1], def.inflict[2] || 1);
         } else p.hurt(def.dmg, this.x, this.z, 1, this);
         this.sound();
       }
@@ -383,7 +431,10 @@ export class Monster extends Mob {
       this.flyTargetVy = clamp(dy * 1.5 + this.flitVy * 0.4, -3, 3);
       if (dist < def.reach && Math.abs(dy) < 1.4 && this.atkCd <= 0 && !segmentBlocked(this.world, this.x, this.y + this.h / 2, this.z, g.player.x, g.player.y + 1.2, g.player.z)) {
         this.atkCd = def.cooldown; this.attackAnim = 0.3;
-        if (g.survival.damage(def.dmg, 'mob', this) && def.poison) g.survival.effects.add('poison', def.poison, 1);
+        if (g.survival.damage(def.dmg, 'mob', this)) {
+          if (def.poison) g.survival.effects.add('poison', def.poison, 1);
+          if (def.inflict) g.survival.effects.add(def.inflict[0], def.inflict[1], def.inflict[2] || 1);
+        }
         this.sound();
         this.flit = 0.8; this.flitX = -dx / (dist || 1); this.flitZ = -dz / (dist || 1);
       }

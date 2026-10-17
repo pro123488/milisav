@@ -124,10 +124,11 @@ export class SaveStore {
     await txDone(tx);
   }
   async deleteWorld(id) {
-    if (!this.db) { this.memWorlds.delete(id); for (const k of [...this.memChunks.keys()]) if (k.startsWith(id + '/')) this.memChunks.delete(k); return; }
+    if (!this.db) { this.memWorlds.delete(id); for (const k of [...this.memChunks.keys()]) if (k.startsWith(id + '/') || k.startsWith(id + '~')) this.memChunks.delete(k); return; }
     const tx = this.db.transaction(['worlds', 'chunks'], 'readwrite');
     tx.objectStore('worlds').delete(id);
     tx.objectStore('chunks').delete(IDBKeyRange.bound(id + '/', id + '/￿'));
+    tx.objectStore('chunks').delete(IDBKeyRange.bound(id + '~', id + '~￿')); // otras dimensiones (id~dark/...)
     await txDone(tx);
   }
 

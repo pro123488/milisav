@@ -79,6 +79,8 @@ function def(id, key, name, o = {}) {
     container: o.container ?? 0,      // huecos de contenedor (cofre, barril)
     // ── Fase 4 ──
     boss: o.boss ?? null,             // altares: jefe que despierta su ofrenda
+    // ── Fase 5 ──
+    trans: o.trans ?? false,          // se dibuja en la pasada translúcida (velo del portal)
   };
   BLOCKS[id] = b;
   byKey.set(key, b);
@@ -356,6 +358,24 @@ def(507, 'sea_lantern', 'Farol marino', { hardness: 0.6, light: 15, sound: 'glas
 def(508, 'magma_brick', 'Ladrillo de magma', { hardness: 2.5, tool: PICK, harvest: 1, light: 6, sound: 'stone' });
 def(509, 'runestone', 'Piedra rúnica', { hardness: 2.2, tool: PICK, harvest: 1, light: 3, sound: 'stone' });
 
+// ══════════════════════ FASE 5: Dimensión Oscura ══════════════════════
+def(700, 'umbral_stone', 'Piedra umbría', { hardness: 1.8, tool: PICK, harvest: 1, sound: 'stone' });
+def(701, 'umbral_moss', 'Musgo umbrío', { tiles: { top: 'umbral_moss_top', side: 'umbral_moss_side', bottom: 'umbral_stone' }, hardness: 1.2, tool: PICK, harvest: 1, drops: 'umbral_stone', sound: 'grass' });
+def(702, 'umbral_bricks', 'Ladrillo umbrío', { hardness: 2.5, tool: PICK, harvest: 1, sound: 'stone' });
+def(703, 'umbral_brick_carved', 'Ladrillo umbrío tallado', { hardness: 2.5, tool: PICK, harvest: 1, light: 2, sound: 'stone' });
+def(704, 'void_crystal', 'Cristal del vacío', { hardness: 1.5, tool: PICK, harvest: 1, light: 12, sound: 'glass', drops: [{ item: 'crystal_shard', min: 1, max: 2 }, { item: 'shadow_shard', chance: 0.35 }] });
+def(705, 'ore_noctisite_umbral', 'Noctisita en piedra umbría', { hardness: 4, tool: PICK, harvest: 4, drops: 'raw_noctisite', sound: 'stone' });
+def(706, 'fungus_stem', 'Tallo de hongo umbrío', { tiles: { top: 'fungus_stem_top', side: 'fungus_stem' }, hardness: 1.5, tool: AXE, sound: 'wood' });
+def(707, 'fungus_cap', 'Sombrero de hongo umbrío', { hardness: 0.6, tool: AXE, light: 10, sound: 'plant', drops: [{ item: 'fungus_slice', min: 0, max: 2 }, { item: 'fungus_cap', chance: 0.25 }] });
+def(708, 'umbral_grass', 'Hierba umbría', { shape: 'cross', solid: false, opaque: false, atten: 0, hardness: 0, sound: 'plant', replaceable: true, plantOn: 'umbral', drops: null, group: 'plant' });
+def(709, 'portal_core', 'Núcleo de portal', { tiles: { top: 'portal_core_top', side: 'portal_core_side' }, hardness: 8, tool: PICK, harvest: 3, sound: 'glass', interact: 'portal' });
+def(710, 'portal_core_active', 'Núcleo de portal (activo)', { tiles: { top: 'portal_core_active_top', side: 'portal_core_active_side' }, hardness: 8, tool: PICK, harvest: 3, light: 15, sound: 'glass', interact: 'portal', drops: 'portal_core', placeable: false, pick: 'portal_core' });
+def(711, 'portal_veil', 'Velo umbrío', { tiles: 'portal_veil', solid: false, opaque: false, cull: true, atten: 0, light: 11, hardness: 1000, unbreakable: true, targetable: false, placeable: false, drops: null, sound: 'glass', trans: true });
+def(712, 'altar_sovereign', 'Trono del Soberano', custom({
+  tiles: { side: 'altar_sovereign_side', top: 'altar_sovereign_top', bottom: 'umbral_bricks' }, boxes: [[1, 0, 1, 15, 3, 15], [2, 3, 2, 14, 12, 14], [0, 12, 0, 16, 15, 16]], colBoxes: [[0, 0, 0, 16, 15, 16]],
+  light: 9, hardness: 60, tool: PICK, harvest: 4, unbreakable: true, sound: 'stone', interact: 'altar', boss: 'sovereign', drops: null,
+}));
+
 // ─────────────────────────────────────────────────────────────────
 export const Blocks = {
   list: BLOCKS,
@@ -403,7 +423,7 @@ for (const b of BLOCKS) {
   B_SHAPE[b.id] = SHAPE_ID[b.shape] ?? 1;
   B_REPLACEABLE[b.id] = b.replaceable ? 1 : 0;
   B_TARGET[b.id] = b.targetable ? 1 : 0;
-  B_TRANS[b.id] = (b.fluid === 'water' || b.key === 'ice' || b.key === 'glass') ? 1 : 0;
+  B_TRANS[b.id] = (b.fluid === 'water' || b.key === 'ice' || b.key === 'glass' || b.trans) ? 1 : 0;
   B_CULLGRP[b.id] = b.group === 'leaves' ? LEAVES_GRP : b.id;
   B_SOUND[b.id] = b.sound;
 }

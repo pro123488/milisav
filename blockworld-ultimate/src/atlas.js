@@ -471,6 +471,58 @@ P.runestone = (g, r) => {
   g.rect(3, 3, 12, 12, rgb(96, 98, 108)); g.line(5, 5, 10, 10, rgb(170, 140, 255)); g.line(10, 5, 5, 10, rgb(170, 140, 255)); g.hline(5, 10, 7, rgb(170, 140, 255)); g.set(7, 7, rgb(240, 220, 255));
 };
 
+// ── Fase 5: Dimensión Oscura ──
+P.umbral_stone = (g, r) => { g.noise(rgb(58, 46, 72), 7, r); g.blobs(rgb(48, 38, 60), r, 4, 2); g.specks(rgb(86, 70, 104), r, 12); g.cracks(rgb(36, 28, 46), r, 3); };
+P.umbral_moss_top = (g, r) => { g.noise(rgb(86, 52, 120), 10, r); g.specks(rgb(140, 90, 190), r, 18); g.specks(rgb(60, 34, 86), r, 14); g.specks(rgb(170, 230, 255), r, 3); };
+P.umbral_moss_side = (g, r) => {
+  P.umbral_stone(g, r);
+  for (let x = 0; x < N; x++) { const h = 2 + Math.floor(r() * 3); for (let y = 0; y < h; y++) g.set(x, y, add(rgb(86, 52, 120), (r() - 0.5) * 18)); }
+};
+P.umbral_bricks = (g, r) => {
+  g.noise(rgb(52, 40, 66), 5, r);
+  for (let y = 0; y < N; y += 4) g.hline(0, 15, y, rgb(30, 22, 40));
+  for (let y = 0; y < N; y += 4) for (let x = (y / 4) % 2 ? 4 : 0; x < N; x += 8) g.vline(x, y, y + 3, rgb(30, 22, 40));
+  g.specks(rgb(74, 58, 92), r, 10);
+};
+P.umbral_brick_carved = (g, r) => {
+  g.noise(rgb(56, 42, 72), 5, r);
+  g.rect(0, 0, 15, 0, rgb(30, 22, 40)); g.rect(0, 15, 15, 15, rgb(30, 22, 40)); g.rect(0, 0, 0, 15, rgb(30, 22, 40)); g.rect(15, 0, 15, 15, rgb(30, 22, 40));
+  g.rect(3, 3, 12, 12, rgb(40, 30, 54)); g.line(4, 4, 11, 11, rgb(170, 110, 255)); g.line(11, 4, 4, 11, rgb(170, 110, 255)); g.circle(7.5, 7.5, 1.6, rgb(220, 190, 255));
+};
+P.void_crystal = (g, r) => {
+  g.noise(rgb(30, 20, 46), 4, r);
+  for (let k = 0; k < 5; k++) { const x = 1 + r() * 12, y = 9 + r() * 6, h = 5 + r() * 6; g.poly([[x, y], [x + 1.6, y - h], [x + 3.2, y]], rgb(178, 110, 255)); g.set(x + 1.6, y - h + 1, rgb(240, 220, 255)); g.set(x + 1, y - 1, rgb(90, 40, 160)); }
+};
+P.ore_noctisite_umbral = (g, r) => {
+  P.umbral_stone(g, r);
+  for (let k = 0; k < 3; k++) {
+    const cx = 3 + r() * 10, cy = 3 + r() * 10;
+    g.poly([[cx - 2, cy - 1], [cx, cy - 3], [cx + 2, cy - 1], [cx + 1, cy + 2], [cx - 1, cy + 2]], rgb(160, 96, 250));
+    g.set(cx, cy - 1, rgb(230, 200, 255)); g.set(cx + 1, cy + 1, rgb(80, 36, 150));
+  }
+};
+P.fungus_stem = (g, r) => { for (let x = 0; x < N; x++) { const c = add(rgb(196, 186, 210), (r() - 0.5) * 16); for (let y = 0; y < N; y++) g.set(x, y, add(c, (r() - 0.5) * 8)); } for (let k = 0; k < 4; k++) g.vline(Math.floor(r() * 16), 0, 15, rgb(160, 148, 180)); g.specks(rgb(120, 230, 255), r, 4); };
+P.fungus_stem_top = (g, r) => { g.noise(rgb(176, 166, 192), 6, r); g.circle(7.5, 7.5, 5, rgb(150, 140, 168)); g.circle(7.5, 7.5, 2.5, rgb(130, 220, 240)); };
+P.fungus_cap = (g, r) => { g.noise(rgb(120, 50, 170), 10, r); g.blobs(rgb(150, 70, 210), r, 5, 2); for (let k = 0; k < 7; k++) { const x = r() * 15, y = r() * 15; g.rect(x, y, x + 1, y + 1, rgb(120, 240, 255)); } };
+P.umbral_grass = (g, r) => {
+  for (let x = 1; x < 15; x += 1 + (r() < 0.5 ? 1 : 0)) {
+    const h = 4 + Math.floor(r() * 8); const lean = r() < 0.5 ? -1 : 1;
+    for (let k = 0; k < h; k++) g.set(x + (k > h * 0.6 ? lean : 0), 15 - k, k > h - 2 ? rgb(150, 220, 255) : add(rgb(110, 60, 150), (r() - 0.5) * 20));
+  }
+};
+P.portal_core_side = (g, r) => { g.noise(rgb(40, 28, 56), 5, r); g.rect(0, 0, 15, 2, rgb(142, 84, 232)); g.rect(0, 13, 15, 15, rgb(30, 20, 40)); g.rect(5, 5, 10, 10, rgb(70, 46, 100)); g.rect(7, 7, 8, 8, rgb(110, 70, 160)); };
+P.portal_core_top = (g, r) => { g.noise(rgb(46, 32, 64), 5, r); g.circle(7.5, 7.5, 6, rgb(142, 84, 232)); g.circle(7.5, 7.5, 4.5, rgb(40, 28, 56)); g.circle(7.5, 7.5, 2, rgb(90, 60, 130)); };
+P.portal_core_active_side = (g, r) => { P.portal_core_side(g, r); g.rect(5, 5, 10, 10, rgb(190, 130, 255)); g.rect(7, 7, 8, 8, rgb(250, 230, 255)); };
+P.portal_core_active_top = (g, r) => { g.noise(rgb(46, 32, 64), 5, r); g.circle(7.5, 7.5, 6, rgb(190, 130, 255)); g.circle(7.5, 7.5, 4.5, rgb(120, 60, 220)); g.circle(7.5, 7.5, 2.4, rgb(250, 230, 255)); };
+P.portal_veil = (g, r) => {
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const v = Math.sin(x * 0.9 + y * 0.5) + Math.sin(y * 1.3 - x * 0.4) + (r() - 0.5) * 0.8;
+    g.set(x, y, [130 + v * 30, 70 + v * 20, 220 + v * 15, 150 + v * 20]);
+  }
+};
+P.altar_sovereign_side = altarSide(rgb(52, 40, 66), rgb(178, 110, 255), rgb(250, 230, 255));
+P.altar_sovereign_top = altarTop(rgb(52, 40, 66), rgb(178, 110, 255), rgb(255, 240, 255));
+
 // Vegetación (con transparencia)
 function blade(g, x, y0, y1, c) { for (let y = y0; y <= y1; y++) g.set(x, y, c); }
 P.tall_grass = (g, r) => {
@@ -810,6 +862,12 @@ function sprites(key) {
     prism_blade: () => { g.line(3, 12, 13, 2, hex('#a8f0ff')); g.line(4, 12, 14, 2, hex('#58d6e8')); g.line(3, 11, 12, 2, hex('#ffffff')); g.line(5, 12, 14, 3, hex('#2a8aa6')); g.set(14, 1, hex('#ffffff')); g.line(3, 9, 7, 13, hex('#c8a0ff')); g.line(2, 9, 6, 13, hex('#7a5ac8')); g.line(2, 14, 4, 12, HANDLE); g.line(1, 15, 2, 14, HANDLE_D); g.set(6, 8, hex('#ff9af0')); },
     coral_crown: () => { g.poly([[2, 13], [2, 8], [4, 9], [5, 4], [7, 8], [8, 2], [9, 8], [11, 4], [12, 9], [14, 8], [14, 13]], hex('#f06a7a')); g.hline(2, 14, 12, hex('#c84a5a')); g.hline(2, 14, 13, hex('#c84a5a')); g.set(8, 10, hex('#3a7ae0')); g.set(5, 11, hex('#e8e8f0')); g.set(11, 11, hex('#e8e8f0')); g.set(8, 3, hex('#ffb0b8')); },
     titan_hammer: () => { g.line(2, 14, 9, 7, HANDLE); g.line(3, 14, 10, 7, HANDLE_D); g.poly([[6, 5], [10, 1], [15, 6], [11, 10]], hex('#3a3236')); g.poly([[6, 5], [10, 1], [11, 2], [7, 6]], hex('#6a5a60')); g.line(8, 7, 12, 3, hex('#ff7a1a')); g.set(10, 5, hex('#ffd060')); },
+    shadow_shard: () => { g.poly([[7, 1], [11, 5], [9, 14], [5, 12], [4, 5]], hex('#5a2a8a')); g.poly([[7, 1], [11, 5], [7, 7]], hex('#c8a0ff')); g.poly([[7, 7], [11, 5], [9, 14]], hex('#2a1040')); g.set(7, 9, hex('#ff9af0')); },
+    umbral_key: () => { g.circle(5, 5, 3.5, hex('#8e5be0')); g.circle(5, 5, 1.8, [0, 0, 0, 0]); g.line(7, 7, 13, 13, hex('#c8a0ff')); g.line(8, 7, 14, 13, hex('#6a3aa8')); g.rect(11, 12, 12, 14, hex('#c8a0ff')); g.rect(13, 10, 14, 11, hex('#c8a0ff')); g.set(5, 2, hex('#5ac040')); g.set(2, 5, hex('#58d6e8')); g.set(8, 5, hex('#3a7ae0')); g.set(5, 8, hex('#ff7a1a')); },
+    sovereign_sigil: () => { g.circle(8, 8, 6.5, hex('#3a2a52')); g.circle(8, 8, 5, hex('#8e5be0')); g.circle(8, 8, 3, hex('#2a1a3a')); g.poly([[8, 4], [10, 8], [8, 12], [6, 8]], hex('#e8c0ff')); g.set(8, 8, hex('#ffffff')); },
+    eclipse_scepter: () => { g.line(3, 14, 10, 7, hex('#3a2a52')); g.line(4, 14, 11, 7, hex('#1a1028')); g.circle(12, 4, 3, hex('#8e5be0')); g.circle(12, 4, 1.6, hex('#1a1028')); g.set(13, 3, hex('#f0e0ff')); g.line(8, 9, 10, 11, hex('#c8a0ff')); },
+    fungus_slice: () => { g.ellipse(8, 9, 6, 4, hex('#8a3ab0')); g.ellipse(8, 8, 5, 2.6, hex('#d8c8e8')); g.set(6, 8, hex('#7af0ff')); g.set(10, 7, hex('#7af0ff')); },
+    roasted_fungus: () => { g.ellipse(8, 9, 6, 4, hex('#5a2a6a')); g.ellipse(8, 8, 5, 2.6, hex('#b08a70')); g.set(6, 8, hex('#3a1a10')); g.set(10, 7, hex('#3a1a10')); },
     crystal_shard: () => { g.poly([[8, 1], [12, 6], [9, 14], [5, 11], [4, 6]], hex('#58d6e8')); g.poly([[8, 1], [12, 6], [8, 7]], hex('#c4f7ff')); g.poly([[8, 7], [12, 6], [9, 14]], hex('#2a8aa6')); g.line(8, 1, 8, 13, hex('#8aeaf6')); },
   };
   if (S[key]) { S[key](); g.outline(); return g; }

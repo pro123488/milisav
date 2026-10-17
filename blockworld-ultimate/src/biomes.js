@@ -4,6 +4,8 @@
 export const BIOME = {
   OCEAN: 0, COAST: 1, PLAINS: 2, FOREST: 3, DARK_FOREST: 4, DESERT: 5, MESA: 6,
   MOUNTAINS: 7, SNOW: 8, JUNGLE: 9, SWAMP: 10, VOLCANIC: 11,
+  // Fase 5: Dimensión Oscura
+  UMBRAL_WASTES: 12, UMBRAL_FUNGAL: 13,
 };
 
 /**
@@ -95,6 +97,19 @@ export const BIOMES = [
     flora: [],
     animals: {}, monsters: { volcano_beast: 5, obsidian_skeleton: 6 }, fog: [0.55, 0.42, 0.38],
     desc: 'Roca oscura, lagos de lava y minerales raros.',
+  },
+  // ── Dimensión Oscura (los genera DarkTerrain; top/filler solo informativos) ──
+  {
+    id: BIOME.UMBRAL_WASTES, key: 'umbral_wastes', name: 'Páramo umbrío', color: '#3a2a4a', dark: true,
+    top: 'umbral_moss', filler: 'umbral_stone', fillerDepth: 3, trees: [], treeDensity: 0, flora: [],
+    animals: { lumen_moth: 3 }, monsters: { void_crawler: 10, shade_wraith: 6 }, fog: [0.16, 0.08, 0.22],
+    desc: 'Islas de piedra umbría que flotan sobre un abismo de lava.',
+  },
+  {
+    id: BIOME.UMBRAL_FUNGAL, key: 'umbral_fungal', name: 'Bosque de hongos umbríos', color: '#5a2a7a', dark: true,
+    top: 'umbral_moss', filler: 'umbral_stone', fillerDepth: 3, trees: [], treeDensity: 0, flora: [],
+    animals: { lumen_moth: 8 }, monsters: { shade_wraith: 9, void_crawler: 6 }, fog: [0.2, 0.1, 0.26],
+    desc: 'Hongos gigantes que brillan en la penumbra eterna.',
   },
 ];
 

@@ -25,6 +25,7 @@ export function supportOk(world, x, y, z, id) {
     case 'sand': { const below = world.getBlock(x, y - 1, z); return below === ID.SAND || below === ID.RED_SAND || below === ID.CACTUS; }
     case 'dry': { const below = world.getBlock(x, y - 1, z); return SANDY.has(below) || Blocks.get(below).soil; }
     case 'any': return solidTop(world.getBlock(x, y - 1, z));
+    case 'umbral': { const below = world.getBlock(x, y - 1, z); return below === ID.UMBRAL_MOSS || below === ID.UMBRAL_STONE; }
     case 'farmland': { const below = world.getBlock(x, y - 1, z); return below === ID.FARMLAND || below === ID.FARMLAND_WET; }
     case 'torch': {
       switch (b.dir) {
@@ -336,6 +337,7 @@ export class Building {
       case 'lectern': if (g.showVillageInfo) { g.showVillageInfo(hit.x, hit.z); return true; } return false;
       case 'alchemy': if (g.openAlchemy) { g.openAlchemy(hit.x, hit.y, hit.z); return true; } return false;
       case 'altar': return g.useAltar ? g.useAltar(hit.x, hit.y, hit.z, b) : false;
+      case 'portal': return g.usePortalCore ? g.usePortalCore(hit.x, hit.y, hit.z) : false;
       case 'door': return this.toggleDoor(hit.x, hit.y, hit.z);
       case 'gate': return this.toggleGate(hit.x, hit.y, hit.z);
       case 'trapdoor': return this.toggleTrapdoor(hit.x, hit.y, hit.z);

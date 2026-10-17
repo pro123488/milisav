@@ -29,6 +29,10 @@ import { BOSSES, BOSS_KEYS, createBoss, throwSnowball, bossForSummon } from './b
 import { tickAlchemy, ALCHEMY_SLOTS } from './alchemy.js';
 import { Bestiary } from './bestiary.js';
 import { nearestShrine } from './shrines.js';
+import { portalFrameOK, activatePortal, deactivatePortal, findPortalNear, buildPortal, PORTAL_RING, PORTAL_TIME } from './portals.js';
+import { ISLAND_Y, FLOOR_TOP } from './darkterrain.js';
+import { OVERWORLD_BOSSES, Missile } from './bosses.js';
+import { unstick } from './physics.js';
 import { AudioEngine } from './audio.js';
 import { raycastBlocks } from './raycast.js';
 import { chunkKey } from './chunk.js';
@@ -103,9 +107,12 @@ export class Game {
   createWorld(meta, store, renderDistance) {
     this.disposeWorld();
     this.world = new World({
-      seed: meta.seed, type: meta.type, structures: meta.structures, size: meta.size,
+      seed: meta.seed, type: meta.type, structures: meta.structures, size: meta.dim === 'dark' ? 0 : meta.size,
       renderDistance: renderDistance ?? this.settings.renderDistance, store, useWorker: meta.useWorker,
+      dimension: meta.dim === 'dark' ? 'dark' : 'overworld',
     });
+    this.dimension = this.world.dimension;
+    this.sky.dark = this.dimension === 'dark';
     this.world.fancyLeaves = !!this.settings.fancyLeaves;
     this.wr = new WorldRenderer(this.scene, this.world);
     const prevUnload = this.world.onChunkUnload;
@@ -135,6 +142,8 @@ export class Game {
   async startSession(meta, store, chunkStore, onProgress) {
     this.endSessionObjects();
     this.panorama = false; this.state = 'loading';
+    // Fase 5: si la partida se guardó en la Dimensión Oscura, sus chunks están en otro almacén
+    if (meta.dim === 'dark' && store) chunkStore = await store.chunkStore(meta.id + '~dark');
     this.store = store; this.chunkStore = chunkStore;
     this.mode = meta.mode; this.difficulty = meta.difficulty;
     this.createWorld(meta, chunkStore, undefined);
@@ -147,7 +156,8 @@ export class Game {
     this.spawner.configure(meta, this.difficulty);
     this.inventory = new Inventory(); this.survival = new Survival(this);
     this.discovered = new Set(); this.achievements = new Set(); this.stats = { blocksBroken: 0, blocksPlaced: 0, mobsKilled: 0, deaths: 0 };
-    this.sleeping = new Map(); this.structQueue = []; this.structDone = new Set(meta.structDone || []);
+    this.sleeping = new Map(); this.structQueue = []; this.structDone = new Set(this._dimData(meta).structDone || []);
+    this.portalTimer = 0; this.portalCooldown = 0; this._traveling = false; this.scepterCd = 0;
     this.villages = new Map(Object.entries(meta.villages || {})); this._villageTimer = 0; this._compassTimer = 0;
     this.bestiary = new Bestiary(); this.bossKills = { ...(meta.bossKills || {}) }; this._bestTimer = 0; this.shake = 0; this.staffCd = 0; this.prismHits = 0;
     this._buildAvatar();
@@ -167,8 +177,9 @@ export class Game {
       this.spawnPoint = saved.spawn || null;
       this.player.yaw = saved.yaw || 0; this.player.pitch = saved.pitch || 0;
       this.time = meta.time ?? 0.12; this.playTime = meta.playTime || 0;
-      for (const [k, list] of Object.entries(meta.sleeping || {})) this.sleeping.set(+k, list);
-      for (const [k, v] of Object.entries(meta.be || {})) w.blockEntities.set(k, Container.deserialize(v));
+      const D = this._dimData(meta);
+      for (const [k, list] of Object.entries(D.sleeping || {})) this.sleeping.set(+k, list);
+      for (const [k, v] of Object.entries(D.be || {})) w.blockEntities.set(k, Container.deserialize(v));
       sx = saved.x; sz = saved.z;
     } else {
       this.time = 0.1; this.playTime = 0;
@@ -383,6 +394,12 @@ export class Game {
   }
   respawn() {
     this.survival.respawn();
+    if (this.dimension === 'dark') { // se reaparece en el mundo normal
+      this.ui.closeScreen(true); this.state = 'playing'; this.paused = false;
+      this.travel('overworld').then(() => this.teleportToSpawn());
+      this.controls.lock();
+      return;
+    }
     this.teleportToSpawn();
     this.ui.closeScreen(true);
     this.state = 'playing'; this.paused = false;
@@ -406,6 +423,7 @@ export class Game {
   }
 
   sleep(x, y, z) {
+    if (this.dimension === 'dark') { this.ui.toast('En la Dimensión Oscura no se puede dormir'); return; }
     const night = this.time > 0.54 && this.time < 0.97;
     const hostile = this.entities.count((e) => MONSTERS[e.type] && !e.removed && Math.hypot(e.x - x, e.z - z) < 10);
     this.spawnPoint = { x: x + 0.5, y: y + 1, z: z + 0.5 };
@@ -511,6 +529,117 @@ export class Game {
     if (source === this.player || mob.lastHitBy === this.player || mob.isBoss) this.bestiary.kill(mob.type);
     if (mob.isVillager && (source === this.player || mob.lastHitBy === this.player)) this.villageReputation(mob.village, -20, mob);
   }
+  // ═════════════ Dimensiones (Fase 5) ═════════════
+  /** Datos propios de una dimensión dentro de los metadatos del mundo (el mundo normal usa la raíz). */
+  _dimData(meta, dim = meta.dim) {
+    if (dim === 'dark') return (meta.dark = meta.dark || {});
+    return meta;
+  }
+  /** Clic derecho en un núcleo de portal: con la Llave umbría lo activa si el marco está completo. */
+  usePortalCore(x, y, z) {
+    const w = this.world, st = this.inventory.getSelected(), it = st ? Items.get(st.i) : null;
+    if (w.getBlock(x, y, z) === ID.PORTAL_CORE_ACTIVE) { this.ui.toast('El portal está abierto: entra en el velo para viajar'); return true; }
+    if (!it || it.key !== 'umbral_key') { this.ui.toast('Núcleo de portal: rodéalo con 8 bloques de vidrio volcánico y actívalo con la Llave umbría', 4500); return true; }
+    if (!portalFrameOK(w, x, y, z)) { this.ui.toast('Faltan bloques de vidrio volcánico alrededor del núcleo (3×3 en el mismo nivel)'); this.audio.play('deny'); return true; }
+    if (!activatePortal(w, x, y, z)) { this.ui.toast('Deja libres los dos bloques que hay encima del núcleo'); this.audio.play('deny'); return true; }
+    this.audio.play('summon', x, y, z);
+    this.particles.emit(x + 0.5, y + 1.5, z + 0.5, 0xb070ff, 30, 3, 1);
+    this.ui.centerMessage('El portal umbrío se abre');
+    return true;
+  }
+  /** Comprueba si el jugador está dentro del velo de un portal y, tras PORTAL_TIME s, viaja. */
+  _updatePortal(dt) {
+    const p = this.player, w = this.world;
+    this.portalCooldown = Math.max(0, this.portalCooldown - dt);
+    const inVeil = [p.y + 0.2, p.y + 1.2].some((yy) => w.getBlock(Math.floor(p.x), Math.floor(yy), Math.floor(p.z)) === ID.PORTAL_VEIL);
+    if (!inVeil || this._traveling) { if (!inVeil) this.portalCooldown = Math.min(this.portalCooldown, 0.5); this.portalTimer = 0; return; }
+    if (this.portalCooldown > 0) return;
+    this.portalTimer += dt;
+    if (Math.random() < 0.5) this.particles.emit(p.x, p.y + 1, p.z, 0xb070ff, 2, 1.5, 0.6);
+    if (this.portalTimer >= PORTAL_TIME) {
+      this.portalTimer = 0;
+      let core = null;
+      for (let k = 0; k <= 3 && !core; k++) if (w.getBlock(Math.floor(p.x), Math.floor(p.y) - k, Math.floor(p.z)) === ID.PORTAL_CORE_ACTIVE) core = [Math.floor(p.x), Math.floor(p.y) - k, Math.floor(p.z)];
+      this.travel(this.dimension === 'dark' ? 'overworld' : 'dark', core);
+    }
+  }
+  /** Reglas propias de la Dimensión Oscura: sin brújula de aldeas; logro al encontrar la ciudadela. */
+  _updateDarkDimension(dt) {
+    this._darkTimer = (this._darkTimer || 0) - dt;
+    if (this._darkTimer > 0) return;
+    this._darkTimer = 1;
+    this.ui.setCompass(null);
+    const c = this.world.terrain.citadel, p = this.player;
+    if (c && Math.hypot(c.x - p.x, c.z - p.z) < 40 && !this.achievements.has('ciudadela')) { this.achieve('ciudadela'); this.ui.centerMessage('Ciudadela del Soberano', 3500); }
+  }
+  /** Altura a la que construir el portal de llegada en (x,z) de la dimensión actual. */
+  _portalSiteY(x, z) {
+    const w = this.world;
+    let y = w.findStandY(x, z);
+    if (this.dimension === 'dark') { if (y < FLOOR_TOP + 4) y = ISLAND_Y; } // sobre el abismo: plataforma flotante
+    else if (y < 2) y = SEA_LEVEL + 1;
+    return Math.min(WH - 8, y);
+  }
+  /**
+   * Viaja a la otra dimensión: guarda la actual, cambia de mundo (otro generador y otro almacén de chunks), espera a
+   * que se cargue el destino y busca un portal cercano o construye uno de vuelta. Devuelve una promesa.
+   */
+  async travel(target, fromCore = null) {
+    if (this._traveling || target === this.dimension || !this.meta) return false;
+    this._traveling = true;
+    const p = this.player, meta = this.meta;
+    const tx = Math.floor(fromCore ? fromCore[0] : p.x), tz = Math.floor(fromCore ? fromCore[2] : p.z);
+    this.ui.centerMessage(target === 'dark' ? 'Entrando en la Dimensión Oscura…' : 'Volviendo al mundo…', 2500);
+    this.audio.play('summon');
+    this.frozen = true;
+    try {
+      meta.portals = meta.portals || {};
+      if (fromCore) meta.portals[this.dimension] = fromCore;
+      await this.saveGame(true);           // guarda chunks y criaturas de la dimensión que se deja
+      this.entities.clear();
+      this.sleeping = new Map(); this.structQueue = []; this.updateQueue = []; this.updateSet = new Set();
+      this.mining.reset(); this.eating = null;
+      meta.dim = target;
+      const cs = this.store ? await this.store.chunkStore(target === 'dark' ? meta.id + '~dark' : meta.id) : null;
+      this.chunkStore = cs;
+      this.createWorld(meta, cs);
+      this.fluids = new FluidSim(this);
+      const D = this._dimData(meta);
+      this.structDone = new Set(D.structDone || []);
+      for (const [k, list] of Object.entries(D.sleeping || {})) this.sleeping.set(+k, list);
+      for (const [k, v] of Object.entries(D.be || {})) this.world.blockEntities.set(k, Container.deserialize(v));
+      p.teleport(tx + 0.5, WH - 4, tz + 0.5);
+      await new Promise((resolve) => {
+        const t0 = performance.now();
+        const tick = () => {
+          if (!this.world) return resolve();
+          this.world.update(tx, tz, 14);
+          if (this.world.isAreaReady(tx, tz, 2) || performance.now() - t0 > 60000) resolve(); else setTimeout(tick, 16);
+        };
+        tick();
+      });
+      let core = findPortalNear(this.world, tx, tz, 20);
+      if (!core) {
+        const y = this._portalSiteY(tx, tz);
+        buildPortal(this.world, tx, y, tz, target === 'dark' ? ID.UMBRAL_STONE : ID.COBBLE);
+        core = [tx, y, tz];
+      }
+      meta.portals[target] = core;
+      p.teleport(core[0] + 0.5, core[1] + 1, core[2] + 2.5);
+      unstick(this.world, p);
+      this.portalCooldown = 3; this.portalTimer = 0;
+      if (target === 'dark') this.achieve('portal');
+      this.ui.centerMessage(target === 'dark' ? 'Dimensión Oscura' : biomeName(this.world.terrain.biomeAt(tx, tz)), 3000);
+      await this.saveGame(true);
+    } catch (e) {
+      console.error('Error al viajar entre dimensiones', e);
+      this.ui.toast('⚠ No se pudo completar el viaje');
+    } finally {
+      this.frozen = false; this._traveling = false;
+    }
+    return true;
+  }
+
   // ═════════════ Jefes ═════════════
   /** Clic derecho en un altar: con la ofrenda en la mano despierta a su jefe; si no, explica qué pide. */
   useAltar(x, y, z, b) {
@@ -553,14 +682,18 @@ export class Game {
     const def = boss.def;
     this.bossKills[def.key] = (this.bossKills[def.key] || 0) + 1;
     this.achieve(def.achievement);
-    if (BOSS_KEYS.every((k) => this.bossKills[k])) this.achieve('cazajefes');
+    if (OVERWORLD_BOSSES.every((k) => this.bossKills[k])) this.achieve('cazajefes');
     this.ui.centerMessage(`¡${def.name} derrotado!`);
+    if (def.key === 'sovereign' && this.bossKills.sovereign === 1) {
+      const lines = ['La corona del Soberano se apaga y la penumbra se aclara un poco.', 'La noche que sobraba vuelve a repartirse entre los días del mundo.', 'Los portales seguirán abiertos: la Dimensión Oscura ya no tiene dueño. Gracias por jugar a BLOCKWORLD ULTIMATE.'];
+      lines.forEach((t, i) => setTimeout(() => this.ui && this.ui.chat('✦ ' + t, 'sys'), 2500 + i * 3500));
+    }
     this.audio.play('levelup');
   }
   /** Barra de vida y música del jefe más cercano, enfriamientos y fichas nuevas del bestiario. */
   _updateBosses(dt) {
     const p = this.player;
-    this.staffCd = Math.max(0, this.staffCd - dt);
+    this.staffCd = Math.max(0, this.staffCd - dt); this.scepterCd = Math.max(0, (this.scepterCd || 0) - dt);
     this.shake = Math.max(0, this.shake - dt);
     let best = null, bd = 56;
     for (const e of this.entities.list) {
@@ -760,6 +893,11 @@ export class Game {
       }
     }
     if (this.fluids) this.fluids.onBlockChange(x, y, z);
+    // Portales: romper el núcleo o el marco cierra el velo
+    if (old === ID.PORTAL_CORE_ACTIVE && nw !== ID.PORTAL_CORE_ACTIVE) deactivatePortal(w, x, y, z);
+    else if (old === ID.OBSIDIAN && nw !== ID.OBSIDIAN) {
+      for (const [dx, dz] of PORTAL_RING) if (w.getBlock(x - dx, y, z - dz) === ID.PORTAL_CORE_ACTIVE) deactivatePortal(w, x - dx, y, z - dz);
+    }
     this.queueUpdate(x, y, z);
     this.queueUpdate(x + 1, y, z); this.queueUpdate(x - 1, y, z); this.queueUpdate(x, y + 1, z); this.queueUpdate(x, y - 1, z); this.queueUpdate(x, y, z + 1); this.queueUpdate(x, y, z - 1);
   }
@@ -973,6 +1111,19 @@ export class Game {
       this.achieve('vitalidad');
       return true;
     }
+    if (it.tool && it.tool.type === 'scepter' && !onInteractive) {
+      if (this.scepterCd > 0) return true;
+      this.scepterCd = 0.7;
+      const d = p.lookDir(), sp = 26;
+      this.entities.add(new Missile(this, {
+        x: p.x + d.x * 0.5, y: p.eyeY - 0.2, z: p.z + d.z * 0.5, vx: d.x * sp, vy: d.y * sp, vz: d.z * sp,
+        color: 0xb070ff, size: 0.3, gravity: 0, dmg: 8, owner: p, hitsPlayer: false, hitsMobs: true, kind: 'shadow', life: 2.5,
+      }));
+      this.audio.play('shoot');
+      if (this.mode !== 'creative' && inv.damageSelected(1)) { this.ui.toast('¡Se rompió el Cetro del eclipse!'); this.audio.play('toolbreak'); }
+      this.hand.swing();
+      return true;
+    }
     if (it.tool && it.tool.type === 'staff' && !onInteractive) {
       if (this.staffCd > 0) { this.ui.toast(`El báculo se está recargando (${Math.ceil(this.staffCd)} s)`, 1200); return true; }
       this.staffCd = 15;
@@ -1179,8 +1330,9 @@ export class Game {
     this.tickBlockEntities(dt);
     this.processBlockUpdates();
     this._structMobs();
-    this._updateVillages(dt);
+    if (this.dimension !== 'dark') this._updateVillages(dt); else this._updateDarkDimension(dt);
     this._updateBosses(dt);
+    this._updatePortal(dt);
     this.audio.update(dt, this.sky.atm.day);
     // bioma actual
     this._biomeTimer -= dt;
@@ -1244,8 +1396,10 @@ export class Game {
         discovered: [...this.discovered], ach: [...this.achievements], spawn: this.spawnPoint, stats: this.stats,
         best: this.bestiary.serialize(),
       };
-      meta.time = this.time; meta.playTime = this.playTime; meta.sleeping = sleeping; meta.be = be;
-      meta.structDone = [...this.structDone]; meta.genVersion = GENERATOR_VERSION; meta.gameVersion = VERSION;
+      const D = this._dimData(meta);
+      meta.time = this.time; meta.playTime = this.playTime; D.sleeping = sleeping; D.be = be;
+      D.structDone = [...this.structDone]; meta.genVersion = GENERATOR_VERSION; meta.gameVersion = VERSION;
+      meta.dim = this.dimension;
       meta.villages = Object.fromEntries(this.villages);
       meta.bossKills = this.bossKills;
       await this.world.saveModified();

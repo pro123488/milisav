@@ -52,5 +52,6 @@ pruebas E2E en Chromium, revisión adversarial, commit y push en la rama `claude
 - [x] Fase 3 — aldeas, aldeanos, comercio, guardián.
 - [x] Fase 4 — efectos de estado, alquimia, santuarios y 4 jefes, bestiario; correcciones de la revisión de la Fase 2
   (ver `docs/fase4-jefes.md`). El Soberano de la Dimensión Oscura se hace en la Fase 5, junto con su dimensión.
-- [ ] Fase 5
+- [x] Fase 5 — Dimensión Oscura (generador de islas, biomas, criaturas, ruinas), portales con llave y velo, guardado por
+  dimensión, Ciudadela y Soberano (ver `docs/fase5-dimension-oscura.md`).
 - [ ] Fase 6

@@ -146,9 +146,43 @@ export const BOSSES = {
       P('hcrack', [1.02, 0.14, 0.92], [1.6, 1.5, -1.9], '#ff9a2a', { pivot: [1.6, 3.7, 0], parent: 'armR', emissive: true }),
     ],
   },
+  sovereign: {
+    key: 'sovereign', name: 'Soberano de la Dimensión Oscura', short: 'Soberano', hp: 600, w: 1.4, h: 3.4, speed: 3.2, armor: 0.2, flying: true, dark: true,
+    altar: 'altar_sovereign', summon: 'sovereign_sigil', essence: 'shadow_shard', unique: 'eclipse_scepter', achievement: 'jefe_soberano', shrine: null,
+    phases: [0.6, 0.3], phaseNames: ['Crepúsculo', 'Eclipse', 'Colapso'], color: 0xb070ff,
+    music: { root: 65, tempo: 132, wave: 'sawtooth' },
+    extraDrops: [{ item: 'heart_crystal', min: 1, max: 1 }, { item: 'noctisite_ingot', min: 4, max: 8 }, { item: 'shadow_shard', min: 6, max: 10 }],
+    lore: {
+      historia: 'Cuando los forjadores terminaron el mundo, quedó una sombra que ninguno quiso: la noche que sobraba. Se retiró a una dimensión sin sol, la llenó de islas y de hongos que brillan para no olvidar la luz, y se coronó Soberano. Desde su ciudadela empuja la oscuridad hacia el otro lado de los portales. Los cuatro guardianes del mundo eran los cerrojos que lo mantenían lejos; con sus esencias se abre la puerta.',
+      arena: 'Ciudadela del Soberano: un zigurat de ladrillo umbrío de tres pisos sobre la isla más grande de la Dimensión Oscura, con columnas coronadas de cristales del vacío y el Trono en lo alto.',
+      invocacion: 'Ofrece un Sello del Soberano en su Trono (6 fragmentos de sombra, 2 lingotes de noctisita y un Cristal vital). Para llegar a la Dimensión Oscura construye un portal: un Núcleo de portal rodeado de 8 bloques de vidrio volcánico, activado con la Llave umbría.',
+      fases: ['Crepúsculo: lanza proyectiles de sombra que debilitan e invoca espectros.', 'Eclipse (60 %): se teletransporta por la arena, apaga la luz con oscuridad y dispara un rayo que se anuncia con una línea de partículas.', 'Colapso (30 %): columnas de vacío estallan bajo tus pies y lanza sombras en todas direcciones.'],
+      ataques: ['Proyectiles de sombra (5, debilidad).', 'Espectros umbríos.', 'Rayo del eclipse: línea de aviso y golpe en línea recta (9, oscuridad).', 'Columnas de vacío: círculos de aviso (8, lanzan por los aires).'],
+      debilidad: 'La luz lo quema: recibe un 50 % más de daño junto a antorchas, faroles y otras luces fuertes. La Hoja prismática le hace el doble.',
+      recompensa: 'Cetro del eclipse (dispara proyectiles de sombra), dos Cristales vitales, noctisita, fragmentos de sombra y el final de la historia.',
+    },
+    model: () => [
+      P('robe', [1.0, 1.6, 0.8], [0, 0.9, 0], '#1a1028', { color2: '#0c0814' }),
+      P('torso', [1.1, 1.0, 0.7], [0, 2.1, 0], '#2a1a3a', { pivot: [0, 1.7, 0] }),
+      P('gem', [0.3, 0.3, 0.06], [0, 2.2, -0.38], '#e8c0ff', { pivot: [0, 1.7, 0], parent: 'torso', emissive: true }),
+      P('head', [0.6, 0.6, 0.6], [0, 2.95, 0], '#3a2a52', { pivot: [0, 2.65, 0] }),
+      P('eyeL', [0.12, 0.06, 0.04], [-0.14, 2.98, -0.31], '#ffffff', { pivot: [0, 2.65, 0], parent: 'head', emissive: true }),
+      P('eyeR', [0.12, 0.06, 0.04], [0.14, 2.98, -0.31], '#ffffff', { pivot: [0, 2.65, 0], parent: 'head', emissive: true }),
+      P('crown1', [0.12, 0.4, 0.12], [-0.22, 3.4, 0], '#b070ff', { pivot: [0, 2.65, 0], parent: 'head', emissive: true }),
+      P('crown2', [0.12, 0.55, 0.12], [0, 3.48, 0], '#b070ff', { pivot: [0, 2.65, 0], parent: 'head', emissive: true }),
+      P('crown3', [0.12, 0.4, 0.12], [0.22, 3.4, 0], '#b070ff', { pivot: [0, 2.65, 0], parent: 'head', emissive: true }),
+      P('armL', [0.3, 1.2, 0.3], [-0.72, 1.95, 0], '#2a1a3a', { pivot: [-0.72, 2.5, 0] }),
+      P('armR', [0.3, 1.2, 0.3], [0.72, 1.95, 0], '#2a1a3a', { pivot: [0.72, 2.5, 0] }),
+      P('cape', [1.3, 2.4, 0.08], [0, 1.5, 0.45], '#3a1a52', { pivot: [0, 2.6, 0.4] }),
+      P('orb1', [0.3, 0.3, 0.3], [1.3, 2.4, 0], '#9af6ff', { pivot: [0, 2.4, 0], emissive: true }),
+      P('orb2', [0.3, 0.3, 0.3], [-1.3, 2.4, 0], '#ff9af0', { pivot: [0, 2.4, 0], emissive: true }),
+    ],
+  },
 };
 for (const b of Object.values(BOSSES)) for (const k of [b.summon, b.essence, b.unique]) if (!Items.has(k)) throw new Error('Jefe ' + b.key + ': objeto desconocido ' + k);
 export const BOSS_KEYS = Object.keys(BOSSES);
+/** Los cuatro jefes del mundo normal (el logro «Leyenda viva» pide derrotarlos a todos). */
+export const OVERWORLD_BOSSES = BOSS_KEYS.filter((k) => !BOSSES[k].dark);
 /** Jefe que despierta la ofrenda `itemKey`, o null. */
 export const bossForSummon = (itemKey) => BOSS_KEYS.find((k) => BOSSES[k].summon === itemKey) || null;
 
@@ -174,6 +208,11 @@ export class Missile extends Entity {
     this.life -= dt; this.age += dt;
     if (this.life <= 0) { this.removed = true; return; }
     this.vy -= this.gravity * dt;
+    if (this.homing && this.hitsPlayer) { // se curva poco a poco hacia el jugador
+      const p = g.player, dx = p.x - this.x, dy = p.y + 1 - this.y, dz = p.z - this.z, d = Math.hypot(dx, dy, dz) || 1;
+      const sp = Math.hypot(this.vx, this.vy, this.vz) || 1, k = Math.min(1, this.homing * dt);
+      this.vx += (dx / d * sp - this.vx) * k; this.vy += (dy / d * sp - this.vy) * k; this.vz += (dz / d * sp - this.vz) * k;
+    }
     const nx = this.x + this.vx * dt, ny = this.y + this.vy * dt, nz = this.z + this.vz * dt;
     if (segmentBlocked(this.world, this.x, this.y, this.z, nx, ny, nz)) { this._hit(null); return; }
     // comprobación de impactos por tramos (a pocos FPS un proyectil rápido avanza más de un bloque por fotograma)
@@ -822,7 +861,101 @@ class VolcanicTitan extends Boss {
   }
 }
 
-const CLASSES = { forest_guardian: ForestGuardian, crystal_colossus: CrystalColossus, deep_queen: DeepQueen, volcanic_titan: VolcanicTitan };
+// ═════════════════════════ Soberano de la Dimensión Oscura ═════════════════════════
+class Sovereign extends Boss {
+  constructor(game, def) { super(game, def); this.orbit = Math.random() * 6.28; this.blinkCd = 6; this.pillarCd = 4; }
+  /** Recibe más daño cerca de la luz de bloques (antorchas, faroles) y con la Hoja prismática. */
+  weakness(it) { return it && it.key === 'prism_blade' ? 2 : 1; }
+  inLight() {
+    const w = this.world, x = Math.floor(this.x), z = Math.floor(this.z);
+    for (const y of [Math.floor(this.y), Math.floor(this.y + this.h * 0.5), Math.floor(this.y + this.h)]) if (w.getBlockLight && w.getBlockLight(x, y, z) >= 10) return true;
+    return false;
+  }
+  damageMultiplier(source) { return super.damageMultiplier(source) * (this.inLight() ? 1.5 : 1); }
+  onPhase(ph) { if (ph >= 3) this.rage = 1.3; this.summonCd = 0.5; }
+  blink() {
+    const g = this.game, h = this.home;
+    if (!h) return;
+    g.particles.emit(this.x, this.y + this.h * 0.5, this.z, 0xb070ff, 20, 4, 1);
+    const a = Math.random() * Math.PI * 2, r = 4 + Math.random() * 5;
+    this.setPos(h.x + 0.5 + Math.cos(a) * r, h.y + 3 + Math.random() * 3, h.z + 0.5 + Math.sin(a) * r);
+    this.vx = this.vy = this.vz = 0;
+    g.particles.emit(this.x, this.y + this.h * 0.5, this.z, 0xb070ff, 20, 4, 1);
+    g.audio && g.audio.play('magic', this.x, this.y, this.z);
+  }
+  behave(dt, p) {
+    const h = this.home;
+    this.blinkCd -= dt; this.pillarCd -= dt;
+    this.orbit += dt * 0.5;
+    let tx = (h ? h.x + 0.5 : p.x) + Math.cos(this.orbit) * 7, tz = (h ? h.z + 0.5 : p.z) + Math.sin(this.orbit) * 7;
+    const ty = (h ? h.y : p.y) + 4 + Math.sin(this.age * 0.8) * 1.5;
+    this.moveToward(tx, tz, 0.8);
+    this.flyTargetVy = clamp((ty - this.y) * 2, -3, 3);
+    this.face(p.x, p.z);
+    if (this.phase >= 2 && this.blinkCd <= 0) { this.blinkCd = 7; this.blink(); }
+    if (this.atkCd > 0) return;
+    if (this.summonCd <= 0 && this.aliveMinions() < 3) { this.action = { id: 'call', t: 0, dur: 1 }; this.summonCd = 20; this.atkCd = 1.2; }
+    else if (this.phase >= 3 && this.pillarCd <= 0) {
+      const strikes = [];
+      for (let i = 0; i < 5; i++) { const a = Math.random() * Math.PI * 2, r = i === 0 ? 0 : 1.5 + Math.random() * 3.5; strikes.push({ x: p.x + Math.cos(a) * r, y: Math.floor(p.y), z: p.z + Math.sin(a) * r, at: 0.2 + i * 0.35 }); }
+      this.action = { id: 'pillars', t: 0, dur: 3.6, strikes }; this.pillarCd = 9; this.atkCd = 1.6;
+    } else if (this.phase >= 2 && Math.random() < 0.45) {
+      this.action = { id: 'beam', t: 0, dur: 1.6, tele: 1.2, from: [this.x, this.y + this.h * 0.6, this.z], to: [p.x, p.y + 1, p.z] }; this.atkCd = 2.6;
+    } else { this.action = { id: 'bolts', t: 0, dur: 0.9, tele: 0.45 }; this.atkCd = 2.0; }
+  }
+  runAction(a) {
+    const g = this.game, p = g.player;
+    if (a.id === 'bolts') {
+      if (a.t >= a.tele && !a.done) {
+        a.done = true;
+        const o = { color: 0xb070ff, size: 0.34, gravity: 0, dmg: 5, kind: 'shadow', homing: 1.4, life: 5, onHit: (m, t) => { if (t === p) g.survival.effects.add('weakness', 6, 1); } };
+        const n = this.phase >= 3 ? 5 : 3;
+        for (let i = 0; i < n; i++) this.shootAt(p.x, p.y + 1, p.z, 9, o, (i - (n - 1) / 2) * 0.35);
+        if (this.phase >= 3) for (let i = 0; i < 8; i++) { const ang = (i / 8) * Math.PI * 2; this.shoot({ ...o, homing: 0, x: this.x, y: this.y + 2, z: this.z, vx: Math.sin(ang) * 8, vy: -1, vz: Math.cos(ang) * 8 }); }
+        g.audio && g.audio.play('shoot', this.x, this.y, this.z);
+      }
+    } else if (a.id === 'beam') {
+      const [ax, ay, az] = a.from, [bx, by, bz] = a.to;
+      if (a.t < a.tele) {
+        // línea de aviso
+        for (let k = 0; k < 4; k++) { const t = Math.random(); g.particles.emit(ax + (bx - ax) * t * 1.6, ay + (by - ay) * t * 1.6, az + (bz - az) * t * 1.6, 0xe8c0ff, 1, 0.2, 0.05); }
+      } else if (!a.done) {
+        a.done = true;
+        // distancia del jugador al rayo (segmento prolongado)
+        const dx = bx - ax, dy = by - ay, dz = bz - az, L2 = dx * dx + dy * dy + dz * dz || 1;
+        const px = p.x - ax, py = p.y + 1 - ay, pz = p.z - az;
+        const t = Math.max(0, Math.min(1.8, (px * dx + py * dy + pz * dz) / L2));
+        const d = Math.hypot(px - dx * t, py - dy * t, pz - dz * t);
+        if (d < 1.4 && g.mode !== 'creative') { if (g.survival.damage(9, 'magic', { x: ax, z: az })) g.survival.effects.add('darkness', 5, 1); }
+        for (let k = 0; k <= 20; k++) { const s2 = k / 20 * 1.8; g.particles.emit(ax + dx * s2, ay + dy * s2, az + dz * s2, 0xb070ff, 2, 1.2, 0.2); }
+        g.audio && g.audio.play('boom', bx, by, bz);
+      }
+    } else if (a.id === 'pillars') {
+      for (const s of a.strikes) {
+        if (s.done) continue;
+        if (a.t < s.at + 1.1) { if (a.t >= s.at && Math.random() < 0.7) this.ring(s.x, s.y, s.z, 1.6, 0xb070ff, 3); }
+        else {
+          s.done = true; this.aoe(s.x, s.y, s.z, 1.7, 8, { launch: 9 });
+          g.particles.emit(s.x, s.y + 1, s.z, 0x2a1a3a, 16, 6, 0.6); g.particles.emit(s.x, s.y + 1, s.z, 0xb070ff, 10, 5, 0.6);
+          g.audio && g.audio.play('boom', s.x, s.y, s.z);
+        }
+      }
+    } else if (a.id === 'call') {
+      if (!a.done && a.t > 0.5) { a.done = true; for (let i = 0; i < 2; i++) this.spawnMinion('shade_wraith', this.x + (i ? 2 : -2), this.z + 1); }
+    }
+  }
+  animate() {
+    const pt = this.model.parts, a = this.action;
+    const f = Math.sin(this.age * 2) * 0.15;
+    pt.armL.rotation.x = a ? -1.6 : f; pt.armR.rotation.x = a ? -1.6 : -f;
+    pt.cape.rotation.x = 0.15 + Math.sin(this.age * 3) * 0.08;
+    // los orbes giran alrededor del Soberano (su pivote está en el eje del cuerpo)
+    pt.orb1.rotation.y = this.age * 1.6; pt.orb2.rotation.y = this.age * 1.6;
+    pt.orb1.position.y = 2.4 + Math.sin(this.age * 2.1) * 0.3; pt.orb2.position.y = 2.4 - Math.sin(this.age * 2.1) * 0.3;
+  }
+}
+
+const CLASSES = { forest_guardian: ForestGuardian, crystal_colossus: CrystalColossus, deep_queen: DeepQueen, volcanic_titan: VolcanicTitan, sovereign: Sovereign };
 export function createBoss(game, key) {
   const C = CLASSES[key];
   return C ? new C(game, BOSSES[key]) : null;

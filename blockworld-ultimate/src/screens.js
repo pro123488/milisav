@@ -246,7 +246,7 @@ export function openInventoryScreen(game) {
   if (creative) {
     // Catálogo con búsqueda y categorías
     const cat = creativeCatalog();
-    const tabs = [['Todo', () => true], ['Bloques', (i) => i.kind === 'block' || i.kind === 'door'], ['Herramientas', (i) => i.kind === 'tool'], ['Armaduras', (i) => i.kind === 'armor'], ['Comida', (i) => !!i.food], ['Materiales', (i) => ['material', 'bucket', 'rope', 'fertilizer', 'compass', 'heal'].includes(i.kind)], ['Alquimia y jefes', (i) => ['drink', 'bottle', 'summon', 'heart'].includes(i.kind) || !!i.unique || (i.kind === 'block' && /^altar_/.test(i.key))]];
+    const tabs = [['Todo', () => true], ['Bloques', (i) => i.kind === 'block' || i.kind === 'door'], ['Herramientas', (i) => i.kind === 'tool'], ['Armaduras', (i) => i.kind === 'armor'], ['Comida', (i) => !!i.food], ['Materiales', (i) => ['material', 'bucket', 'rope', 'fertilizer', 'compass', 'heal'].includes(i.kind)], ['Alquimia y jefes', (i) => ['drink', 'bottle', 'summon', 'heart', 'key'].includes(i.kind) || !!i.unique || (i.kind === 'block' && /^(altar_|portal_)/.test(i.key))]];
     let filter = tabs[0][1], q = '';
     const bar = el('div', 'creative-bar');
     const tabBox = el('div', 'tabs');

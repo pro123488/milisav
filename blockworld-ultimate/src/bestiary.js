@@ -24,6 +24,10 @@ export const LORE = {
   thorn_sprout: 'Brote que el Guardián del Bosque arranca de la tierra para defenderse. Mientras vive, alimenta a su señor con savia.',
   tide_jelly: 'Medusa que acompaña a la Reina de las Profundidades. Su roce envenena.',
   ember_imp: 'Chispa del martillo del Titán que cobró vida. Quema al tocar y no teme a la lava.',
+  shade_wraith: 'Jirón de noche con alas que caza en la Dimensión Oscura. Su toque debilita los brazos de quien lo recibe.',
+  void_crawler: 'Reptador de muchas patas que recorre las islas umbrías y se cuela por las cavernas. Lleva fragmentos de sombra en el lomo.',
+  umbral_sentinel: 'Guardia de piedra umbría que el Soberano dejó en sus ruinas y en las escalinatas de su ciudadela. No abandona su puesto.',
+  lumen_moth: 'Polilla que brilla en la penumbra de la Dimensión Oscura. Se acerca a quien lleva rodajas de hongo.',
   villager: 'Habitante de las aldeas. Trabaja en su oficio de día, duerme en su cama de noche y comercia con monedas de sol.',
   stone_guardian: 'Gólem de piedra que protege cada aldea de los monstruos nocturnos. No ataca a quien no ataca a los aldeanos.',
 };

@@ -118,9 +118,26 @@ export class Sky {
     this._t = 0;
   }
 
+  /** Cielo de la Dimensión Oscura: penumbra violeta permanente, sin sol, luna ni nubes. */
+  _updateDark(camera, dt) {
+    const zen = [0.05, 0.02, 0.09], hor = [0.16, 0.07, 0.22];
+    this.domeMat.uniforms.uZenith.value.setRGB(zen[0], zen[1], zen[2]);
+    this.domeMat.uniforms.uHorizon.value.setRGB(hor[0], hor[1], hor[2]);
+    this.domeMat.uniforms.uGlow.value = 0;
+    this.group.position.copy(camera.position);
+    this.sun.material.opacity = 0; this.moon.material.opacity = 0;
+    this.stars.material.opacity = 0.75; this.stars.rotation.z += dt * 0.004;
+    this.clouds.visible = false;
+    const atm = this.atm;
+    atm.sunH = -0.6; atm.day = 0; atm.gameSky = 0.27; atm.fog = hor; atm.sun = 0.8; atm.skyTint = [0.86, 0.72, 1.0];
+    atm.ambient = 0.13; atm.zenith = zen; atm.horizon = hor; atm.dusk = 0; atm.sunDir = new THREE.Vector3(0, -1, 0);
+    return atm;
+  }
+
   /** t∈[0,1): 0 amanecer, 0.25 mediodía, 0.5 atardecer, 0.75 medianoche. */
   update(t, camera, dt) {
     this._t += dt;
+    if (this.dark) return this._updateDark(camera, dt);
     const a = ((t % 1) + 1) % 1 * Math.PI * 2;
     const sunDir = new THREE.Vector3(Math.cos(a), Math.sin(a), 0.28 * Math.cos(a)).normalize();
     const sunH = sunDir.y;

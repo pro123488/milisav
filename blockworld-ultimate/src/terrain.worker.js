@@ -1,11 +1,12 @@
 // Web Worker: genera el terreno fuera del hilo principal para que explorar no congele el juego.
 import { Terrain } from './terrain.js';
+import { DarkTerrain } from './darkterrain.js';
 
 let terrain = null;
 self.onmessage = (e) => {
   const m = e.data;
   if (m.type === 'init') {
-    terrain = new Terrain(m.seed, m.opts);
+    terrain = m.opts && m.opts.dimension === 'dark' ? new DarkTerrain(m.seed, m.opts) : new Terrain(m.seed, m.opts);
     self.postMessage({ type: 'ready' });
   } else if (m.type === 'gen') {
     const r = terrain.generateChunk(m.cx, m.cz);

@@ -38,6 +38,11 @@ export const LOOT = {
     { item: 'iron_pickaxe', min: 1, max: 1, w: 2 }, { item: 'iron_sword', min: 1, max: 1, w: 1.5 }, { item: 'iron_helmet', min: 1, max: 1, w: 1.5 },
     { item: 'gold_ingot', min: 1, max: 2, w: 2 }, { item: 'bread', min: 1, max: 3, w: 3 },
   ],
+  umbral: [
+    { item: 'shadow_shard', min: 1, max: 4, w: 7 }, { item: 'raw_noctisite', min: 1, max: 3, w: 5 }, { item: 'noctisite_ingot', min: 1, max: 2, w: 2 },
+    { item: 'crystal_shard', min: 2, max: 5, w: 4 }, { item: 'roasted_fungus', min: 2, max: 5, w: 5 }, { item: 'tonic_night', min: 1, max: 1, w: 2 },
+    { item: 'tonic_regeneration', min: 1, max: 1, w: 1.5 }, { item: 'heart_crystal', min: 1, max: 1, w: 0.4 }, { item: 'obsidian', min: 1, max: 3, w: 2 },
+  ],
   dungeon: [
     { item: 'iron_ingot', min: 1, max: 5, w: 6 }, { item: 'copper_ingot', min: 2, max: 7, w: 6 }, { item: 'gold_ingot', min: 1, max: 3, w: 3 },
     { item: 'crystal_shard', min: 1, max: 4, w: 3 }, { item: 'iron_pickaxe', min: 1, max: 1, w: 1.5 }, { item: 'iron_boots', min: 1, max: 1, w: 1.5 },

@@ -210,11 +210,23 @@ item('titan_hammer', 'Martillo del Titán', {
   tool: { type: 'pickaxe', tier: 'noctisite', level: 4, speed: 7, durability: 2400, damage: 8, cooldown: 1.2, area: 1 },
 });
 
+// ── Fase 5: Dimensión Oscura ─────────────────────────────────────
+item('shadow_shard', 'Fragmento de sombra');
+item('umbral_key', 'Llave umbría', { kind: 'key', stack: 1 });
+item('sovereign_sigil', 'Sello del Soberano', { kind: 'summon', boss: 'sovereign', stack: 16 });
+item('eclipse_scepter', 'Cetro del eclipse', {
+  stack: 1, kind: 'tool', unique: true, repair: 'shadow_shard',
+  tool: { type: 'scepter', tier: 'noctisite', level: 0, speed: 1, durability: 500, damage: 6, cooldown: 0.8 },
+});
+item('fungus_slice', 'Rodaja de hongo umbrío', { food: { hunger: 2, sat: 1.2 }, kind: 'food' });
+item('roasted_fungus', 'Hongo umbrío asado', { food: { hunger: 6, sat: 7.2 }, kind: 'food' });
+
 // Combustibles de bloques
 const blockFuel = {
   planks: 15, log_oak: 15, log_dark: 15, log_jungle: 15, log_pine: 15, workbench: 15, chest: 15, slab_planks: 7, sapling_oak: 5, sapling_dark: 5, sapling_jungle: 5, sapling_pine: 5,
   stairs_planks: 15, fence_wood: 15, gate_wood: 15, trapdoor_wood: 15, ladder: 5,
   bookshelf: 15, barrel: 15, compost_bin: 15, lectern: 15, loom: 15, hay_bale: 10,
+  fungus_stem: 12,
 };
 for (const [k, v] of Object.entries(blockFuel)) if (byKey.has(k)) byKey.get(k).fuel = v;
 
