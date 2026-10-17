@@ -1,6 +1,6 @@
 // Prueba E2E de la Fase 3 en Chromium: aldea generada, aldeanos, comercio con la interfaz real, campana,
 // guardián contra un monstruo y brújula. Ejecuta: node tests/e2e/fase3.mjs
-import { withPage, frames } from '../../tools/pw.mjs';
+import { withPage, frames, ensurePlaying } from '../../tools/pw.mjs';
 import os from 'node:os';
 const S = process.env.SHOTS || os.tmpdir();
 const ok = (name, cond, extra = '') => console.log((cond ? 'PASS ' : 'FAIL ') + name + (extra ? ' — ' + extra : ''));
@@ -88,11 +88,13 @@ await withPage('index.html?autostart=survival&rd=4&seed=aldea&type=normal&mobs=a
   await ev(() => { window.__game.mode = 'survival'; });
 
   // ── Brújula de aldeas ──
+  await ensurePlaying(page);
   const comp = await ev(async () => {
     const g = window.__game; const { Items } = await import('/src/items.js');
     g.inventory.slots[8] = { i: Items.id('village_compass'), n: 1, d: 0 }; g.inventory.selected = 8;
     g.player.teleport(g.player.x + 150, g.player.y + 30, g.player.z); g.player.flying = true;
-    await new Promise((r) => setTimeout(r, 1200));
+    // esperar a que la brújula se actualice (con WebGL por software los fotogramas pueden ir muy lentos)
+    for (let i = 0; i < 200; i++) { const e = document.querySelector('.hud-compass'); if (e && !e.classList.contains('hidden') && e.textContent) break; await new Promise((r) => setTimeout(r, 100)); }
     const el = document.querySelector('.hud-compass');
     return { text: el && el.textContent, hidden: el && el.classList.contains('hidden') };
   });

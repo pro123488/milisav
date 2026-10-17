@@ -5,6 +5,7 @@ import { HOTBAR_SIZE } from './inventory.js';
 import { biomeName } from './biomes.js';
 import { clockString, phaseName } from './sky.js';
 import { GAMEMODE_NAMES } from './config.js';
+import { EFFECTS, ROMAN } from './effects.js';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export function el(tag, cls, attrs, ...children) {
@@ -76,6 +77,18 @@ export class UI {
     this._buildHotbar();
     this.tooltip = el('div', 'tooltip hidden'); document.body.append(this.tooltip);
     this.compassEl = el('div', 'hud-compass hidden'); this.hud.append(this.compassEl);
+    this.effectsEl = el('div', 'effects-hud'); this.hud.append(this.effectsEl);
+    // Barra de vida de jefe
+    this.bossEl = el('div', 'boss-bar hidden', null, el('div', 'boss-name'), el('div', 'boss-track', null, el('div', 'boss-fill')), el('div', 'boss-phase'));
+    this.hud.append(this.bossEl);
+  }
+  /** Barra de vida del jefe (null = ocultar). */
+  setBoss(info) {
+    if (!info) { this.bossEl.classList.add('hidden'); return; }
+    this.bossEl.classList.remove('hidden');
+    this.bossEl.children[0].textContent = info.name;
+    this.bossEl.children[1].firstChild.style.width = Math.max(0, Math.min(100, info.frac * 100)).toFixed(1) + '%';
+    this.bossEl.children[2].textContent = info.phase || '';
   }
   /** Texto de la brújula de aldeas (null = ocultar). */
   setCompass(text) {
@@ -154,7 +167,7 @@ export class UI {
     // Salud / hambre / armadura / aire
     const creative = g.mode === 'creative';
     $('#stats-row').style.visibility = creative ? 'hidden' : 'visible';
-    const hs = `${Math.ceil(sv.health)}|${sv.hunger | 0}|${sv.invuln > 0 ? 1 : 0}|${inv.armorDefense()}|${Math.ceil(sv.air)}|${g.player.headInWater ? 1 : 0}`;
+    const hs = `${Math.ceil(sv.health)}|${sv.maxHealth}|${sv.hunger | 0}|${sv.invuln > 0 ? 1 : 0}|${inv.armorDefense()}|${Math.ceil(sv.air)}|${g.player.headInWater ? 1 : 0}|${sv.effects.has('poison') ? 1 : 0}`;
     if (hs !== this._sig.stats) {
       this._sig.stats = hs;
       this._drawHearts(); this._drawHunger(); this._drawArmor(); this._drawBubbles();
@@ -189,6 +202,17 @@ export class UI {
       this.topLeft.style.display = 'block';
     } else if (g.settings.showFps) { this.topLeft.textContent = `${g.frameStats.fps} FPS`; this.topLeft.style.display = 'block'; }
     else this.topLeft.style.display = 'none';
+    // Efectos de estado
+    const fxs = sv.effects ? [...sv.effects.list].map(([id, e]) => `${id}:${e.level}:${Math.ceil(e.time)}`).join('|') : '';
+    if (fxs !== this._sig.fx) {
+      this._sig.fx = fxs;
+      this.effectsEl.innerHTML = '';
+      for (const [id, e] of sv.effects.list) {
+        const d = EFFECTS[id];
+        const t = Math.ceil(e.time), mm = Math.floor(t / 60), ss = String(t % 60).padStart(2, '0');
+        this.effectsEl.append(el('div', 'fx' + (d.good ? '' : ' bad'), { title: d.desc }, el('span', 'fx-dot', { style: `background:${d.color}` }), `${d.name} ${ROMAN[e.level] || e.level} · ${mm}:${ss}`));
+      }
+    }
     // Chat: desvanecer líneas antiguas
     const now = performance.now();
     for (const l of this.chatLines) l.el.style.opacity = this.chatInput.classList.contains('hidden') ? Math.max(0, Math.min(1, (l.until - now) / 800)) : 1;
@@ -198,9 +222,10 @@ export class UI {
     const sv = this.game.survival;
     const hp = Math.ceil(sv.health);
     this.heartsEl.innerHTML = '';
-    for (let i = 0; i < 10; i++) {
+    const poison = sv.effects && sv.effects.has('poison');
+    for (let i = 0; i < Math.ceil(sv.maxHealth / 2); i++) {
       const v = hp - i * 2;
-      const img = el('img', 'hp' + (sv.health <= 6 ? ' low' : ''), { src: v >= 2 ? HEART_FULL() : v === 1 ? HEART_HALF() : HEART_EMPTY(), width: 20, height: 20 });
+      const img = el('img', 'hp' + (sv.health <= 6 ? ' low' : '') + (poison ? ' poison' : ''), { src: v >= 2 ? HEART_FULL() : v === 1 ? HEART_HALF() : HEART_EMPTY(), width: 20, height: 20 });
       if (sv.invuln > 0) img.classList.add('inv');
       this.heartsEl.append(img);
     }
@@ -242,6 +267,18 @@ export class UI {
     }
     if (it.armor) lines.push(`<span class="dim">Defensa +${it.armor.defense}</span>`);
     if (it.food) lines.push(`<span class="dim">Hambre +${it.food.hunger}</span>`);
+    const fxList = (it.food && it.food.effects) || (it.drink && it.drink.effects) || [];
+    if (fxList.length) lines.push(`<span class="fx-line">${fxList.map(([id, sec, lvl]) => `${EFFECTS[id].name}${lvl > 1 ? ' ' + ROMAN[lvl] : ''} (${sec} s)`).join(' · ')}</span>`);
+    if (it.drink && it.drink.heal) lines.push(`<span class="fx-line">Cura ${it.drink.heal / 2} corazones y quita los efectos negativos</span>`);
+    const DESC = {
+      glass_bottle: 'Clic derecho sobre el agua para llenarlo', water_flask: 'Base de los tónicos', tonic_base: 'Destílalo con un ingrediente en la mesa de alquimia',
+      heart_crystal: 'Clic derecho: +1 corazón máximo (hasta 20)', root_staff: 'Clic derecho: las raíces inmovilizan a los enemigos cercanos y te regeneran (15 s de recarga)',
+      prism_blade: 'Cada cuatro golpes libera un anillo de esquirlas', coral_crown: 'Respiras bajo el agua mientras la llevas puesta',
+      titan_hammer: 'Rompe zonas de 3×3 bloques de piedra y minerales', snowball: 'Clic derecho: lánzala (enfría al Titán Volcánico)',
+    };
+    if (it.kind === 'summon') lines.push(`<span class="fx-line">Ofrenda: despierta a un jefe en su altar</span>`);
+    if (DESC[it.key]) lines.push(`<span class="dim">${DESC[it.key]}</span>`);
+    if (it.unique) lines.push('<span class="fx-line">★ Objeto único de jefe</span>');
     if (it.fuel) lines.push(`<span class="dim">Combustible: ${it.fuel} s</span>`);
     if (max) lines.push(`<span class="dim">Durabilidad ${max - (stack.d || 0)}/${max}</span>`);
     this.tooltip.innerHTML = lines.join('<br>');

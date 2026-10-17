@@ -31,3 +31,16 @@ export async function withPage(urlPath, fn, { w = 1280, h = 720, port = 8123, re
 /** Espera n fotogramas de renderizado del navegador. */
 export const frames = (page, n) => page.evaluate((k) => new Promise((res) => { let c = 0; const f = () => { if (++c >= k) res(); else requestAnimationFrame(f); }; requestAnimationFrame(f); }), n);
 export { root };
+/**
+ * Garantiza que la partida está en marcha con el ratón capturado (bajo carga, Chromium sin pantalla puede perder la
+ * captura y el juego se pausa solo). Reanuda la pausa y vuelve a capturar el ratón con un clic.
+ */
+export async function ensurePlaying(page) {
+  for (let i = 0; i < 4; i++) {
+    const st = await page.evaluate(() => { const g = window.__game; if (g.state === 'paused') g.resume(); return { locked: g.controls.locked, state: g.state }; });
+    if (st.locked && st.state === 'playing') return true;
+    await page.click('#gl').catch(() => {});
+    await frames(page, 4);
+  }
+  return page.evaluate(() => window.__game.controls.locked && window.__game.state === 'playing');
+}

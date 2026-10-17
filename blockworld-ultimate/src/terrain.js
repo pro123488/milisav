@@ -6,6 +6,7 @@ import { Simplex, hash2, hash3, mulberry32, clamp, lerp, smoothstep } from './no
 import { BIOME, BIOMES } from './biomes.js';
 import { placeStructures, structureFootprints } from './structures.js';
 import { placeVillages, villageFootprints } from './villages.js';
+import { placeShrines, shrineFootprints } from './shrines.js';
 
 const BX = (lx, y, lz) => lx + (lz << 4) + (y << 8);
 const TOPID = {};   // biome id → [top, filler, depth]
@@ -369,12 +370,13 @@ export class Terrain {
     }
 
     // ── Estructuras (antes de árboles) ──
-    const foot = this.structures ? structureFootprints(this, cx, cz).concat(villageFootprints(this, cx, cz)) : [];
+    const foot = this.structures ? structureFootprints(this, cx, cz).concat(villageFootprints(this, cx, cz), shrineFootprints(this, cx, cz)) : [];
     let sx = { chests: [], mobs: [] };
     if (this.structures) {
       sx = placeStructures(this, blocks, cx, cz);
       const vx = placeVillages(this, blocks, cx, cz); // aldeas (varios chunks, deterministas)
       sx.chests = sx.chests.concat(vx.chests); sx.mobs = sx.mobs.concat(vx.mobs);
+      placeShrines(this, blocks, cx, cz); // santuarios de los jefes (varios chunks, deterministas)
     }
 
     // ── Árboles y flora ──

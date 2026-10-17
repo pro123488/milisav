@@ -1,7 +1,8 @@
 // Supervivencia: salud, hambre, saturación, recuperación, daño (caída, ahogo, lava, fuego, cactus, vacío),
 // armadura, muerte y reaparición. Las reglas dependen del modo de juego y de la dificultad.
-import { DEFENSE_PER_POINT } from './items.js';
+import { DEFENSE_PER_POINT, Items } from './items.js';
 import { ID } from './blocks.js';
+import { Effects } from './effects.js';
 
 const DIFF_DAMAGE = { peaceful: 0.0, easy: 0.6, normal: 1.0, hard: 1.45 };
 export const mobDamageScale = (difficulty) => DIFF_DAMAGE[difficulty] ?? 1;
@@ -20,6 +21,7 @@ export class Survival {
     this.regenTimer = 0; this.starveTimer = 0; this.drownTimer = 0; this.lavaTimer = 0; this.cactusTimer = 0; this.fireTimer = 0;
     this.invuln = 0; this.dead = false; this.deathCause = '';
     this.blocksBroken = 0; this.blocksPlaced = 0;
+    this.effects = new Effects(); this.poisonTimer = 0; this.effRegenTimer = 0;
   }
 
   get canSprint() { return this.hunger > 6 || this.game.mode === 'creative'; }
@@ -33,7 +35,10 @@ export class Survival {
     if (this.dead || amount <= 0) return false;
     if (g.mode === 'creative' && type !== 'void') return false;
     if (this.invuln > 0 && type !== 'void') return false;
+    const fx = this.effects;
+    if ((type === 'fire' || type === 'lava') && fx.has('fire_resistance')) return false;
     let dmg = amount;
+    if (type !== 'void' && type !== 'starve') dmg *= fx.damageFactor();
     if (type === 'mob') dmg *= mobDamageScale(g.difficulty);
     const armored = !['drown', 'starve', 'void', 'fall'].includes(type);
     if (armored) {
@@ -58,6 +63,12 @@ export class Survival {
     return true;
   }
 
+  /** ¿Lleva puesta la pieza de armadura `key`? (la Corona de coral da respiración acuática) */
+  wearing(key) { const a = this.game.inventory && this.game.inventory.armor; if (!a) return false; for (const s of a) if (s && Items.get(s.i).key === key) return true; return false; }
+
+  /** Aplica una lista de efectos [[id, segundos, nivel], ...] (tónicos y comidas especiales). */
+  applyEffects(list) { for (const [id, sec, lvl] of list || []) this.effects.add(id, sec, lvl || 1); }
+
   heal(n) { this.health = Math.min(this.maxHealth, this.health + n); }
 
   eat(item) {
@@ -74,7 +85,9 @@ export class Survival {
   }
 
   respawn() {
+    const mh = this.maxHealth;
     this.reset();
+    this.maxHealth = mh; this.health = mh; // los corazones extra (recompensas de jefes) se conservan
   }
 
   /** Avanza las reglas del juego un fotograma. */
@@ -93,6 +106,8 @@ export class Survival {
     // Vacío
     if (p.y < -20) { this.damage(4, 'void'); p.teleport(p.x, 90, p.z); }
 
+    const fx = this.effects;
+    fx.update(dt);
     if (creative) { this.health = this.maxHealth; this.hunger = 20; this.air = this.maxAir; this.fire = 0; return; }
 
     // Movimiento → hambre
@@ -102,14 +117,25 @@ export class Survival {
     }
     if (p.jumpedThisFrame) this.addExhaustion(p.sprinting ? 0.2 : 0.05);
 
+    // Efectos de estado
+    if (fx.has('regeneration') && this.health < this.maxHealth) {
+      this.effRegenTimer += dt;
+      if (this.effRegenTimer >= 2.5 / fx.level('regeneration')) { this.effRegenTimer = 0; this.heal(1); }
+    } else this.effRegenTimer = 0;
+    if (fx.has('poison') && this.health > 1) {
+      this.poisonTimer += dt;
+      if (this.poisonTimer >= 1.25 / fx.level('poison')) { this.poisonTimer = 0; this.health = Math.max(1, this.health - 1); g.ui.damageFlash(); }
+    }
+
     // Ahogamiento
-    if (p.headInWater) {
+    if (p.headInWater && !fx.has('water_breathing') && !this.wearing('coral_crown')) {
       this.air -= dt;
       if (this.air <= 0) { this.drownTimer += dt; if (this.drownTimer >= 1) { this.drownTimer = 0; this.damage(2, 'drown'); } }
     } else { this.air = Math.min(this.maxAir, this.air + dt * 5); this.drownTimer = 0; }
 
     // Lava y fuego
-    if (p.inLava) {
+    if (fx.has('fire_resistance')) this.fire = 0;
+    if (p.inLava && !fx.has('fire_resistance')) {
       this.fire = 8; this.lavaTimer += dt;
       if (this.lavaTimer >= 0.5) { this.lavaTimer = 0; this.damage(4, 'lava'); }
     }
@@ -159,10 +185,12 @@ export class Survival {
   }
 
   serialize() {
-    return { h: this.health, hu: this.hunger, sat: this.saturation, ex: this.exhaustion, air: this.air };
+    return { h: this.health, hu: this.hunger, sat: this.saturation, ex: this.exhaustion, air: this.air, fx: this.effects.serialize(), mh: this.maxHealth };
   }
   load(o) {
     if (!o) return;
-    this.health = Math.max(1, Math.min(20, o.h ?? 20)); this.hunger = o.hu ?? 20; this.saturation = o.sat ?? 5; this.exhaustion = o.ex ?? 0; this.air = o.air ?? 10;
+    this.maxHealth = o.mh ?? 20;
+    this.health = Math.max(1, Math.min(this.maxHealth, o.h ?? 20)); this.hunger = o.hu ?? 20; this.saturation = o.sat ?? 5; this.exhaustion = o.ex ?? 0; this.air = o.air ?? 10;
+    this.effects.load(o.fx);
   }
 }

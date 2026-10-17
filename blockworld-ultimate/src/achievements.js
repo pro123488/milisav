@@ -25,4 +25,13 @@ export const ACHIEVEMENTS = [
   { id: 'comercio', name: 'Trato hecho', desc: 'Comercia con un aldeano' },
   { id: 'maestro', name: 'Maestro artesano', desc: 'Lleva a un aldeano al nivel de maestro' },
   { id: 'abono', name: 'Abono natural', desc: 'Usa abono en un cultivo, un brote o el césped' },
+  // Fase 4
+  { id: 'alquimia', name: 'Aprendiz de alquimista', desc: 'Bébete un tónico destilado en la mesa de alquimia' },
+  { id: 'santuario', name: 'Tierra sagrada', desc: 'Encuentra el altar de un santuario' },
+  { id: 'jefe_bosque', name: 'Leñador legendario', desc: 'Derrota al Guardián del Bosque Antiguo' },
+  { id: 'jefe_cristal', name: 'Rompecristales', desc: 'Derrota al Coloso de Cristal' },
+  { id: 'jefe_mar', name: 'Señor de las mareas', desc: 'Derrota a la Reina de las Profundidades' },
+  { id: 'jefe_titan', name: 'Forja apagada', desc: 'Derrota al Titán Volcánico' },
+  { id: 'cazajefes', name: 'Leyenda viva', desc: 'Derrota a los cuatro jefes del mundo' },
+  { id: 'vitalidad', name: 'Corazón de hierro', desc: 'Usa un Cristal vital para ganar un corazón' },
 ];

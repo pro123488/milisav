@@ -174,8 +174,14 @@ export class FallingBlock extends Entity {
         if (item) this.game.dropItem({ i: item.id, n: 1, d: 0 }, this.x, this.y + 0.2, this.z, 0.5);
         return;
       }
-      let y = by;
-      while (y < 127 && w.getBlock(bx, y, bz) !== 0 && !B_FLUID[w.getBlock(bx, y, bz)] && Blocks.get(w.getBlock(bx, y, bz)).shape !== 'cross') y++;
+      const cur = w.getBlock(bx, by, bz);
+      // la celda está ocupada por algo que no se puede sustituir (p. ej. una puerta de valla abierta): se suelta como objeto
+      if (cur !== 0 && !B_FLUID[cur] && Blocks.get(cur).shape !== 'cross' && !Blocks.get(cur).replaceable) {
+        const item = Items.forBlock(this.blockId);
+        if (item) this.game.dropItem({ i: item.id, n: 1, d: 0 }, this.x, this.y + 0.2, this.z, 0.5);
+        return;
+      }
+      const y = by;
       w.setBlock(bx, y, bz, this.blockId);
       this.game.audio && this.game.audio.blockSound('place', Blocks.get(this.blockId).sound, bx, y, bz);
     }
@@ -310,6 +316,7 @@ export class Mob extends Entity {
     this.hurtTime = Math.max(0, this.hurtTime - dt);
     this.wishX = this.wishZ = 0; this.wantJump = false;
     this.think(dt);
+    if (this.rooted > 0) { this.rooted -= dt; this.wishX = this.wishZ = 0; this.wantJump = false; } // Báculo de raíces
 
     const fl = w.fluidAt(Math.floor(this.x), Math.floor(this.y + this.h * 0.4), Math.floor(this.z));
     this.inWater = fl === 1; this.inLava = fl === 2;

@@ -101,13 +101,15 @@ export function connectMask(get, x, y, z, id) {
   const fam = B_FAMILY[id];
   if (fam !== FAM.FENCE && fam !== FAM.WALL) return 0;
   let m = 0;
-  for (let d = 0; d < 4; d++) if (connectsTo(fam, get(x + FACING_VEC[d][0], y, z + FACING_VEC[d][1]))) m |= 1 << d;
+  for (let d = 0; d < 4; d++) if (connectsTo(fam, get(x + FACING_VEC[d][0], y, z + FACING_VEC[d][1]), d)) m |= 1 << d;
   return m;
 }
-/** ¿Se une una valla/muro (familia fam) al bloque vecino n? */
-export function connectsTo(fam, n) {
+/** ¿Se une una valla/muro (familia fam) al bloque vecino n, que está en la dirección d (0 N, 1 E, 2 S, 3 O)? */
+export function connectsTo(fam, n, d = -1) {
   const nf = B_FAMILY[n];
-  return nf === fam || nf === FAM.GATE || (B_OPAQUE[n] === 1 && B_SOLID[n] === 1);
+  // a una puerta de valla solo si está alineada con la línea de la valla (no por su costado)
+  if (nf === FAM.GATE) return d < 0 || (BLOCKS[n].facing % 2) !== (d % 2);
+  return nf === fam || (B_OPAQUE[n] === 1 && B_SOLID[n] === 1);
 }
 
 function withArms(core, armSet, mask) {

@@ -6,6 +6,7 @@ import { ID } from './blocks.js';
 import { hash2, hash3, mulberry32 } from './noise.js';
 import { BIOME } from './biomes.js';
 import { chunkInVillage } from './villages.js';
+import { chunkInShrine } from './shrines.js';
 
 const REGION = 5; // chunks por región; como mucho una estructura de superficie por región
 
@@ -93,6 +94,7 @@ export function structureFootprints(terrain, cx, cz) {
 /** Decide si el chunk (cx,cz) contiene una estructura y de qué tipo. Determinista. */
 function planFor(terrain, cx, cz) {
   if (!terrain.structures) return null;
+  if (chunkInShrine(terrain, cx, cz)) return null; // las arenas de los jefes no se mezclan con otras estructuras
   const seed = terrain.seed;
   // Estructuras subterráneas: mazmorras (independientes de la superficie)
   const dg = hash2(cx, cz, seed + 9001);

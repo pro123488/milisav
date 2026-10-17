@@ -123,6 +123,53 @@ export const MONSTERS = {
       P('leg_br', [0.32, 0.6, 0.32], [0.35, 0.3, 0.55], '#241a1c', { pivot: [0.35, 0.6, 0.55] }),
     ],
   },
+  // ── Fase 4: esbirros de los jefes (solo aparecen invocados por un jefe) ──
+  thorn_sprout: {
+    key: 'thorn_sprout', name: 'Brote espinoso', threat: 2, hp: 10, speed: 2.4, chase: 3.3, dmg: 3, reach: 1.4, detect: 32, w: 0.6, h: 0.95,
+    habitat: 'Santuario del Bosque Antiguo (invocado por el Guardián)', sound: 'growl', cooldown: 1.0, minion: true, poison: 0,
+    drops: [{ item: 'stick', min: 0, max: 2 }, { item: 'apple', min: 0, max: 1, chance: 0.2 }],
+    model: () => [
+      P('body', [0.5, 0.5, 0.5], [0, 0.45, 0], '#4f7a2e', { color2: '#3a5a20' }),
+      P('head', [0.56, 0.36, 0.56], [0, 0.86, 0], '#5ea83a', { pivot: [0, 0.7, 0] }),
+      P('thorn1', [0.08, 0.3, 0.08], [0.18, 1.12, 0.1], '#c8e070', { pivot: [0, 0.7, 0], parent: 'head' }),
+      P('thorn2', [0.08, 0.26, 0.08], [-0.16, 1.1, -0.1], '#c8e070', { pivot: [0, 0.7, 0], parent: 'head' }),
+      P('eyeL', [0.08, 0.06, 0.03], [-0.12, 0.86, -0.29], '#f0ff8a', { pivot: [0, 0.7, 0], parent: 'head', emissive: true }),
+      P('eyeR', [0.08, 0.06, 0.03], [0.12, 0.86, -0.29], '#f0ff8a', { pivot: [0, 0.7, 0], parent: 'head', emissive: true }),
+      P('legL', [0.16, 0.3, 0.16], [-0.14, 0.15, 0], '#3a5a20', { pivot: [-0.14, 0.3, 0] }),
+      P('legR', [0.16, 0.3, 0.16], [0.14, 0.15, 0], '#3a5a20', { pivot: [0.14, 0.3, 0] }),
+    ],
+  },
+  tide_jelly: {
+    key: 'tide_jelly', name: 'Medusa de marea', threat: 2, hp: 8, speed: 2.2, chase: 2.8, dmg: 2, reach: 1.2, detect: 30, w: 0.7, h: 0.8, flying: true, canJump: false,
+    habitat: 'Templo sumergido (invocada por la Reina)', sound: 'screech', cooldown: 1.3, minion: true, poison: 5,
+    drops: [{ item: 'raw_fish', min: 0, max: 1, chance: 0.4 }],
+    model: () => [
+      P('body', [0.7, 0.45, 0.7], [0, 0.6, 0], '#8ac8f0', { emissive: true }),
+      P('core', [0.3, 0.2, 0.3], [0, 0.55, 0], '#e870c8', { emissive: true }),
+      P('wingL', [0.1, 0.45, 0.1], [-0.22, 0.2, -0.2], '#6aa8d8', { pivot: [-0.22, 0.4, -0.2] }),
+      P('wingR', [0.1, 0.45, 0.1], [0.22, 0.2, 0.2], '#6aa8d8', { pivot: [0.22, 0.4, 0.2] }),
+      P('t3', [0.1, 0.5, 0.1], [0.2, 0.18, -0.2], '#6aa8d8'),
+      P('t4', [0.1, 0.5, 0.1], [-0.2, 0.18, 0.2], '#6aa8d8'),
+    ],
+  },
+  ember_imp: {
+    key: 'ember_imp', name: 'Diablillo de brasas', threat: 3, hp: 12, speed: 2.4, chase: 3.5, dmg: 3, reach: 1.4, detect: 32, w: 0.6, h: 1.15, fireImmune: true, ignite: 3,
+    habitat: 'Caldera volcánica (invocado por el Titán)', sound: 'growl', cooldown: 1.1, minion: true, jump: 9,
+    drops: [{ item: 'coal', min: 0, max: 2 }],
+    model: () => [
+      P('torso', [0.4, 0.45, 0.26], [0, 0.72, 0], '#3a2226', { pivot: [0, 0.72, 0] }),
+      P('glow', [0.2, 0.2, 0.04], [0, 0.75, -0.14], '#ff8a20', { pivot: [0, 0.72, 0], parent: 'torso', emissive: true }),
+      P('head', [0.4, 0.36, 0.36], [0, 1.12, 0], '#4a2a2c', { pivot: [0, 0.95, 0] }),
+      P('hornL', [0.06, 0.16, 0.06], [-0.14, 1.36, 0], '#1a1010', { pivot: [0, 0.95, 0], parent: 'head' }),
+      P('hornR', [0.06, 0.16, 0.06], [0.14, 1.36, 0], '#1a1010', { pivot: [0, 0.95, 0], parent: 'head' }),
+      P('eyeL', [0.08, 0.05, 0.03], [-0.09, 1.14, -0.19], '#ffd040', { pivot: [0, 0.95, 0], parent: 'head', emissive: true }),
+      P('eyeR', [0.08, 0.05, 0.03], [0.09, 1.14, -0.19], '#ffd040', { pivot: [0, 0.95, 0], parent: 'head', emissive: true }),
+      P('armL', [0.12, 0.42, 0.12], [-0.27, 0.7, 0], '#3a2226', { pivot: [-0.27, 0.9, 0] }),
+      P('armR', [0.12, 0.42, 0.12], [0.27, 0.7, 0], '#3a2226', { pivot: [0.27, 0.9, 0] }),
+      P('legL', [0.14, 0.5, 0.14], [-0.1, 0.25, 0], '#2a1618', { pivot: [-0.1, 0.5, 0] }),
+      P('legR', [0.14, 0.5, 0.14], [0.1, 0.25, 0], '#2a1618', { pivot: [0.1, 0.5, 0] }),
+    ],
+  },
 };
 
 /** Proyectil (fragmento de obsidiana). */
@@ -195,7 +242,8 @@ export class Monster extends Mob {
   think(dt) {
     const g = this.game, def = this.def, w = this.world;
     // Reglas globales de despawn
-    if (g.difficulty === 'peaceful' || g.meta.mobs !== 'all') { this.removed = true; return; }
+    if (!this.bossMinion && (g.difficulty === 'peaceful' || g.meta.mobs !== 'all')) { this.removed = true; return; }
+    if (def.minion && !this.bossMinion) { this.removed = true; return; } // los esbirros solo existen junto a su jefe
     this.atkCd -= dt; this.attackAnim = Math.max(0, this.attackAnim - dt);
     this.soundTimer -= dt;
     // Objetivo: el jugador o, si está más cerca, un aldeano (solo los que atacan cuerpo a cuerpo por tierra)
@@ -272,7 +320,8 @@ export class Monster extends Mob {
         this.attackAnim = 0.35;
         if (isPlayer) {
           const hurt = g.survival.damage(def.dmg, 'mob', this);
-          if (hurt && def.ignite) g.survival.fire = Math.max(g.survival.fire, def.ignite);
+          if (hurt && def.ignite && !g.survival.effects.has('fire_resistance')) g.survival.fire = Math.max(g.survival.fire, def.ignite);
+          if (hurt && def.poison) g.survival.effects.add('poison', def.poison, 1);
         } else p.hurt(def.dmg, this.x, this.z, 1, this);
         this.sound();
       }
@@ -332,9 +381,9 @@ export class Monster extends Mob {
       const d3 = Math.hypot(dx, dy, dz) || 1;
       this.wishX = (dx / d3) * 1.1 + this.flitX * 0.5; this.wishZ = (dz / d3) * 1.1 + this.flitZ * 0.5;
       this.flyTargetVy = clamp(dy * 1.5 + this.flitVy * 0.4, -3, 3);
-      if (dist < def.reach && Math.abs(dy) < 1.4 && this.atkCd <= 0) {
+      if (dist < def.reach && Math.abs(dy) < 1.4 && this.atkCd <= 0 && !segmentBlocked(this.world, this.x, this.y + this.h / 2, this.z, g.player.x, g.player.y + 1.2, g.player.z)) {
         this.atkCd = def.cooldown; this.attackAnim = 0.3;
-        g.survival.damage(def.dmg, 'mob', this);
+        if (g.survival.damage(def.dmg, 'mob', this) && def.poison) g.survival.effects.add('poison', def.poison, 1);
         this.sound();
         this.flit = 0.8; this.flitX = -dx / (dist || 1); this.flitZ = -dz / (dist || 1);
       }

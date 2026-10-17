@@ -33,6 +33,16 @@ export function segmentBlocked(world, ax, ay, az, bx, by, bz) {
       const h = rayAABB(ax - x, ay - y, az - z, ux, uy, uz, [b[0], b[1], b[2]], [b[3], b[4], b[5]]);
       if (h && h.t <= len) return true;
     }
+    // Capa inferior: vallas, muros y puertas de valla de la celda de abajo sobresalen hasta 1,5
+    if (world.collisionBoxesTall) {
+      const tall = world.collisionBoxesTall(x, y - 1, z);
+      for (let k = 0; k < tall.length; k++) {
+        const b = tall[k];
+        if (b[4] <= 1) continue;
+        const h = rayAABB(ax - x, ay - (y - 1), az - z, ux, uy, uz, [b[0], Math.max(b[1], 1), b[2]], [b[3], b[4], b[5]]);
+        if (h && h.t <= len) return true;
+      }
+    }
     let t;
     if (tmx < tmy && tmx < tmz) { x += sx; t = tmx; tmx += tdx; }
     else if (tmy < tmz) { y += sy; t = tmy; tmy += tdy; }

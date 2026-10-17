@@ -58,6 +58,7 @@ export class Spawner {
       if (e.removed || e.type === 'item' || e.type === 'falling' || e.type === 'projectile') continue;
       const d = Math.hypot(e.x - p.x, e.z - p.z);
       if (MONSTERS[e.type]) {
+        if (e.bossMinion) continue; // los esbirros desaparecen con su jefe
         if (!this.enabledMonsters) { e.removed = true; continue; }
         if (e.noDespawn) continue;
         if (d > 80 || (d > 36 && Math.random() < 0.02)) e.removed = true;

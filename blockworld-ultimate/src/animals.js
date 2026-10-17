@@ -197,8 +197,13 @@ export class Animal extends Mob {
     if (!this.leash) return false;
     if (this.leash !== 'player') {
       const k = this.leash;
+      if (this.world.isLoaded && !this.world.isLoaded(k.x, k.z)) { this.wishX = this.wishZ = 0; return true; } // la valla aún no se ha cargado: esperar
       if (B_FAMILY[this.world.getBlock(k.x, k.y, k.z)] !== FAM.FENCE) { this.detachLeash(false); this.game.dropItem({ i: Items.id('rope'), n: 1, d: 0 }, k.x + 0.5, k.y + 0.8, k.z + 0.5); return false; }
-    } else if (this.game.survival && this.game.survival.dead) { this.detachLeash(false); return false; }
+    } else if (this.game.survival && this.game.survival.dead) {
+      this.detachLeash(false);
+      if (this.game.mode !== 'creative') this.game.dropItem({ i: Items.id('rope'), n: 1, d: 0 }, this.x, this.y + 0.5, this.z);
+      return false;
+    }
     const a = this._leashAnchor();
     const d = Math.hypot(a.x - this.x, a.z - this.z);
     if (d > 14) { // se rompe
@@ -248,6 +253,7 @@ export class Animal extends Mob {
 
   onDeath() {
     const g = this.game;
+    if (this.leash) { this.detachLeash(false); if (g.mode !== 'creative') g.dropItem({ i: Items.id('rope'), n: 1, d: 0 }, this.x, this.y + 0.5, this.z); }
     for (const d of pickDrops(this.def)) {
       if (this.baby) continue;
       g.dropItem({ i: Items.id(d.item), n: d.n, d: 0 }, this.x, this.y + 0.4, this.z);
@@ -306,7 +312,8 @@ export class Animal extends Mob {
     if (this.baby) { this.growAge += dt; if (this.growAge >= 300) this.setBaby(false); }
     if (def.flying) return this._thinkFlying(dt);
     if (def.swimmer) return this._thinkSwimmer(dt);
-    if (this.panic <= 0 && this._thinkLeash()) return;
+    if (this.leash && this.panic > 0) this.panic = Math.min(this.panic, 0.6); // atado: el susto dura poco y la cuerda manda
+    if (this._thinkLeash()) return;
 
     const dx = p.x - this.x, dz = p.z - this.z, dist = Math.hypot(dx, dz);
     // Pánico
@@ -319,7 +326,7 @@ export class Animal extends Mob {
       return;
     }
     // Esquivos
-    if (def.skittish && !this.tamed) {
+    if (def.skittish && !this.tamed && !this.leash) {
       const range = def.skittish * (p.crouching ? 0.4 : 1);
       if (dist < range && g.mode !== 'creative') {
         const held = g.inventory.selectedItem();

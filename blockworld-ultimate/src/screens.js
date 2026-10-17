@@ -8,6 +8,9 @@ import { recipesFor, canCraft, maxCrafts, craft, countIngredient, TAGS, smeltRec
 import { DEFAULT_KEYS } from './controls.js';
 import { ACHIEVEMENTS } from './achievements.js';
 import { PROFESSIONS, offersFor, canTrade, executeTrade, LEVEL_XP, MAX_LEVEL } from './trading.js';
+import { BREWS, BREW_TIME, isIngredient, isBrewBase, canBrew } from './alchemy.js';
+import { bestiaryEntries } from './bestiary.js';
+import { EFFECTS } from './effects.js';
 
 const KEY_LABEL = (c) => c.replace('Key', '').replace('Arrow', '↑↓←→'.charAt(['Up', 'Down', 'Left', 'Right'].findIndex((d) => c.endsWith(d))) || '').replace('Space', 'Espacio').replace('ShiftLeft', 'Shift').replace('ShiftRight', 'Shift').replace('Slash', '/');
 
@@ -73,6 +76,15 @@ class SlotScreen {
     if (e.shiftKey && !inv.cursor) { if (this.onShift(slots, idx)) { this.afterChange(); } return; }
     const button = e.button === 2 ? 2 : 0;
     const before = inv.cursor;
+    // Huecos de una sola unidad (frascos de la mesa de alquimia)
+    if (rules.max === 1 && inv.cursor && (!rules.canPlace || rules.canPlace(inv.cursor))) {
+      const c = inv.cursor, cur = slots[idx];
+      if (!cur) { slots[idx] = { i: c.i, n: 1, d: c.d || 0 }; c.n--; if (c.n <= 0) inv.cursor = null; }
+      else if (c.n === 1 && (cur.i !== c.i)) { slots[idx] = c; inv.cursor = cur; }
+      g.audio && g.audio.play('click');
+      this.afterChange();
+      return;
+    }
     inv.cursor = clickSlot(slots, idx, inv.cursor, button, {
       canPlace: rules.canPlace ? (i, st) => rules.canPlace(st) : undefined,
       outputOnly: rules.outputOnly ? () => true : undefined,
@@ -234,7 +246,7 @@ export function openInventoryScreen(game) {
   if (creative) {
     // Catálogo con búsqueda y categorías
     const cat = creativeCatalog();
-    const tabs = [['Todo', () => true], ['Bloques', (i) => i.kind === 'block' || i.kind === 'door'], ['Herramientas', (i) => i.kind === 'tool'], ['Armaduras', (i) => i.kind === 'armor'], ['Comida', (i) => !!i.food], ['Materiales', (i) => ['material', 'bucket', 'rope', 'fertilizer', 'compass', 'heal'].includes(i.kind)]];
+    const tabs = [['Todo', () => true], ['Bloques', (i) => i.kind === 'block' || i.kind === 'door'], ['Herramientas', (i) => i.kind === 'tool'], ['Armaduras', (i) => i.kind === 'armor'], ['Comida', (i) => !!i.food], ['Materiales', (i) => ['material', 'bucket', 'rope', 'fertilizer', 'compass', 'heal'].includes(i.kind)], ['Alquimia y jefes', (i) => ['drink', 'bottle', 'summon', 'heart'].includes(i.kind) || !!i.unique || (i.kind === 'block' && /^altar_/.test(i.key))]];
     let filter = tabs[0][1], q = '';
     const bar = el('div', 'creative-bar');
     const tabBox = el('div', 'tabs');
@@ -342,6 +354,88 @@ export function openFurnaceScreen(game, be) {
   return s;
 }
 
+// ── Mesa de alquimia ─────────────────────────────────────────────
+export function openAlchemyScreen(game, be) {
+  const s = new SlotScreen(game, 'Mesa de alquimia', 'alchemy-screen');
+  const inv = game.inventory;
+  const ex = be.extra || (be.extra = { brew: 0 });
+  const ingRule = { canPlace: (st) => isIngredient(Items.get(st.i).key), label: '' };
+  const bottleRule = { canPlace: (st) => isBrewBase(Items.get(st.i).key) || !!Items.get(st.i).drink, max: 1, label: '' };
+  const bubbles = el('div', 'brew-bar', null, el('div'));
+  const top = el('div', 'alch-top', null, s.slot(be.slots, 0, ingRule, 'big'), bubbles);
+  const bottles = el('div', 'alch-bottles', null, s.slot(be.slots, 1, bottleRule), s.slot(be.slots, 2, bottleRule), s.slot(be.slots, 3, bottleRule));
+  // Libro de recetas: todas las destilaciones posibles
+  const book = el('div', 'brew-book');
+  const icon = (k) => { const it = Items.get(k); return el('img', null, { src: getItemIconURL(it), title: it.name }); };
+  for (const b of BREWS) book.append(el('div', 'brew-row', null, icon(b.base), el('span', null, { text: '+' }), icon(b.ing), el('span', null, { text: '→' }), icon(b.out), el('span', 'dim', { text: Items.get(b.out).name })));
+  s.panel.append(el('div', 'alch-layout', null, el('div', 'alch-col', null, top, bottles, el('p', 'dim small', { text: 'Llena frascos de vidrio con agua (clic derecho sobre el agua) y destílalos con un ingrediente.' })), book));
+  s.panel.append(el('h3', null, { text: 'Inventario' }), s.playerInventory());
+  s.onShift = (slots, idx) => {
+    if (slots === be.slots) return shiftMove(slots, idx, [{ slots: inv.slots, from: 0, to: 36 }]);
+    const st = slots[idx];
+    if (!st) return false;
+    const k = Items.get(st.i).key;
+    if (isIngredient(k)) return s.shiftFromPlayer(slots, idx, [{ slots: be.slots, from: 0, to: 1 }]);
+    if (isBrewBase(k) || Items.get(st.i).drink) {
+      // los frascos van de uno en uno a los huecos libres
+      for (let i = 1; i <= 3; i++) if (!be.slots[i]) { be.slots[i] = { i: st.i, n: 1, d: 0 }; st.n--; if (st.n <= 0) slots[idx] = null; return true; }
+      return false;
+    }
+    return s.shiftFromPlayer(slots, idx, []);
+  };
+  s.update = () => {
+    s.sigCheck();
+    $('div', bubbles).style.width = (canBrew(be) ? Math.round((ex.brew / BREW_TIME) * 100) : 0) + '%';
+    for (const v of s.views) UI.paintSlot(v.el, v.slots[v.idx]);
+  };
+  s.refresh();
+  return s;
+}
+
+// ── Bestiario ────────────────────────────────────────────────────
+export function openBestiaryScreen(game, onBack) {
+  const root = el('div', 'screen-overlay dim');
+  const best = game.bestiary;
+  const entries = bestiaryEntries();
+  const list = el('div', 'best-list');
+  const page = el('div', 'best-page');
+  const known = (e) => best.seen.has(e.key) || (e.boss && game.achievements.has(e.boss.achievement));
+  const show = (e) => {
+    page.innerHTML = '';
+    for (const r of list.children) r.classList.toggle('sel', r.dataset.key === e.key);
+    if (!known(e)) { page.append(el('h3', null, { text: '???' }), el('p', 'dim', { text: e.boss ? `Jefe aún no encontrado. ${e.boss.lore.arena}` : 'Todavía no has visto a esta criatura de cerca.' })); return; }
+    const kills = best.kills[e.key] || 0;
+    page.append(el('h3', null, { text: e.name }), el('div', 'dim', { text: `${e.cat} · Vida ${e.hp}${e.threat ? ` · Amenaza ${'★'.repeat(e.threat)}` : ''} · Derrotados: ${kills}` }));
+    if (e.boss) {
+      const L = e.boss.lore;
+      const sec = (t, body) => { page.append(el('h4', null, { text: t })); if (Array.isArray(body)) { const ul = el('ul'); for (const x of body) ul.append(el('li', null, { text: x })); page.append(ul); } else page.append(el('p', null, { text: body })); };
+      sec('Historia', L.historia); sec('Arena', L.arena); sec('Invocación', L.invocacion); sec('Fases', L.fases); sec('Ataques', L.ataques); sec('Debilidad', L.debilidad); sec('Recompensa', L.recompensa);
+    } else {
+      if (e.habitat) page.append(el('p', 'dim', { text: 'Hábitat: ' + e.habitat }));
+      page.append(el('p', null, { text: e.lore || '' }));
+    }
+  };
+  let first = null;
+  let lastCat = '';
+  for (const e of entries) {
+    if (e.cat !== lastCat) { lastCat = e.cat; list.append(el('div', 'cat', { text: e.cat === 'Jefe' ? 'Jefes' : e.cat === 'Esbirro' ? 'Esbirros' : e.cat === 'Monstruo' ? 'Monstruos' : e.cat === 'Animal' ? 'Animales' : 'Aldea' })); }
+    const row = el('div', 'best-row' + (known(e) ? '' : ' unk'), { text: known(e) ? e.name : '???' });
+    row.dataset.key = e.key;
+    row.addEventListener('click', () => show(e));
+    list.append(row);
+    if (!first) first = e;
+  }
+  const seenN = entries.filter(known).length;
+  const b = el('button', 'btn primary', { text: 'Volver' }); b.addEventListener('click', onBack);
+  const panel = el('div', 'panel wide', null, el('h2', null, { text: `Bestiario (${seenN}/${entries.length})` }), el('div', 'best-layout', null, list, page), b);
+  root.append(panel);
+  show(first);
+  return { root };
+}
+
+/** Texto de ayuda de los efectos (para la descripción de los tónicos). */
+export function effectsText(list) { return (list || []).map(([id, sec, lvl]) => `${EFFECTS[id].name}${lvl > 1 ? ' ' + 'I'.repeat(lvl) : ''} (${sec} s)`).join(', '); }
+
 // ── Comercio con aldeanos ────────────────────────────────────────
 const LEVEL_NAMES = ['', 'Aprendiz', 'Oficial', 'Maestro'];
 export function openTradeScreen(game, villager) {
@@ -400,11 +494,11 @@ export function openTradeScreen(game, villager) {
 }
 
 // ── Pausa / muerte / controles ──────────────────────────────────
-export function openPauseScreen(game, { onResume, onOptions, onControls, onQuit, onAchievements }) {
+export function openPauseScreen(game, { onResume, onOptions, onControls, onQuit, onAchievements, onBestiary }) {
   const root = el('div', 'screen-overlay dim');
   const panel = el('div', 'panel narrow', null, el('h2', null, { text: 'Juego en pausa' }));
   const mk = (t, f, cls = '') => { const b = el('button', 'btn ' + cls, { text: t }); b.addEventListener('click', () => { game.audio && game.audio.play('click'); f(); }); return b; };
-  panel.append(mk('Continuar', onResume, 'primary'), mk('Opciones', onOptions), mk('Controles', onControls), mk('Logros', onAchievements), mk('Guardar y salir al menú', onQuit));
+  panel.append(mk('Continuar', onResume, 'primary'), mk('Opciones', onOptions), mk('Controles', onControls), mk('Logros', onAchievements), mk('Bestiario', onBestiary || (() => {})), mk('Guardar y salir al menú', onQuit));
   panel.append(el('p', 'dim center', { text: 'El mundo se guarda automáticamente cada 30 s.' }));
   root.append(panel);
   return { root };
@@ -427,7 +521,7 @@ export function buildControlsPanel() {
   const rows = [
     ['Avanzar / izquierda / retroceder / derecha', 'W A S D (o flechas)'], ['Saltar (doble toque: volar en Creativo)', 'Espacio'], ['Correr', 'Shift'], ['Agacharse (no cae de los bordes) / bajar al volar', 'C'],
     ['Mirar', 'Ratón'], ['Romper bloque / atacar', 'Clic izquierdo (mantener)'], ['Colocar bloque / usar / abrir / comer (mantener)', 'Clic derecho'], ['Copiar bloque apuntado (Creativo)', 'Clic central'],
-    ['Seleccionar ranura', 'Teclas 1–9 o rueda'], ['Inventario / fabricación', 'E'], ['Soltar objeto (Mayús+Q: toda la pila)', 'Q'], ['Cámara en 1ª / 3ª persona', 'V'],
+    ['Seleccionar ranura', 'Teclas 1–9 o rueda'], ['Inventario / fabricación', 'E'], ['Bestiario', 'B'], ['Beber un tónico (mantener) / lanzar una bola de nieve', 'Clic derecho'], ['Soltar objeto (Mayús+Q: toda la pila)', 'Q'], ['Cámara en 1ª / 3ª persona', 'V'],
     ['Depuración (coordenadas, FPS)', 'F3'], ['Ocultar interfaz', 'F1'], ['Chat y comandos', 'T o /'], ['Pausa', 'Esc'],
   ];
   const t = el('table', 'keys');

@@ -418,6 +418,59 @@ P.bookshelf = (g, r) => {
   }
 };
 
+// ── Fase 4: altares y arenas de los jefes ──
+function altarSide(base, rune, glow) {
+  return (g, r) => {
+    g.noise(base, 7, r); g.specks(shade(base, 0.75), r, 18);
+    g.hline(0, 15, 0, add(base, 30)); g.hline(0, 15, 15, shade(base, 0.6));
+    g.rect(5, 4, 10, 11, shade(base, 0.7));
+    g.vline(7, 5, 10, rune); g.vline(8, 5, 10, rune); g.hline(6, 9, 6, rune); g.hline(6, 9, 9, rune); g.set(7, 7, glow); g.set(8, 8, glow);
+  };
+}
+function altarTop(base, rune, glow) {
+  return (g, r) => {
+    g.noise(base, 6, r);
+    g.circle(7.5, 7.5, 5.5, shade(base, 0.7)); g.circle(7.5, 7.5, 4.2, rune); g.circle(7.5, 7.5, 2.6, shade(base, 0.6)); g.circle(7.5, 7.5, 1.4, glow);
+    for (const [x, y] of [[1, 1], [14, 1], [1, 14], [14, 14]]) g.set(x, y, rune);
+  };
+}
+P.altar_forest_side = altarSide(rgb(104, 112, 92), rgb(84, 170, 70), rgb(190, 255, 150));
+P.altar_forest_top = altarTop(rgb(104, 112, 92), rgb(84, 170, 70), rgb(200, 255, 160));
+P.altar_crystal_side = altarSide(rgb(92, 90, 118), rgb(88, 214, 232), rgb(220, 255, 255));
+P.altar_crystal_top = altarTop(rgb(92, 90, 118), rgb(88, 214, 232), rgb(230, 255, 255));
+P.altar_tide_side = altarSide(rgb(70, 112, 120), rgb(60, 140, 230), rgb(180, 230, 255));
+P.altar_tide_top = altarTop(rgb(70, 112, 120), rgb(60, 140, 230), rgb(200, 240, 255));
+P.altar_ember_side = altarSide(rgb(58, 46, 50), rgb(255, 110, 30), rgb(255, 230, 120));
+P.altar_ember_top = altarTop(rgb(58, 46, 50), rgb(255, 110, 30), rgb(255, 240, 150));
+P.ancient_bark = (g, r) => {
+  for (let x = 0; x < N; x++) { const c = add(rgb(78, 66, 48), (r() - 0.5) * 18); for (let y = 0; y < N; y++) g.set(x, y, add(c, (r() - 0.5) * 10)); }
+  for (let k = 0; k < 5; k++) { const x = Math.floor(r() * 16); g.vline(x, 0, 15, rgb(52, 42, 30)); }
+  g.blobs(rgb(76, 120, 56), r, 4, 1.6); g.specks(rgb(140, 200, 110), r, 4);
+};
+P.ancient_bark_top = (g, r) => { P.log_top(g, r); g.circle(7.5, 7.5, 2.2, rgb(120, 200, 90)); g.set(7, 7, rgb(220, 255, 180)); };
+P.geode = (g, r) => { g.noise(rgb(70, 60, 96), 8, r); g.blobs(rgb(110, 90, 160), r, 6, 2); g.specks(rgb(170, 140, 230), r, 14); g.specks(rgb(230, 210, 255), r, 4); };
+P.sea_stone = (g, r) => {
+  g.noise(rgb(78, 140, 136), 8, r);
+  for (let y = 0; y < N; y += 4) g.hline(0, 15, y, rgb(56, 108, 106));
+  for (let y = 0; y < N; y += 4) for (let x = (y / 4) % 2 ? 2 : 6; x < N; x += 8) g.vline(x, y, y + 3, rgb(56, 108, 106));
+  g.specks(rgb(120, 190, 180), r, 10);
+};
+P.sea_lantern = (g, r) => {
+  g.noise(rgb(190, 230, 230), 8, r);
+  g.rect(0, 0, 15, 0, rgb(120, 170, 170)); g.rect(0, 15, 15, 15, rgb(120, 170, 170)); g.rect(0, 0, 0, 15, rgb(120, 170, 170)); g.rect(15, 0, 15, 15, rgb(120, 170, 170));
+  g.rect(5, 5, 10, 10, rgb(240, 255, 255)); g.specks(rgb(160, 220, 255), r, 12);
+};
+P.magma_brick = (g, r) => {
+  g.noise(rgb(64, 40, 38), 6, r);
+  for (let y = 3; y < N; y += 4) g.hline(0, 15, y, rgb(255, 110, 30));
+  for (let y = 0; y < N; y += 4) for (let x = (y / 4) % 2 ? 3 : 11; x < N; x += 8) g.vline(x, y, y + 2, rgb(230, 80, 20));
+  g.specks(rgb(255, 200, 80), r, 6);
+};
+P.runestone = (g, r) => {
+  g.noise(rgb(112, 114, 124), 6, r); g.specks(rgb(90, 92, 100), r, 14);
+  g.rect(3, 3, 12, 12, rgb(96, 98, 108)); g.line(5, 5, 10, 10, rgb(170, 140, 255)); g.line(10, 5, 5, 10, rgb(170, 140, 255)); g.hline(5, 10, 7, rgb(170, 140, 255)); g.set(7, 7, rgb(240, 220, 255));
+};
+
 // Vegetación (con transparencia)
 function blade(g, x, y0, y1, c) { for (let y = y0; y <= y1; y++) g.set(x, y, c); }
 P.tall_grass = (g, r) => {
@@ -671,6 +724,22 @@ function doorItem(g, key) {
     g.set(4 + x, 8 + (y >> 1), lo.get(x * 2, y));
   }
 }
+function flask(g, liquid) {
+  g.rect(6, 2, 9, 4, hex('#c8d4e0')); g.rect(6, 1, 9, 1, hex('#8a6a40'));
+  g.circle(7.5, 10, 5, hex('#d8e4f0')); g.circle(7.5, 10, 4, liquid ? hex(liquid) : hex('#eef4fa'));
+  if (liquid) { g.hline(4, 11, 7, add(hex(liquid), 40)); g.circle(6, 9, 1, add(hex(liquid), 90)); }
+  g.set(5, 8, hex('#ffffff'));
+}
+function essence(g, col, hi) {
+  g.poly([[8, 1], [12, 5], [12, 11], [8, 15], [4, 11], [4, 5]], shade(hex(col), 0.6));
+  g.poly([[8, 3], [11, 6], [11, 10], [8, 13], [5, 10], [5, 6]], hex(col));
+  g.poly([[8, 3], [11, 6], [8, 8]], hex(hi)); g.set(7, 10, hex(hi));
+}
+/** Color del líquido de cada tónico (según su efecto principal). */
+const TONIC_COL = {
+  tonic_healing: '#e8304a', tonic_regeneration: '#e8609a', tonic_strength: '#a8282a', tonic_speed: '#7ac8ff', tonic_haste: '#e8c84a',
+  tonic_fire: '#ff8a2a', tonic_water: '#2a5ad0', tonic_night: '#5a5ae0', tonic_resistance: '#8a8ca0',
+};
 function bowlWith(g, soup, bits) {
   g.poly([[2, 7], [14, 7], [12, 12], [4, 12]], hex('#9a6a3a')); g.hline(5, 11, 13, hex('#7a522a'));
   g.ellipse(8, 7, 6, 1.6, hex(soup));
@@ -724,6 +793,23 @@ function sprites(key) {
     vegetable_stew: () => { bowlWith(g, '#c8642a', [['#f08a2a', 5, 7], ['#e03a2e', 9, 6], ['#e8d090', 11, 8]]); },
     mushroom_stew: () => { bowlWith(g, '#a8784a', [['#8a5a3a', 5, 7], ['#7ae0d0', 10, 6], ['#d8c0a0', 8, 8]]); },
     salad: () => { bowlWith(g, '#5aa844', [['#e03a2e', 6, 6], ['#f08a2a', 10, 7], ['#8ad06a', 8, 5]]); },
+    glass_bottle: () => flask(g, null),
+    water_flask: () => flask(g, '#3a78e0'),
+    tonic_base: () => flask(g, '#9ab0d8'),
+    sun_apple: () => { g.circle(8, 9, 5, hex('#f2c230')); g.circle(6, 7, 1.6, hex('#fff2a0')); g.line(8, 4, 9, 2, hex('#6a4220')); g.poly([[9, 3], [12, 2], [11, 5]], hex('#58b040')); g.set(10, 12, hex('#c88a10')); g.set(12, 9, hex('#c88a10')); g.set(4, 5, hex('#fffbe0')); g.set(13, 4, hex('#fffbe0')); },
+    ancient_seed: () => { g.ellipse(8, 9, 4, 5, hex('#8a5a2a')); g.ellipse(8, 5, 4.5, 2, hex('#5a3a1a')); g.ellipse(7, 9, 1.5, 2.5, hex('#b07a40')); g.line(8, 13, 8, 15, hex('#3e9a3a')); g.set(9, 8, hex('#9aff7a')); g.set(6, 11, hex('#9aff7a')); },
+    geode_heart: () => { g.circle(8, 8, 6, hex('#5a4a7a')); g.circle(8, 8, 4.4, hex('#8a6ac8')); g.poly([[8, 4], [11, 8], [8, 12], [5, 8]], hex('#58d6e8')); g.poly([[8, 4], [11, 8], [8, 8]], hex('#c4f7ff')); },
+    tide_pearl: () => { g.circle(8, 8, 5.5, hex('#d8e8f0')); g.circle(8, 8, 4, hex('#a8c8e8')); g.circle(6.5, 6.5, 1.8, hex('#ffffff')); g.line(4, 11, 8, 13, hex('#6a9ac8')); g.set(11, 10, hex('#5a8ab8')); },
+    eternal_ember: () => { g.poly([[8, 1], [12, 6], [12, 11], [8, 14], [4, 11], [4, 6]], hex('#c8400c')); g.poly([[8, 4], [10, 7], [10, 11], [8, 12], [6, 11], [6, 7]], hex('#ff9a20')); g.poly([[8, 7], [9, 9], [8, 11], [7, 9]], hex('#fff0a0')); },
+    heart_crystal: () => { g.poly([[8, 14], [2, 7], [3, 3], [6, 2], [8, 4], [10, 2], [13, 3], [14, 7]], hex('#e0304a')); g.poly([[4, 4], [6, 3], [7, 5], [5, 7]], hex('#ff8aa0')); g.line(8, 5, 8, 12, hex('#a81830')); g.set(11, 5, hex('#ffd0d8')); },
+    essence_forest: () => essence(g, '#5ac040', '#d8ffb0'),
+    essence_crystal: () => essence(g, '#58d6e8', '#e8ffff'),
+    essence_tide: () => essence(g, '#3a7ae0', '#c8e8ff'),
+    essence_ember: () => essence(g, '#ff7a1a', '#fff0a0'),
+    root_staff: () => { g.line(3, 14, 11, 4, hex('#6a4a24')); g.line(4, 14, 12, 4, hex('#4a3214')); g.circle(12, 3, 2.4, hex('#3e9a3a')); g.set(12, 3, hex('#c8ff9a')); g.line(10, 6, 8, 4, hex('#5aa840')); g.line(6, 10, 4, 8, hex('#5aa840')); g.set(13, 1, hex('#8ae070')); },
+    prism_blade: () => { g.line(3, 12, 13, 2, hex('#a8f0ff')); g.line(4, 12, 14, 2, hex('#58d6e8')); g.line(3, 11, 12, 2, hex('#ffffff')); g.line(5, 12, 14, 3, hex('#2a8aa6')); g.set(14, 1, hex('#ffffff')); g.line(3, 9, 7, 13, hex('#c8a0ff')); g.line(2, 9, 6, 13, hex('#7a5ac8')); g.line(2, 14, 4, 12, HANDLE); g.line(1, 15, 2, 14, HANDLE_D); g.set(6, 8, hex('#ff9af0')); },
+    coral_crown: () => { g.poly([[2, 13], [2, 8], [4, 9], [5, 4], [7, 8], [8, 2], [9, 8], [11, 4], [12, 9], [14, 8], [14, 13]], hex('#f06a7a')); g.hline(2, 14, 12, hex('#c84a5a')); g.hline(2, 14, 13, hex('#c84a5a')); g.set(8, 10, hex('#3a7ae0')); g.set(5, 11, hex('#e8e8f0')); g.set(11, 11, hex('#e8e8f0')); g.set(8, 3, hex('#ffb0b8')); },
+    titan_hammer: () => { g.line(2, 14, 9, 7, HANDLE); g.line(3, 14, 10, 7, HANDLE_D); g.poly([[6, 5], [10, 1], [15, 6], [11, 10]], hex('#3a3236')); g.poly([[6, 5], [10, 1], [11, 2], [7, 6]], hex('#6a5a60')); g.line(8, 7, 12, 3, hex('#ff7a1a')); g.set(10, 5, hex('#ffd060')); },
     crystal_shard: () => { g.poly([[8, 1], [12, 6], [9, 14], [5, 11], [4, 6]], hex('#58d6e8')); g.poly([[8, 1], [12, 6], [8, 7]], hex('#c4f7ff')); g.poly([[8, 7], [12, 6], [9, 14]], hex('#2a8aa6')); g.line(8, 1, 8, 13, hex('#8aeaf6')); },
   };
   if (S[key]) { S[key](); g.outline(); return g; }
@@ -828,6 +914,7 @@ export function getItemIcon(item) {
     else if (kind === 'armor') g = armorSprite(a, b);
     else if (kind === 'bucket') g = bucketSprite(a === 'empty' ? null : a);
     else if (kind === 'sprite') g = sprites(a);
+    else if (kind === 'tonic') { g = new Grid(16); flask(g, TONIC_COL[a] || '#c040c0'); g.outline(); }
     if (!g) { g = new Grid(16); P.missing(g); }
     canvas = gridToCanvas(g, 1);
   }

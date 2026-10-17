@@ -50,6 +50,7 @@ pruebas E2E en Chromium, revisión adversarial, commit y push en la rama `claude
 - [x] Fase 2.0 — IDs de 16 bits, guardado v2, atlas 32×32 (commit 79c938e).
 - [x] Fase 2 — escaleras, puertas, vallas, muros, trampillas, fluidos, cuerda, cultivos (commit 79c938e).
 - [x] Fase 3 — aldeas, aldeanos, comercio, guardián.
-- [ ] Fase 4
+- [x] Fase 4 — efectos de estado, alquimia, santuarios y 4 jefes, bestiario; correcciones de la revisión de la Fase 2
+  (ver `docs/fase4-jefes.md`). El Soberano de la Dimensión Oscura se hace en la Fase 5, junto con su dimensión.
 - [ ] Fase 5
 - [ ] Fase 6

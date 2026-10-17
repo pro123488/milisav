@@ -138,17 +138,58 @@ export class AudioEngine {
       case 'screech': this._tone({ dur: 0.18, type: 'sawtooth', freq: 3200 * p, to: 4200, gain: 0.12 }, sp); break;
       case 'rumble': this._tone({ dur: 0.6, type: 'sawtooth', freq: 55, to: 38, gain: 0.4 }, sp); this._noise({ dur: 0.5, type: 'lowpass', freq: 220, gain: 0.4 }, sp); break;
       case 'shoot': this._noise({ dur: 0.1, type: 'bandpass', freq: 2200, sweep: 0.4, gain: 0.3 }, sp); break;
+      // ── Fase 4 ──
+      case 'roar': this._tone({ dur: 1.1, type: 'sawtooth', freq: 90 * p, to: 42, gain: 0.5 }, sp); this._tone({ dur: 0.9, type: 'square', freq: 61 * p, to: 34, gain: 0.25, attack: 0.08 }, sp); this._noise({ dur: 1.0, type: 'lowpass', freq: 500, sweep: 0.4, gain: 0.45, attack: 0.05 }, sp); break;
+      case 'boom': this._noise({ dur: 0.6, type: 'lowpass', freq: 260, sweep: 0.3, gain: 0.9 }, sp); this._tone({ dur: 0.4, type: 'sine', freq: 70, to: 30, gain: 0.6 }, sp); break;
+      case 'drink': [0, 0.18, 0.36].forEach((t) => setTimeout(() => this._noise({ dur: 0.12, type: 'bandpass', freq: 700 * p, q: 3, gain: 0.35 }, sp), t * 1000)); break;
+      case 'magic': [660, 880, 1175, 1320].forEach((f, i) => setTimeout(() => this._tone({ dur: 0.35, type: 'sine', freq: f * p, gain: 0.16 }, sp), i * 70)); break;
+      case 'summon': this._tone({ dur: 2.2, type: 'sawtooth', freq: 55, to: 110, gain: 0.3, attack: 0.6 }, sp); this._noise({ dur: 2.0, type: 'bandpass', freq: 300, sweep: 4, gain: 0.3, attack: 0.5 }, sp); break;
       default: break;
     }
   }
 
   // ── Música generativa ──
   startMusic() { this.musicOn = true; this._musicTimer = 4; }
-  stopMusic() { this.musicOn = false; }
+  stopMusic() { this.musicOn = false; this.combat = null; }
+  /** Música de combate contra un jefe: theme = {root, tempo, wave} o null para volver a la música tranquila. */
+  setCombat(theme) {
+    if (theme === this.combat) return;
+    this.combat = theme; this._beat = 0; this._nextBeat = 0;
+    if (!theme) this._musicTimer = 6;
+  }
+  _mTone(t, freq, dur, type, gain) {
+    const ctx = this.ctx;
+    const o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(freq, t);
+    const g = ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(this.musicGain); o.start(t); o.stop(t + dur + 0.05);
+  }
+  _mNoise(t, dur, type, freq, gain) {
+    const ctx = this.ctx;
+    const src = ctx.createBufferSource(); src.buffer = this.noise; src.loop = true;
+    const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq;
+    const g = ctx.createGain(); g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f); f.connect(g); g.connect(this.musicGain); src.start(t, Math.random()); src.stop(t + dur + 0.05);
+  }
+  /** Programa los pulsos de la música de combate con un poco de antelación. */
+  _combatTick() {
+    const ctx = this.ctx, th = this.combat, spb = 60 / th.tempo / 2; // corcheas
+    if (this._nextBeat < ctx.currentTime) this._nextBeat = ctx.currentTime + 0.05;
+    const minor = [1, 1, 1.2, 1, 0.75, 0.75, 0.9, 1.125];
+    while (this._nextBeat < ctx.currentTime + 0.2) {
+      const t = this._nextBeat, b = this._beat++;
+      if (b % 4 === 0) this._mNoise(t, 0.22, 'lowpass', 140, 0.9);             // bombo
+      if (b % 8 === 4) this._mNoise(t, 0.16, 'bandpass', 1800, 0.45);          // caja
+      if (b % 2 === 1) this._mNoise(t, 0.04, 'highpass', 6000, 0.12);          // charles
+      this._mTone(t, th.root * minor[(b >> 1) % 8] / 2, spb * 1.6, th.wave, 0.22); // bajo ostinato
+      if (b % 16 === 0) { const r = [1.5, 1.2, 1.8, 1.333][(b >> 4) % 4]; this._mTone(t, th.root * r * 2, spb * 6, 'triangle', 0.12); }
+      this._nextBeat += spb;
+    }
+  }
   /** Llamar cada fotograma con dt para programar frases. */
   update(dt, dayFactor) {
     this.dayFactor = dayFactor;
     if (!this.ctx || !this.musicOn || this.settings.musicVolume <= 0) return;
+    if (this.combat) { this._combatTick(); return; }
     this._musicTimer -= dt;
     if (this._musicTimer > 0) return;
     this._musicTimer = 14 + Math.random() * 26;

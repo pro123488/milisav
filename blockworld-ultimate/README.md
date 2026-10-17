@@ -1,4 +1,4 @@
-# BLOCKWORLD ULTIMATE — Fase 3 (aldeas y comercio)
+# BLOCKWORLD ULTIMATE — Fase 4 (jefes, efectos y bestiario)
 
 Videojuego **original** de bloques, supervivencia, construcción y exploración que se ejecuta en el navegador
 (HTML + CSS + JavaScript + three.js/WebGL). Todo el contenido —texturas, iconos, modelos, sonidos, música,
@@ -7,7 +7,9 @@ criaturas, nombres— se **genera por código** y es propio: no hay recursos, c�
 > La **Fase 1** dejó un videojuego funcional de punta a punta (menú → crear mundo → jugar → guardar → continuar).
 > La **Fase 2** añade bloques con forma y orientación (escaleras, puertas, vallas…), fluidos que fluyen, cultivos y
 > comidas nuevas y la cuerda para llevar animales. La **Fase 3** añade aldeas generadas con aldeanos que trabajan,
-> duermen y comercian con una moneda propia, y un guardián que las defiende. Más abajo hay una tabla **honesta** de lo que está implementado y de
+> duermen y comercian con una moneda propia, y un guardián que las defiende. La **Fase 4** añade efectos de estado, la
+> mesa de alquimia con tónicos, cuatro santuarios generados con sus **jefes** (historia, arena, invocación, fases, ataques,
+> debilidad y recompensas únicas), música de combate y un bestiario. Más abajo hay una tabla **honesta** de lo que está implementado y de
 > lo que queda para fases posteriores; el plan completo está en [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Cómo ejecutarlo
@@ -31,12 +33,14 @@ Opciones de depuración por URL: `?autostart=survival|creative|adventure|peacefu
 ### Pruebas automáticas
 
 ```bash
-npm test                        # 43 + 32 + 19 pruebas de lógica: terreno, luz, inventario, crafteo, física, raycast, mallado,
-                                #   guardado, formas, fluidos, colocación, aldeas sin costuras, A*, comercio, aldeanos
+npm test                        # 43 + 32 + 19 + 23 pruebas de lógica: terreno, luz, inventario, crafteo, física, raycast, mallado,
+                                #   guardado, formas, fluidos, colocación, aldeas sin costuras, A*, comercio, aldeanos, efectos,
+                                #   alquimia, santuarios sin costuras y combates de jefes simulados
 node tests/e2e/save-load.mjs    # pruebas E2E en Chromium (requieren Playwright: npm i -D playwright, o PW_MODULES=ruta/node_modules)
 npm run test:e2e                # ciclo completo: menú→mundo→crafteo→horno→cofre→muerte→guardar→continuar, cultivos, criaturas,
                                 #   la Fase 2 con ratón/teclado reales (puerta, escaleras, agua, cuerda, iconos) y la Fase 3
-                                #   (aldea, aldeanos, comercio con la interfaz, campana, guardián, brújula)
+                                #   (aldea, aldeanos, comercio con la interfaz, campana, guardián, brújula) y la Fase 4 (tónicos,
+                                #   alquimia, santuario, invocación, barra de jefe, los 4 jefes, bola de nieve, bestiario)
 node tools/mapdump.mjs semilla normal mapa.png 4096 16   # PNG de biomas + estadísticas del generador
 node tools/chunkstats.mjs semilla normal 6               # tiempos de generación y distribución de bloques
 ```
@@ -53,6 +57,10 @@ node tools/chunkstats.mjs semilla normal 6               # tiempos de generació
 | Escalera de mano: subir / sujetarse | Avanzar contra ella o `Espacio` / `C` |
 | Cuerda: atar un animal / atarlo a una valla / soltarlo | Clic derecho al animal con la cuerda / a la valla / al animal atado |
 | Comerciar con un aldeano | Clic derecho al aldeano y clic en una oferta |
+| Beber un tónico | Mantener clic derecho (como comer) |
+| Llenar un frasco / lanzar una bola de nieve | Clic derecho sobre el agua / clic derecho al aire |
+| Despertar a un jefe | Clic derecho al altar del santuario con su ofrenda en la mano |
+| Bestiario | `B` (o desde la pausa) |
 | Copiar el bloque apuntado (Creativo) | Clic central |
 | Ranura de la barra rápida | `1`–`9` o rueda |
 | Inventario y fabricación | `E` |
@@ -70,7 +78,7 @@ Leyenda: ✅ hecho y probado · 🟡 hecho de forma simplificada · ❌ no imple
 |---|---|---|
 | **3. Menú principal** | ✅ | Jugar, Crear mundo, Continuar mundo, Seleccionar mundo, 4 modos de inicio rápido (Supervivencia, Creativo, Aventura, Pacífico), Opciones, Controles, Créditos; panorama 3D de fondo. Todos los botones hacen algo real. |
 | Creación de mundos | ✅ | Nombre, semilla (texto o número), tipo (Normal, Montañoso, Archipiélago, Superplano), dificultad, tamaño/límites (infinito, 1024, 512, 256), estructuras sí/no, criaturas (todas/solo animales/ninguna), modo de juego, comandos, conservar inventario. Lista de mundos guardados con borrado. |
-| **4. Bloques** | ✅ | ~120 bloques originales (222 IDs contando orientaciones y estados) con datos (dureza, herramienta, nivel de cosecha, sonido, luz, drops…) y texturas procedurales 16×16 propias: tierra, 5 céspedes, piedra, arena, grava, arcilla, barro, nieve, hielo, 4 troncos, hojas, roca profunda, 6 minerales (carbón, cobre, hierro, oro, **cristal**, **noctisita** rara), basalto, vidrio volcánico, arenisca, ladrillos, losas, bloques de metal, lámpara de cristal, cristales de cueva… **Fase 2:** escaleras de 5 materiales (4 orientaciones, normales e invertidas), escalera de mano, puertas de madera y de hierro (2 bloques), trampilla, valla de madera, muro de adoquín y puerta de valla, con modelos de cajas, iconos isométricos y texturas propias. |
+| **4. Bloques** | ✅ | ~140 bloques originales (251 IDs contando orientaciones y estados) con datos (dureza, herramienta, nivel de cosecha, sonido, luz, drops…) y texturas procedurales 16×16 propias: tierra, 5 céspedes, piedra, arena, grava, arcilla, barro, nieve, hielo, 4 troncos, hojas, roca profunda, 6 minerales (carbón, cobre, hierro, oro, **cristal**, **noctisita** rara), basalto, vidrio volcánico, arenisca, ladrillos, losas, bloques de metal, lámpara de cristal, cristales de cueva… **Fase 2:** escaleras de 5 materiales (4 orientaciones, normales e invertidas), escalera de mano, puertas de madera y de hierro (2 bloques), trampilla, valla de madera, muro de adoquín y puerta de valla, con modelos de cajas, iconos isométricos y texturas propias. |
 | **5. Terreno procedural** | ✅ | Ruido simplex con semilla: océanos, costas/playas, llanuras, colinas, montañas (crestas), valles, **ríos**, **lagos**, **cuevas** (cuevas amplias + túneles), **barrancos**, **mesetas y cañones** áridos, bosques, desiertos, regiones heladas con lagos congelados, pantanos, junglas, **volcanes con lava**. Mismo mundo con la misma semilla y versión del generador (`GENERATOR_VERSION`). |
 | **6. Chunks y optimización** | ✅ | Chunks 16×16×128 con **IDs de 16 bits** (hasta 4096 bloques; los mundos de la Fase 1 se migran solos al cargarlos); terreno generado en un **Web Worker** (con alternativa por tiempo si no hay Workers); mallas combinadas con caras ocultas, **AO** y **luz suave por vértice**; mallado con presupuesto de tiempo por fotograma; carga progresiva por distancia, descarga conservando cambios, remallado local al editar; partículas instanciadas; frustum culling. |
 | Iluminación | ✅ | Luz de cielo + luz de bloque (0–15) con propagación entre chunks y actualización incremental al poner/quitar bloques; antorchas y cristales iluminan. |
@@ -88,7 +96,11 @@ Leyenda: ✅ hecho y probado · 🟡 hecho de forma simplificada · ❌ no imple
 | **19. Agricultura** | ✅ | Azada → tierra arada, semillas, hidratación por agua cercana, 4 etapas de crecimiento (solo con luz), cosecha, replantado; trigo, zanahoria, papa, bayas y (Fase 2) **tomate y maíz**, con comidas nuevas: mazorca asada, pan de maíz, estofado de verduras, sopa de hongos y ensalada (devuelven el cuenco). Los cultivos se guardan. 🟡 Crecen solo con el chunk cargado. |
 | **20. Cría y domesticación** | ✅/🟡 | Alimentar, modo "amor", crías que crecen, enfriamiento y topes de población; domesticar al zorro con pescado; los animales criados/domesticados persisten. **Fase 2:** la **cuerda** lleva animales (te siguen, tiran y se rompe a 14 bloques) y los ata a vallas; los animales atados o alimentados no desaparecen. |
 | **21. Monstruos y combate** | ✅ | 7 criaturas hostiles originales (acechador nocturno, murciélago cavernario, gólem de barro, guardián de ruinas, esqueleto de obsidiana —ataque a distancia—, devorador de arena —emboscada—, bestia volcánica), persecución, ataques, retroceso, recompensas, aparición controlada por bioma/luz/dificultad, se queman con el sol. |
-| **22. Jefes** | ❌ | **No implementados** (ver nota al final). |
+| **22. Jefes** (Fase 4) | ✅ | Cuatro jefes originales, cada uno con **historia, arena, invocación, tres fases, ataques anunciados, debilidad y recompensas**: **Guardián del Bosque Antiguo** (raíces que lanzan por los aires, brotes que lo curan; débil a las hachas), **Coloso de Cristal** (pisotones que se esquivan saltando, ráfagas de esquirlas, pilares de resonancia que le dan escudo; débil a los picos), **Reina de las Profundidades** (nada, embiste, envenena, tinta que oscurece, remolino; queda aturdida si choca contra un muro) y **Titán Volcánico** (martillazos que queman, bolas de fuego, lluvia de meteoritos, diablillos; se enfría con bolas de nieve o agua). Barra de vida con fase, música de combate procedural, esbirros propios, recompensas únicas (Báculo de raíces, Hoja prismática, Corona de coral, Martillo del Titán que rompe 3×3), **Cristal vital** (+1 corazón, hasta 20) y esencias. Si te alejas o mueres, el jefe vuelve a dormir y devuelve la ofrenda al altar. |
+| **Santuarios** (Fase 4) | ✅ | Arenas generadas sin costuras en varios chunks: claro del bosque con pilares de corteza ancestral, gruta de geoda subterránea con pozo y escalera de mano, templo sumergido con faroles marinos y caldera volcánica con foso de lava y puentes. `/localizar santuario [bosque\|cristal\|mar\|fuego]`. Las ofrendas se fabrican en la mesa de trabajo. |
+| **Efectos de estado** (Fase 4) | ✅ | 12 efectos con nivel y duración, visibles en el HUD y guardados: regeneración, fuerza, velocidad, prisa minera, resistencia, resistencia al fuego, respiración acuática, visión nocturna, lentitud, veneno, oscuridad y debilidad. Afectan de verdad a la vida, el daño, el movimiento, el minado, el ahogo, la lava y la niebla. |
+| **Alquimia** (Fase 4) | ✅ | Frascos de vidrio que se llenan en el agua; la mesa de alquimia destila hasta 3 frascos a la vez con un ingrediente (10 recetas: tónico rúnico de base y 9 tónicos), con libro de recetas en la pantalla. Manzana solar con efectos. |
+| **Bestiario** (Fase 4) | ✅ | Ficha de cada criatura (23) con su historia; las de los jefes incluyen arena, invocación, fases, ataques, debilidad y recompensa. Se desbloquean al ver a la criatura de cerca y cuentan cuántas has derrotado. |
 | Estructuras | ✅ | Cabañas abandonadas (Fase 2: con puerta y alero de escaleras), ruinas del bosque/jungla con guardián, templos del desierto enterrados con obelisco y pozo con escalera de mano, mazmorras subterráneas; cofres con botín. |
 | Guardado | ✅ | IndexedDB (chunks modificados comprimidos con RLE de 16 bits —formato 2, con migración del formato 1—, inventario, cofres/hornos, criaturas persistentes, hora, posición, logros) + autoguardado cada 30 s; opciones en localStorage. |
 | Audio | ✅ | 100 % procedural (WebAudio): sonidos por material, criaturas, interfaz y música ambiental generativa; volúmenes ajustables. |
@@ -96,8 +108,8 @@ Leyenda: ✅ hecho y probado · 🟡 hecho de forma simplificada · ❌ no imple
 | **Aldeanos** (Fase 3) | ✅ | Seis oficios según su estación de trabajo (granjero/compostador, herrero/yunque, erudito/atril, tejedor/telar, pescador/barril, curandero/mesa de alquimia); de día trabajan y pasean, de noche vuelven a su cama abriendo y cerrando puertas (A*), huyen de los monstruos y se refugian al sonar la campana. Un aldeano sin oficio adopta la estación libre que coloques cerca. |
 | **Comercio** (Fase 3) | ✅ | Moneda propia (**Moneda de sol**); 3 niveles de ofertas por oficio que se desbloquean con experiencia, se agotan y se reponen al amanecer; la mala reputación (golpear o matar aldeanos) sube los precios y enfada al guardián. |
 | **Guardián de piedra** (Fase 3) | ✅ | Uno por aldea: patrulla, ataca a los monstruos cercanos y se vuelve contra el jugador si este ataca a la aldea. Los monstruos nocturnos persiguen también a los aldeanos. |
-| Logros | 🟡 | 23 logros (Fase 2: puerta, atar un animal, estofado; Fase 3: aldea, comercio, maestro, abono). |
-| Dimensiones, jefes, maquinaria/automatización, raíles/vagonetas/barcos, multijugador, móvil/táctil | ❌ | Fases posteriores (ver `docs/PLAN.md`). |
+| Logros | 🟡 | 31 logros (Fase 2: puerta, atar un animal, estofado; Fase 3: aldea, comercio, maestro, abono; Fase 4: tónico, santuario, un logro por jefe, los cuatro jefes, Cristal vital). |
+| Dimensiones (y el quinto jefe, el Soberano de la Dimensión Oscura), maquinaria/automatización, raíles/vagonetas/barcos, multijugador, móvil/táctil | ❌ | Fases posteriores (ver `docs/PLAN.md`). |
 
 ## Estructura del proyecto
 
@@ -111,6 +123,9 @@ src/shapes.js                    Formas de cajas (render/colisión/selección) d
 src/fluids.js                    Agua y lava que fluyen
 src/villages.js · villagers.js   Aldeas (plan de varios chunks), aldeanos y guardián
 src/navigation.js · trading.js   Búsqueda de caminos A*; oficios, ofertas y comercio
+src/bosses.js · shrines.js       Jefes (fases, ataques, recompensas) y santuarios generados
+src/effects.js · alchemy.js      Efectos de estado; destilación de tónicos
+src/bestiary.js                  Fichas e historia de las criaturas
 src/terrain.js · biomes.js       Generador procedural y definición de biomas
 src/structures.js                Estructuras y botines
 src/terrain.worker.js            Generación fuera del hilo principal
@@ -126,7 +141,7 @@ src/entities.js · animals.js · monsters.js · spawner.js
 src/ui.js · screens.js · menus.js
 src/save.js · audio.js · commands.js · achievements.js · hand.js · config.js · noise.js
 tools/                           Servidor, benchmarks, generador de mapas, utilidades de pruebas
-tests/run.mjs · tests/fase2.mjs  Pruebas automáticas (Node); tests/e2e/ en Chromium
+tests/run.mjs · tests/fase*.mjs  Pruebas automáticas (Node); tests/e2e/ en Chromium
 docs/                            Plan de fases y especificaciones
 ```
 
@@ -144,7 +159,19 @@ docs/                            Plan de fases y especificaciones
   atraviesa losas, puertas y vallas, pero no las escaleras (dan sombra).
 - **Fase 3 — límites conocidos:** los aldeanos no se reproducen; solo aparecen una vez por aldea (al acercarse) y se guardan
   con el mundo; los mundos creados antes de la Fase 3 avisan de que el generador cambió (las aldeas solo aparecen en
-  terreno no guardado y pueden quedar cortadas junto a zonas ya modificadas); la mesa de alquimia aún no destila (Fase 4).
+  terreno no guardado y pueden quedar cortadas junto a zonas ya modificadas).
+- **Fase 4 — límites conocidos:** el quinto jefe (Soberano de la Dimensión Oscura) llega con la Fase 5; los jefes no rompen
+  bloques (sus explosiones solo dañan); la Reina no persigue fuera de su templo y fuera del agua se debilita; no hay tónicos
+  "potenciados" ni "prolongados" ni tónicos arrojadizos; los santuarios, como las aldeas, solo aparecen en terreno no guardado
+  de mundos creados antes de la Fase 4; con poca potencia gráfica los combates grandes pueden bajar de fotogramas.
+- **Revisión de la Fase 2 (corregido en la Fase 4):** las escaleras ya no oscurecen ni ponen negras las caras vecinas y su techo
+  no ilumina salas cerradas; la línea de visión tiene en cuenta la parte alta de vallas y muros (y los murciélagos la respetan);
+  mantener el clic derecho en una puerta ya no coloca bloques delante; el agua que corre hidrata la tierra arada; las vallas no
+  se unen al costado de una puerta de valla; vaciar un cubo sobre una fuente de otro fluido vuelve a funcionar; los animales
+  atados no rompen la cuerda al asustarse ni la sueltan si la valla está en un chunk sin cargar, y la cuerda se recupera si
+  muere el animal o el jugador; ya no se pierden animales persistentes al descargar chunks muy poblados; la arena que cae sobre
+  una puerta de valla abierta se suelta como objeto; el rayo de selección sale de la cámara al subir escalones.
+  Pendiente (cosmético): el pomo de la puerta se ve junto a la bisagra en una de las dos caras.
 
 ## Nota sobre el encargo
 

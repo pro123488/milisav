@@ -77,6 +77,8 @@ function def(id, key, name, o = {}) {
     colBoxes: o.colBoxes ?? null,     // cajas de colisión del modelo propio (si difieren)
     oriented: o.oriented ?? false,    // el modelo propio se gira según facing
     container: o.container ?? 0,      // huecos de contenedor (cofre, barril)
+    // ── Fase 4 ──
+    boss: o.boss ?? null,             // altares: jefe que despierta su ofrenda
   };
   BLOCKS[id] = b;
   byKey.set(key, b);
@@ -331,10 +333,28 @@ def(314, 'loom', 'Telar', { tiles: { top: 'loom_top', side: 'loom_side', south: 
 def(315, 'alchemy_table', 'Mesa de alquimia', custom({
   tiles: { side: 'alchemy_side', top: 'alchemy_top', bottom: 'cobble' }, light: 6,
   boxes: [[0, 10, 0, 16, 14, 16], [1, 0, 1, 4, 10, 4], [12, 0, 1, 15, 10, 4], [1, 0, 12, 4, 10, 15], [12, 0, 12, 15, 10, 15], [6, 14, 6, 10, 16, 10]],
-  colBoxes: [[0, 0, 0, 16, 14, 16]], hardness: 2.5, tool: PICK, harvest: 1, sound: 'stone', interact: 'alchemy',
+  colBoxes: [[0, 0, 0, 16, 14, 16]], hardness: 2.5, tool: PICK, harvest: 1, sound: 'stone', interact: 'alchemy', container: 4,
 }));
 def(316, 'bell', 'Campana', custom({ tiles: { side: 'bell', top: 'bell_top', bottom: 'bell_top' }, boxes: [[7, 0, 7, 9, 3, 9], [5, 3, 5, 11, 11, 11], [6, 11, 6, 10, 13, 10]], hardness: 3, tool: PICK, sound: 'metal', interact: 'bell' }));
 def(317, 'plaster', 'Yeso blanco', { hardness: 1.2, tool: PICK, harvest: 1, sound: 'stone' });
+
+// ══════════════════════ FASE 4: jefes ══════════════════════
+// Altares de invocación (indestructibles en supervivencia para que las arenas no se pierdan).
+const altar = (id, key, name, boss, top, side, light) => def(id, key, name, custom({
+  tiles: { side, top, bottom: side }, boxes: [[1, 0, 1, 15, 4, 15], [3, 4, 3, 13, 11, 13], [2, 11, 2, 14, 14, 14]], colBoxes: [[0, 0, 0, 16, 14, 16]],
+  light, hardness: 60, tool: PICK, harvest: 4, unbreakable: true, sound: 'stone', interact: 'altar', boss, drops: null,
+}));
+altar(500, 'altar_forest', 'Altar del bosque', 'forest_guardian', 'altar_forest_top', 'altar_forest_side', 7);
+altar(501, 'altar_crystal', 'Altar de cristal', 'crystal_colossus', 'altar_crystal_top', 'altar_crystal_side', 10);
+altar(502, 'altar_tide', 'Altar de las mareas', 'deep_queen', 'altar_tide_top', 'altar_tide_side', 9);
+altar(503, 'altar_ember', 'Altar de brasas', 'volcanic_titan', 'altar_ember_top', 'altar_ember_side', 11);
+// Bloques de las arenas
+def(504, 'ancient_bark', 'Corteza ancestral', { tiles: { top: 'ancient_bark_top', side: 'ancient_bark' }, hardness: 3, tool: AXE, sound: 'wood', group: 'log' });
+def(505, 'geode', 'Bloque de geoda', { hardness: 4, tool: PICK, harvest: 2, sound: 'glass' });
+def(506, 'sea_stone', 'Piedra marina', { hardness: 1.8, tool: PICK, harvest: 1, sound: 'stone' });
+def(507, 'sea_lantern', 'Farol marino', { hardness: 0.6, light: 15, sound: 'glass' });
+def(508, 'magma_brick', 'Ladrillo de magma', { hardness: 2.5, tool: PICK, harvest: 1, light: 6, sound: 'stone' });
+def(509, 'runestone', 'Piedra rúnica', { hardness: 2.2, tool: PICK, harvest: 1, light: 3, sound: 'stone' });
 
 // ─────────────────────────────────────────────────────────────────
 export const Blocks = {
@@ -365,6 +385,8 @@ export const B_REPLACEABLE = new Uint8Array(MAX_BLOCKS);
 export const B_TARGET = new Uint8Array(MAX_BLOCKS);
 export const B_TRANS = new Uint8Array(MAX_BLOCKS);   // se dibuja en la pasada translúcida (agua, hielo, vidrio)
 export const B_CULLGRP = new Uint16Array(MAX_BLOCKS); // bloques con el mismo grupo ocultan sus caras entre sí
+/** Grupo de ocultación de las hojas: fuera del rango de IDs para que nunca coincida con un bloque real. */
+export const LEAVES_GRP = MAX_BLOCKS;
 export const B_CLIMB = new Uint8Array(MAX_BLOCKS);   // trepable (escalera de mano)
 export const B_SOUND = new Array(MAX_BLOCKS).fill('stone');
 export const SHAPE_ID = { none: 0, cube: 1, cross: 2, fluid: 3, torch: 4, slab: 5, farmland: 6, box: 7 };
@@ -382,7 +404,7 @@ for (const b of BLOCKS) {
   B_REPLACEABLE[b.id] = b.replaceable ? 1 : 0;
   B_TARGET[b.id] = b.targetable ? 1 : 0;
   B_TRANS[b.id] = (b.fluid === 'water' || b.key === 'ice' || b.key === 'glass') ? 1 : 0;
-  B_CULLGRP[b.id] = b.group === 'leaves' ? 1000 : b.id;
+  B_CULLGRP[b.id] = b.group === 'leaves' ? LEAVES_GRP : b.id;
   B_SOUND[b.id] = b.sound;
 }
 // Bloques vacíos (sin definir) se comportan como aire.

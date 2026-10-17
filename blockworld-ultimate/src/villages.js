@@ -494,4 +494,4 @@ const BUILDERS = {
   },
 };
 
-export { STYLES, PIECES, layoutOf };
+export { STYLES, PIECES, layoutOf, ChunkWriter };

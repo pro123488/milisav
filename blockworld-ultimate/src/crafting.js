@@ -83,6 +83,14 @@ recipe('plaster', 4, [['clay_ball', 2], ['sand', 2]], 'workbench', 'clay_ball', 
 recipe('bandage', 2, [['paper', 2], ['mushroom_glow', 1]], 'workbench', 'paper', 'Aldea');
 recipe('village_compass', 1, [['iron_ingot', 4], ['crystal_shard', 1], ['sun_coin', 1]], 'workbench', 'sun_coin', 'Aldea');
 
+// ── Fase 4: alquimia y jefes ─────────────────────────────────────
+recipe('glass_bottle', 3, [['glass', 3]], 'workbench', 'glass', 'Alquimia');
+recipe('sun_apple', 1, [['apple', 1], ['gold_ingot', 8]], 'workbench', 'gold_ingot', 'Alquimia');
+recipe('ancient_seed', 1, [['sapling_oak', 1], ['sapling_dark', 1], ['sapling_jungle', 1], ['sapling_pine', 1], ['apple', 2], ['fertilizer', 2]], 'workbench', 'fertilizer', 'Ofrendas');
+recipe('geode_heart', 1, [['crystal_shard', 6], ['cave_crystal', 2], ['gold_ingot', 2]], 'workbench', 'crystal_shard', 'Ofrendas');
+recipe('tide_pearl', 1, [['scute', 3], ['raw_fish', 4], ['crystal_shard', 2]], 'workbench', 'scute', 'Ofrendas');
+recipe('eternal_ember', 1, [['obsidian', 2], ['coal', 6], ['iron_ingot', 4]], 'workbench', 'obsidian', 'Ofrendas');
+
 // Herramientas: cabeza + palos
 const HEAD_COST = { pickaxe: [3, 2], axe: [3, 2], shovel: [1, 2], sword: [2, 1], hoe: [2, 2] };
 for (const tier of TIER_ORDER) {
@@ -193,6 +201,7 @@ export function recipesFor(station, discovered, creative = false) {
 // ── Reparación ───────────────────────────────────────────────────
 /** Material de reparación de una herramienta/armadura, o null. */
 export function repairMaterial(it) {
+  if (it.repair) return it.repair; // objetos únicos de los jefes
   if (it.tool) return TIER_MATERIAL[it.tool.tier];
   if (it.armor) return ARMOR_TIERS[it.armor.tier].material;
   return null;

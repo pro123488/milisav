@@ -2,7 +2,7 @@
 // Devuelve búferes intercalados [x,y,z,u,v,cielo,bloque,sombra] (8 floats por vértice) listos para three.js.
 // Sin dependencias del DOM: se puede ejecutar en Node para pruebas.
 import { CHUNK_SIZE as CS, WORLD_HEIGHT as WH } from './config.js';
-import { B_OPAQUE, B_SHAPE, B_TRANS, B_CULLGRP, B_HEIGHT, B_LIGHT, B_FLUID, B_FLUIDLVL, B_SOLID, B_ATTEN, ID, BLOCKS } from './blocks.js';
+import { B_OPAQUE, B_SHAPE, B_TRANS, B_CULLGRP, B_HEIGHT, B_LIGHT, B_FLUID, B_FLUIDLVL, B_SOLID, B_ATTEN, ID, BLOCKS, LEAVES_GRP } from './blocks.js';
 import { B_TILE, ATLAS_COLS } from './atlas.js';
 import { B_FAMILY, FAM, renderBoxes, connectsTo } from './shapes.js';
 
@@ -103,6 +103,33 @@ function fillPadded(world, c) {
   return top;
 }
 
+// Celdas "sumidero": no opacas pero que no dejan pasar la luz (escaleras). Su luz propia es 0, así que para dibujar
+// usan la de sus vecinas (si no, oscurecerían las caras y vértices de alrededor y dejarían caras negras).
+const B_SINK = new Uint8Array(B_ATTEN.length);
+for (let i = 0; i < B_ATTEN.length; i++) B_SINK[i] = B_ATTEN[i] >= 15 && !B_OPAQUE[i] ? 1 : 0;
+const SINK_IDX = new Int32Array(PW * PW * 64), SINK_VAL = new Uint8Array(PW * PW * 64);
+/** Sustituye la luz de las celdas sumidero del volumen acolchado por la mayor de sus vecinas transparentes. */
+function brightenSinks(top) {
+  let n = 0;
+  for (let py = 1; py <= top + 1; py++) for (let z = 0; z < PW; z++) for (let x = 0; x < PW; x++) {
+    const pi = z * PW + py * PSTRIDE_Y + x;
+    if (!B_SINK[PB[pi]]) continue;
+    let sk = 0, bl = 0;
+    for (let f = 0; f < 6; f++) {
+      const nx = x + FACES[f].n[0], nz = z + FACES[f].n[2];
+      if (nx < 0 || nx >= PW || nz < 0 || nz >= PW) continue;
+      const q = pi + NIDX[f], nb = PB[q];
+      if (B_OPAQUE[nb] || B_SINK[nb]) continue;
+      const v = PL[q];
+      if ((v >> 4) > sk) sk = v >> 4;
+      if ((v & 15) > bl) bl = v & 15;
+    }
+    if (n >= SINK_IDX.length) break;
+    SINK_IDX[n] = pi; SINK_VAL[n] = (sk << 4) | bl; n++;
+  }
+  for (let i = 0; i < n; i++) PL[SINK_IDX[i]] = SINK_VAL[i];
+}
+
 const CACTUS = ID.CACTUS;
 
 // ── Fluidos: altura de la superficie ─────────────────────────────
@@ -143,7 +170,12 @@ function emitBox(buf, x, y, z, pi, id, b, ownL) {
       const nb = PB[pi + NIDX[f]];
       if (B_OPAQUE[nb]) continue;
       lv = PL[pi + NIDX[f]];
-    } else lv = ownL; // cara interior: luz de la propia celda (o de sus vecinas si la celda bloquea la luz)
+    } else {
+      // cara interior: luz de la celda hacia la que mira (no la más alta de alrededor: un techo de escaleras no
+      // ilumina la sala cerrada de debajo con la luz del cielo)
+      const q = pi + NIDX[f];
+      lv = B_OPAQUE[PB[q]] ? ownL : PL[q];
+    }
     const tile = B_TILE[id * 6 + f];
     const u0 = TILE_UV[tile * 3], v0 = TILE_UV[tile * 3 + 1], ts = TILE_UV[tile * 3 + 2];
     const sk = (lv >> 4) / 15, bl = (lv & 15) / 15, sh = FACE_SHADE[f];
@@ -175,6 +207,7 @@ function emitBox(buf, x, y, z, pi, id, b, ownL) {
  */
 export function meshChunk(world, c, opts = {}) {
   const top = fillPadded(world, c);
+  brightenSinks(top);
   OPQ.reset(); TRN.reset();
   const fancy = !!opts.fancyLeaves;
 
@@ -200,7 +233,7 @@ export function meshChunk(world, c, opts = {}) {
             if (nb === 0) vis = true;
             else if (B_OPAQUE[nb]) vis = false;
             else if (B_CULLGRP[nb] === grp && !opaqueBlock) {
-              if (shape === SHAPE.CUBE) vis = grp === 1000 && fancy;
+              if (shape === SHAPE.CUBE) vis = grp === LEAVES_GRP && fancy;
               else vis = f >= 2 && f <= 3; // losas/tierra arada: solo se ocultan los laterales
             } else vis = true;
             if (!vis) continue;
@@ -276,17 +309,12 @@ export function meshChunk(world, c, opts = {}) {
           const fam = B_FAMILY[id];
           let mask = 0;
           if (fam === FAM.FENCE || fam === FAM.WALL) {
-            for (let d = 0; d < 4; d++) if (connectsTo(fam, PB[pi + DIR_PIDX[d]])) mask |= 1 << d;
+            for (let d = 0; d < 4; d++) if (connectsTo(fam, PB[pi + DIR_PIDX[d]], d)) mask |= 1 << d;
           }
           const boxes = renderBoxes(id, mask);
           // Las escaleras no dejan pasar la luz (atten 15) y su celda queda a oscuras: sus caras interiores usan
           // la luz más alta de las 6 celdas vecinas (como hacen las losas y escaleras del juego de referencia).
-          let ownL = PL[pi];
-          if (B_ATTEN[id] >= 15) {
-            let s = 0, bl = 0;
-            for (let f = 0; f < 6; f++) { const v = PL[pi + NIDX[f]], nb = PB[pi + NIDX[f]]; if (B_OPAQUE[nb]) continue; if ((v >> 4) > s) s = v >> 4; if ((v & 15) > bl) bl = v & 15; }
-            ownL = (s << 4) | bl;
-          }
+          const ownL = PL[pi]; // en las escaleras ya es la luz de sus vecinas (brightenSinks)
           for (let i = 0; i < boxes.length; i++) emitBox(buf, x, y, z, pi, id, boxes[i], ownL);
         } else if (shape === SHAPE.CROSS) {
           const lv = PL[pi];

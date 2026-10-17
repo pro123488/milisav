@@ -24,6 +24,7 @@ export function breakSeconds(block, tool, env = {}) {
   let t = block.hardness * (ok ? 1.5 : 5) / speed;
   if (env.headInWater) t *= 5;
   if (env.airborne) t *= 5;
+  if (env.haste) t /= env.haste; // efecto "Prisa minera"
   return Math.max(t, 0.05);
 }
 
@@ -65,7 +66,7 @@ export class Mining {
   /** ¿Se puede romper en este modo? */
   canBreak(block) {
     const g = this.game;
-    if (block.unbreakable) return false;
+    if (block.unbreakable && !(g.mode === 'creative' && block.interact === 'altar')) return false;
     if (g.mode === 'adventure') return block.group === 'plant' || block.group === 'crop';
     return true;
   }
@@ -94,13 +95,13 @@ export class Mining {
       const item = stack ? Items.get(stack.i) : null;
       this.target = { x: hit.x, y: hit.y, z: hit.z, id: hit.id };
       this.progress = 0;
-      this.needed = breakSeconds(block, item && item.tool, { headInWater: g.player.headInWater, airborne: !g.player.onGround && !g.player.flying && !g.player.inWater });
+      this.needed = breakSeconds(block, item && item.tool, { headInWater: g.player.headInWater, airborne: !g.player.onGround && !g.player.flying && !g.player.inWater, haste: g.survival.effects.miningMul() });
       this.stepAcc = 0;
     }
     // Si el jugador cambia de herramienta a mitad, se recalcula manteniendo la proporción
     const stack = g.inventory.getSelected();
     const item = stack ? Items.get(stack.i) : null;
-    const needNow = breakSeconds(block, item && item.tool, { headInWater: g.player.headInWater, airborne: !g.player.onGround && !g.player.flying && !g.player.inWater });
+    const needNow = breakSeconds(block, item && item.tool, { headInWater: g.player.headInWater, airborne: !g.player.onGround && !g.player.flying && !g.player.inWater, haste: g.survival.effects.miningMul() });
     this.needed = needNow;
     this.progress += dt / Math.max(needNow, 0.001);
     this.stepAcc = (this.stepAcc || 0) + dt;
@@ -159,6 +160,32 @@ export class Mining {
       g.survival.addExhaustion(0.005);
     }
     g.stats && g.stats.blocksBroken++;
+    // Martillo del Titán: rompe también el anillo 3×3 perpendicular a la cara golpeada
+    if (!creative && tool && tool.area && hit.nx !== undefined) this._breakArea(hit, block, tool);
+  }
+
+  _breakArea(hit, center, tool) {
+    const g = this.game, w = g.world;
+    const ax = hit.nx ? 0 : 1, ay = hit.ny ? 0 : 1, az = hit.nz ? 0 : 1; // ejes del plano
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) {
+      if (!a && !b) continue;
+      let dx = 0, dy = 0, dz = 0;
+      if (!ax) { dy = a; dz = b; } else if (!ay) { dx = a; dz = b; } else { dx = a; dy = b; }
+      void az;
+      const x = hit.x + dx, y = hit.y + dy, z = hit.z + dz;
+      const id = w.getBlock(x, y, z);
+      if (!id) continue;
+      const bl = Blocks.get(id);
+      if (!this.canBreak(bl) || bl.tool !== 'pickaxe' || bl.family || bl.container || bl.interact || !canHarvest(bl, tool)) continue;
+      if (bl.hardness > center.hardness * 1.6 + 0.5) continue; // no atraviesa minerales mucho más duros
+      const st = g.inventory.getSelected();
+      if (!st || !Items.get(st.i).tool || !Items.get(st.i).tool.area) return; // el martillo se rompió
+      w.setBlock(x, y, z, 0);
+      for (const d of rollDrops(bl.drops)) g.dropItem({ i: d.id, n: d.n, d: 0 }, x + 0.5, y + 0.5, z + 0.5);
+      g.particles.emit(x + 0.5, y + 0.5, z + 0.5, tileAverageColor(bl.tiles[2]), 5, 2.4, 0.8);
+      if (g.inventory.damageSelected(1)) { g.ui.toast('¡Se rompió el Martillo del Titán!'); g.audio && g.audio.play('toolbreak'); return; }
+      g.stats && g.stats.blocksBroken++;
+    }
   }
 }
 void B_FLUID; void ID;

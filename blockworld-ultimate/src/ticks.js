@@ -77,7 +77,7 @@ export class RandomTicks {
     if (id === ID.FARMLAND || id === ID.FARMLAND_WET) {
       let wet = false;
       for (let dx = -4; dx <= 4 && !wet; dx++) for (let dz = -4; dz <= 4 && !wet; dz++) for (let dy = 0; dy <= 1; dy++) {
-        if (w.getBlock(x + dx, y + dy, z + dz) === ID.WATER) { wet = true; break; }
+        if (B_FLUID[w.getBlock(x + dx, y + dy, z + dz)] === 1) { wet = true; break; } // fuente, corriente o cascada
       }
       const above = w.getBlock(x, y + 1, z);
       if (B_OPAQUE[above]) { w.setBlock(x, y, z, ID.DIRT); return; }

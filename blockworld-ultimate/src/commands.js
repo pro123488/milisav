@@ -4,6 +4,9 @@ import { ANIMALS } from './animals.js';
 import { MONSTERS } from './monsters.js';
 import { GAMEMODE_NAMES, DIFFICULTY_NAMES } from './config.js';
 import { nearestVillage } from './villages.js';
+import { nearestShrine, SHRINE_TYPES } from './shrines.js';
+import { BOSSES } from './bosses.js';
+import { EFFECTS } from './effects.js';
 
 const norm = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
 
@@ -14,8 +17,10 @@ const TIME_ALIAS = { amanecer: 0.0, manana: 0.1, dia: 0.15, mediodia: 0.25, tard
 export const COMMAND_HELP = [
   '/modo <supervivencia|creativo|aventura>', '/tiempo <amanecer|dia|mediodia|atardecer|noche|medianoche|0-1>', '/dar <objeto> [cantidad]',
   '/tp <x> <y> <z>', '/curar', '/matar', '/invocar <criatura>', '/dificultad <pacifico|facil|normal|dificil>', '/semilla', '/spawn', '/limpiar',
-  '/guardar', '/bestiario', '/objetos [texto]', '/localizar aldea',
+  '/guardar', '/bestiario', '/objetos [texto]', '/localizar aldea', '/localizar santuario [bosque|cristal|mar|fuego]',
+  '/efecto <efecto> [segundos] [nivel] | /efecto limpiar', '/jefe <bosque|cristal|mar|fuego>',
 ];
+const SHRINE_ALIAS = { bosque: 'bosque', guardian: 'bosque', forest: 'bosque', cristal: 'cristal', coloso: 'cristal', crystal: 'cristal', mar: 'mar', reina: 'mar', marea: 'mar', sea: 'mar', fuego: 'fuego', titan: 'fuego', volcan: 'fuego', fire: 'fuego' };
 
 function findItem(q) {
   const n = norm(q).replace(/\s+/g, '_');
@@ -89,13 +94,39 @@ export function runCommand(game, line) {
       return m ? `Invocado: ${all[k].name}` : 'No se pudo invocar.';
     }
     case 'localizar': case 'locate': {
-      if (!/^aldea|village/.test(norm(args[0] || ''))) return 'Uso: /localizar aldea';
+      if (/^santuario|shrine|jefe/.test(norm(args[0] || ''))) {
+        const type = args[1] ? SHRINE_ALIAS[norm(args[1])] : null;
+        if (args[1] && !type) return 'Uso: /localizar santuario [bosque|cristal|mar|fuego]';
+        const sh = nearestShrine(game.world.terrain, p.x, p.z, type, 10);
+        if (!sh) return 'No hay santuarios de ese tipo en 2000 bloques a la redonda.';
+        const where = sh.type === 'cristal' ? `pozo de acceso en ${sh.x + 9}, ${sh.surface + 1}, ${sh.z}; altar a ${sh.y + 1} de altura` : `altar en ${sh.x}, ${sh.y + 1}, ${sh.z}`;
+        return `${sh.name} (${BOSSES[sh.boss].short}): ${where} (a ${Math.round(Math.hypot(sh.x - p.x, sh.z - p.z))} bloques)`;
+      }
+      if (!/^aldea|village/.test(norm(args[0] || ''))) return 'Uso: /localizar aldea | /localizar santuario [bosque|cristal|mar|fuego]';
       const v = nearestVillage(game.world.terrain, p.x, p.z, 8);
       if (!v) return 'No hay aldeas en 1300 bloques a la redonda.';
       const info = game.villageInfo(v.id);
       return `Aldea de ${info.name} en ${v.x}, ${v.y + 1}, ${v.z} (a ${Math.round(Math.hypot(v.x - p.x, v.z - p.z))} bloques)`;
     }
-    case 'bestiario': return 'Animales: ' + Object.values(ANIMALS).map((d) => d.name).join(', ') + '. Monstruos: ' + Object.values(MONSTERS).map((d) => `${d.name} (amenaza ${d.threat})`).join(', ');
+    case 'bestiario': if (game.openBestiary) { setTimeout(() => game.openBestiary(), 0); return 'Abriendo el bestiario (tecla B).'; } return 'Animales: ' + Object.values(ANIMALS).map((d) => d.name).join(', ') + '. Monstruos: ' + Object.values(MONSTERS).map((d) => `${d.name} (amenaza ${d.threat})`).join(', ');
+    case 'efecto': case 'effect': {
+      const fx = game.survival.effects;
+      const a0 = norm(args[0] || '');
+      if (a0 === 'limpiar' || a0 === 'clear') { fx.clear(); return 'Efectos eliminados.'; }
+      const id = Object.keys(EFFECTS).find((k) => k === a0 || norm(EFFECTS[k].name).replace(/\s+/g, '_') === a0 || norm(EFFECTS[k].name).startsWith(a0.replace(/_/g, ' ')));
+      if (!id) return 'Efectos: ' + Object.keys(EFFECTS).join(', ');
+      const sec = Math.max(1, Math.min(3600, parseFloat(args[1]) || 60)), lvl = Math.max(1, Math.min(5, parseInt(args[2], 10) || 1));
+      fx.add(id, sec, lvl); fx.list.get(id).time = sec; fx.list.get(id).level = lvl;
+      return `Efecto: ${EFFECTS[id].name} ${lvl} durante ${sec} s`;
+    }
+    case 'jefe': case 'boss': {
+      const type = SHRINE_ALIAS[norm(args[0] || '')];
+      if (!type) return 'Uso: /jefe <bosque|cristal|mar|fuego>';
+      const key = SHRINE_TYPES[type].boss;
+      const d = p.lookDir();
+      const m = game.summonBoss(key, Math.floor(p.x + d.x * 8), Math.floor(p.y), Math.floor(p.z + d.z * 8));
+      return m ? `¡${BOSSES[key].name} despierta!` : 'No se pudo invocar.';
+    }
     default: return `Comando desconocido: ${cmdRaw}. Escribe /ayuda`;
   }
 }

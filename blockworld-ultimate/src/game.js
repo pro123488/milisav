@@ -6,7 +6,7 @@ import { Sky } from './sky.js';
 import { Player } from './player.js';
 import { Controls } from './controls.js';
 import { DAY_LENGTH, REACH_SURVIVAL, REACH_CREATIVE, WORLD_HEIGHT as WH, SEA_LEVEL, GENERATOR_VERSION, VERSION } from './config.js';
-import { Blocks, ID, B_SOUND, B_FLUID, B_REPLACEABLE, B_SOLID } from './blocks.js';
+import { Blocks, ID, B_SOUND, B_FLUID, B_REPLACEABLE, B_SOLID, B_ATTEN, B_OPAQUE } from './blocks.js';
 import { Items, makeStack, rollDrops } from './items.js';
 import { Inventory, Container, addToSlots } from './inventory.js';
 import { RECIPES } from './crafting.js';
@@ -24,7 +24,11 @@ import { villageAt, nearestVillage } from './villages.js';
 import { PROFESSION_BY_STATION, villagerName } from './trading.js';
 import { HandRenderer } from './hand.js';
 import { UI } from './ui.js';
-import { openInventoryScreen, openWorkbenchScreen, openChestScreen, openFurnaceScreen, openPauseScreen, openDeathScreen, openControlsScreen, openAchievementsScreen, openTradeScreen } from './screens.js';
+import { openInventoryScreen, openWorkbenchScreen, openChestScreen, openFurnaceScreen, openPauseScreen, openDeathScreen, openControlsScreen, openAchievementsScreen, openTradeScreen, openAlchemyScreen, openBestiaryScreen } from './screens.js';
+import { BOSSES, BOSS_KEYS, createBoss, throwSnowball, bossForSummon } from './bosses.js';
+import { tickAlchemy, ALCHEMY_SLOTS } from './alchemy.js';
+import { Bestiary } from './bestiary.js';
+import { nearestShrine } from './shrines.js';
 import { AudioEngine } from './audio.js';
 import { raycastBlocks } from './raycast.js';
 import { chunkKey } from './chunk.js';
@@ -33,7 +37,7 @@ import { hash3, mulberry32 } from './noise.js';
 import { runCommand } from './commands.js';
 import { biomeName } from './biomes.js';
 import { buildOptionsPanel } from './menus.js';
-import { moveEntity } from './physics.js';
+import { moveEntity, boxCollides } from './physics.js';
 import { ACHIEVEMENTS } from './achievements.js';
 
 export { ACHIEVEMENTS };
@@ -145,6 +149,7 @@ export class Game {
     this.discovered = new Set(); this.achievements = new Set(); this.stats = { blocksBroken: 0, blocksPlaced: 0, mobsKilled: 0, deaths: 0 };
     this.sleeping = new Map(); this.structQueue = []; this.structDone = new Set(meta.structDone || []);
     this.villages = new Map(Object.entries(meta.villages || {})); this._villageTimer = 0; this._compassTimer = 0;
+    this.bestiary = new Bestiary(); this.bossKills = { ...(meta.bossKills || {}) }; this._bestTimer = 0; this.shake = 0; this.staffCd = 0; this.prismHits = 0;
     this._buildAvatar();
     const saved = meta.player;
     let sx, sz;
@@ -158,6 +163,7 @@ export class Game {
       this.discovered = new Set(saved.discovered || []);
       this.achievements = new Set(saved.ach || []);
       this.stats = { ...this.stats, ...(saved.stats || {}) };
+      this.bestiary = Bestiary.load(saved.best);
       this.spawnPoint = saved.spawn || null;
       this.player.yaw = saved.yaw || 0; this.player.pitch = saved.pitch || 0;
       this.time = meta.time ?? 0.12; this.playTime = meta.playTime || 0;
@@ -258,6 +264,7 @@ export class Game {
     if (code === 'F1') { this.ui.hudHidden = !this.ui.hudHidden; this.ui.hud.classList.toggle('nohud', this.ui.hudHidden); return; }
     if (code === 'KeyV') { this.cameraMode = (this.cameraMode + 1) % 3; return; }
     if (code === 'KeyE') { this.openInventory(); return; }
+    if (code === 'KeyB') { this.openBestiary(); return; }
     if (code === 'KeyT' || code === 'Slash') { e.preventDefault(); this.ui.openChat(code === 'Slash' ? '/' : ''); return; }
     if (code === 'KeyQ') { this.dropSelected(e.shiftKey); return; }
     if (code.startsWith('Digit')) { const n = parseInt(code.slice(5), 10); if (n >= 1 && n <= 9) this.inventory.selected = n - 1; }
@@ -298,7 +305,7 @@ export class Game {
   getBlockEntity(x, y, z, type, size) {
     const k = this.world.beKey(x, y, z);
     let be = this.world.blockEntities.get(k);
-    if (!be) { be = new Container(size, type); if (type === 'furnace') be.extra = { burn: 0, burnMax: 0, cook: 0 }; this.world.blockEntities.set(k, be); }
+    if (!be) { be = new Container(size, type); if (type === 'furnace') be.extra = { burn: 0, burnMax: 0, cook: 0 }; if (type === 'alchemy') be.extra = { brew: 0 }; this.world.blockEntities.set(k, be); }
     return be;
   }
   openChest(x, y, z) {
@@ -312,6 +319,15 @@ export class Game {
     const be = this.getBlockEntity(x, y, z, 'furnace', 3);
     this._openScreen(openFurnaceScreen(this, be));
   }
+  openAlchemy(x, y, z) {
+    const be = this.getBlockEntity(x, y, z, 'alchemy', ALCHEMY_SLOTS);
+    this._openScreen(openAlchemyScreen(this, be));
+  }
+  openBestiary() {
+    const scr = openBestiaryScreen(this, () => this.closeScreen());
+    scr.keepOnE = false;
+    this._openScreen(scr);
+  }
   openPause() {
     if (this.state !== 'playing') return;
     this.state = 'paused'; this.paused = true; this._expectUnlock = false;
@@ -321,6 +337,7 @@ export class Game {
       onOptions: () => { const root = document.createElement('div'); root.className = 'screen-overlay dim'; const panel = document.createElement('div'); panel.className = 'panel'; panel.innerHTML = '<h2>Opciones</h2>'; panel.append(buildOptionsPanel(this.settings, (k, v) => this.applySetting(k, v))); const b = document.createElement('button'); b.className = 'btn primary'; b.textContent = 'Volver'; b.onclick = show; panel.append(b); root.append(panel); this.ui.setScreen({ root }); },
       onControls: () => this.ui.setScreen(openControlsScreen(show)),
       onAchievements: () => this.ui.setScreen(openAchievementsScreen(this, show)),
+      onBestiary: () => this.ui.setScreen(openBestiaryScreen(this, show)),
       onQuit: () => { if (this.onExitRequest) this.onExitRequest(); },
     }));
     show();
@@ -467,14 +484,23 @@ export class Game {
   lightAt(x, y, z) {
     const w = this.world, atm = this.sky.atm;
     const fx = Math.floor(x), fy = Math.floor(y), fz = Math.floor(z);
-    const sky = w.getSky(fx, fy, fz) / 15 * atm.sun, blk = w.getBlockLight(fx, fy, fz) / 15;
+    let sky = w.getSky(fx, fy, fz) / 15 * atm.sun, blk = w.getBlockLight(fx, fy, fz) / 15;
+    const id = w.getBlock(fx, fy, fz);
+    if (B_ATTEN[id] >= 15 && !B_OPAQUE[id]) { // dentro de una escalera: luz de las celdas de alrededor
+      sky = 0; blk = 0;
+      for (const [dx, dy, dz] of [[0, 1, 0], [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1]]) {
+        const n = w.getBlock(fx + dx, fy + dy, fz + dz);
+        if (B_OPAQUE[n] || B_ATTEN[n] >= 15) continue;
+        sky = Math.max(sky, w.getSky(fx + dx, fy + dy, fz + dz) / 15 * atm.sun); blk = Math.max(blk, w.getBlockLight(fx + dx, fy + dy, fz + dz) / 15);
+      }
+    }
     const c = (l) => Math.pow(0.8, 15 * (1 - l));
     return Math.min(1, Math.max(c(sky), c(blk), 0.13) * this.settings.brightness);
   }
 
   // ═════════════ Criaturas ═════════════
   spawnMob(key, x, y, z) {
-    const m = ANIMALS[key] ? createAnimal(this, key) : MONSTERS[key] ? createMonster(this, key) : VILLAGE_MOBS[key] ? createVillageMob(this, key) : null;
+    const m = ANIMALS[key] ? createAnimal(this, key) : MONSTERS[key] ? createMonster(this, key) : VILLAGE_MOBS[key] ? createVillageMob(this, key) : BOSSES[key] ? createBoss(this, key) : null;
     if (!m) return null;
     m.setPos(x, y, z);
     this.entities.add(m);
@@ -482,14 +508,93 @@ export class Game {
   }
   mobKilled(mob, source) {
     if (MONSTERS[mob.type]) { this.stats.mobsKilled++; this.achieve('monstruo'); }
+    if (source === this.player || mob.lastHitBy === this.player || mob.isBoss) this.bestiary.kill(mob.type);
     if (mob.isVillager && (source === this.player || mob.lastHitBy === this.player)) this.villageReputation(mob.village, -20, mob);
   }
+  // ═════════════ Jefes ═════════════
+  /** Clic derecho en un altar: con la ofrenda en la mano despierta a su jefe; si no, explica qué pide. */
+  useAltar(x, y, z, b) {
+    const def = BOSSES[b.boss];
+    if (!def) return false;
+    const inv = this.inventory, st = inv.getSelected(), it = st ? Items.get(st.i) : null;
+    this.achieve('santuario');
+    const active = this.entities.list.find((e) => e.isBoss && !e.removed && e.deathTime < 0 && Math.hypot(e.x - x, e.z - z) < 64);
+    if (active) { this.ui.toast(`${active.def.short} ya está despierto`); return true; }
+    if (!it || it.key !== def.summon) {
+      const want = bossForSummon(it && it.key);
+      this.ui.toast(want ? `Esa ofrenda es para otro altar (${BOSSES[want].short})` : `${b.name}: ofrece ${Items.get(def.summon).name} para despertar al ${def.name}`, 4500);
+      return true;
+    }
+    if (this.difficulty === 'peaceful') { this.ui.toast('Los jefes no despiertan en dificultad Pacífica'); return true; }
+    if (this.mode !== 'creative') inv.consumeSelected(1);
+    this.summonBoss(b.boss, x, y, z);
+    return true;
+  }
+  /** Despierta al jefe `key` junto al altar (x,y,z). */
+  summonBoss(key, x, y, z) {
+    const def = BOSSES[key];
+    if (!def) return null;
+    const w = this.world;
+    let pos = null;
+    for (const [dx, dz] of [[0, 4], [4, 0], [0, -4], [-4, 0], [0, 2], [2, 0]]) {
+      const px = x + 0.5 + dx, pz = z + 0.5 + dz, py = y + (def.flying ? 3 : 1);
+      if (!boxCollides(w, px, py, pz, def.w, def.h)) { pos = [px, py, pz]; break; }
+    }
+    if (!pos) pos = [x + 0.5, y + 2, z + 0.5];
+    const m = this.spawnMob(key, pos[0], pos[1], pos[2]);
+    if (!m) return null;
+    m.home = { x, y, z };
+    this.audio.play('summon', x, y, z);
+    this.ui.centerMessage(`¡${def.name} despierta!`);
+    this.particles.emit(x + 0.5, y + 1.2, z + 0.5, def.color, 30, 4, 1);
+    return m;
+  }
+  onBossDefeated(boss) {
+    const def = boss.def;
+    this.bossKills[def.key] = (this.bossKills[def.key] || 0) + 1;
+    this.achieve(def.achievement);
+    if (BOSS_KEYS.every((k) => this.bossKills[k])) this.achieve('cazajefes');
+    this.ui.centerMessage(`¡${def.name} derrotado!`);
+    this.audio.play('levelup');
+  }
+  /** Barra de vida y música del jefe más cercano, enfriamientos y fichas nuevas del bestiario. */
+  _updateBosses(dt) {
+    const p = this.player;
+    this.staffCd = Math.max(0, this.staffCd - dt);
+    this.shake = Math.max(0, this.shake - dt);
+    let best = null, bd = 56;
+    for (const e of this.entities.list) {
+      if (!e.isBoss || e.removed || e.deathTime >= 0) continue;
+      const d = Math.hypot(e.x - p.x, e.z - p.z);
+      if (d < bd) { bd = d; best = e; }
+    }
+    this.activeBoss = best;
+    if (best) {
+      const phase = best.intro > 0 ? 'Despertando…' : best.shield ? 'Escudo prismático: rompe los pilares' : best.cool > 0 ? 'Enfriado: recibe el doble de daño' : best.stun > 0 ? 'Aturdida: recibe el doble de daño' : `Fase ${best.phase}: ${best.phaseName}`;
+      const sig = best.def.name + Math.round(best.frac * 400) + phase;
+      if (sig !== this._bossSig) { this._bossSig = sig; this.ui.setBoss({ name: best.def.name, frac: best.frac, phase }); }
+      this.audio.setCombat(best.def.music);
+    } else if (this._bossSig) { this._bossSig = null; this.ui.setBoss(null); this.audio.setCombat(null); }
+    // Bestiario: criaturas vistas de cerca
+    this._bestTimer -= dt;
+    if (this._bestTimer <= 0) {
+      this._bestTimer = 0.5;
+      for (const e of this.entities.list) {
+        if (e.removed || !e.def || e.deathTime >= 0 || e.burrowed || e.isPylon) continue;
+        if (!(ANIMALS[e.type] || MONSTERS[e.type] || VILLAGE_MOBS[e.type] || BOSSES[e.type])) continue;
+        if (Math.hypot(e.x - p.x, e.y - p.y, e.z - p.z) < 14 && this.bestiary.see(e.type) && this.state === 'playing') this.ui.toast(`📖 Bestiario: ${e.def.name} (pulsa B)`, 2200);
+      }
+    }
+  }
+
   sleepEntity(e) {
     if (!e.persistent || e.removed) return;
     const k = chunkKey(Math.floor(e.x / 16), Math.floor(e.z / 16));
     if (!this.sleeping.has(k)) this.sleeping.set(k, []);
     const list = this.sleeping.get(k);
-    if (list.length < 40) list.push(e.serialize());
+    // los objetos sueltos tienen tope (son efímeros); animales y criaturas persistentes se guardan siempre
+    if (e.type === 'item' && list.reduce((n, q) => n + (q.t === 'item' ? 1 : 0), 0) >= 40) return;
+    list.push(e.serialize());
   }
   sleepChunk(c) {
     if (!this.entities) return;
@@ -697,6 +802,11 @@ export class Game {
     const step = this._furnaceAcc; this._furnaceAcc = 0;
     const w = this.world;
     for (const [k, be] of w.blockEntities) {
+      if (be.type === 'alchemy') {
+        const [x, , z] = k.split(',').map(Number);
+        if (w.isLoaded(x, z)) tickAlchemy(be, step);
+        continue;
+      }
       if (be.type !== 'furnace') continue;
       const [x, y, z] = k.split(',').map(Number);
       if (!w.isLoaded(x, z)) continue;
@@ -714,7 +824,7 @@ export class Game {
   // ═════════════ Interacción ═════════════
   _eyeRay() {
     const p = this.player, d = p.lookDir();
-    return { ox: p.x, oy: p.eyeY, oz: p.z, dx: d.x, dy: d.y, dz: d.z };
+    return { ox: p.x, oy: p.eyeY - (p.stepSmooth || 0), oz: p.z, dx: d.x, dy: d.y, dz: d.z }; // mismo origen que la cámara
   }
   get reach() { return this.mode === 'creative' ? REACH_CREATIVE : REACH_SURVIVAL; }
 
@@ -738,7 +848,7 @@ export class Game {
     // Mantener clic derecho: colocar bloques repetidamente / comer
     if (canAct && ctl.mouse[2]) {
       const it = stack ? Items.get(stack.i) : null;
-      if (it && it.food) { /* gestionado por updateEating */ }
+      if (it && (it.food || it.drink)) { /* gestionado por updateEating */ }
       else if (it && it.kind === 'block' && this.useCooldown <= 0) { this.useItem(false); }
     }
     this.updateEating(dt, canAct && ctl.mouse[2]);
@@ -756,7 +866,7 @@ export class Game {
     if (!pressed && this.attackCharge < cd) return;
     const charge = Math.min(1, this.attackCharge / Math.max(cd, 0.01));
     if (pressed && this.attackCharge < 0.15) return;
-    const base = tool ? tool.damage : 1;
+    const base = Math.max(0.5, (tool ? tool.damage : 1) + this.survival.effects.meleeBonus()); // fuerza / debilidad
     let dmg = base * (0.25 + 0.75 * charge * charge);
     const p = this.player;
     const crit = !p.onGround && p.vy < -0.5 && !p.inWater && charge > 0.9;
@@ -768,6 +878,17 @@ export class Game {
     this.hand.swing();
     if (ok) {
       if (crit) this.particles.emit(e.x, e.y + e.h * 0.7, e.z, 0xffe8a0, 8, 3);
+      // Hoja prismática: cada cuatro golpes libera un anillo de esquirlas que daña a las criaturas cercanas
+      if (it && it.key === 'prism_blade' && ++this.prismHits >= 4) {
+        this.prismHits = 0;
+        this.particles.emit(e.x, e.y + e.h * 0.5, e.z, 0x9af6ff, 20, 5, 1.2);
+        this.audio.blockSound('break', 'glass', e.x, e.y + 1, e.z);
+        for (const o of this.entities.list) {
+          if (o === e || o.removed || !o.hurt || o.deathTime >= 0 || o.isVillager || o.tamed || o.type === 'item' || o.type === 'projectile') continue;
+          if (ANIMALS[o.type] && !o.isPylon) continue;
+          if (Math.hypot(o.x - e.x, o.z - e.z) < 4.5) o.hurt(4, e.x, e.z, 0.5, p);
+        }
+      }
       if (this.mode !== 'creative' && tool) {
         const broke = this.inventory.damageSelected(it.tool.type === 'sword' ? 1 : 2);
         if (broke) { this.ui.toast('¡Se rompió ' + it.name.toLowerCase() + '!'); this.audio.play('toolbreak'); }
@@ -805,39 +926,112 @@ export class Game {
       this.audio.play('eat', e.x, e.y, e.z); this.hand.swing();
       return;
     }
+    // Fase 4: objetos con uso propio
+    if (it && pressed && this._useSpecial(it, et)) return;
     let fluidHit = null;
-    if (it && it.kind === 'bucket') { const r = this._eyeRay(); fluidHit = raycastBlocks(this.world, r.ox, r.oy, r.oz, r.dx, r.dy, r.dz, this.reach, { fluids: it.key === 'bucket' ? 'source' : true }); }
+    if (it && (it.kind === 'bucket' || it.kind === 'bottle')) { const r = this._eyeRay(); fluidHit = raycastBlocks(this.world, r.ox, r.oy, r.oz, r.dx, r.dy, r.dz, this.reach, { fluids: it.key === 'bucket' ? 'source' : true }); }
+    if (it && it.kind === 'bottle' && pressed && fluidHit && B_FLUID[fluidHit.id] === 1 && !(this.hit && Blocks.get(this.hit.id).interact && this.hit.dist < fluidHit.dist)) {
+      // Frasco de vidrio sobre el agua: se llena (sin gastar la fuente)
+      inv.consumeSelected(1);
+      const flask = { i: Items.id('water_flask'), n: 1, d: 0 };
+      if (!inv.slots[inv.selected]) inv.slots[inv.selected] = flask;
+      else { const rest = inv.add(flask); if (rest) this.dropItem(rest, p.x, p.y + 1, p.z); }
+      this.audio.play('splash', fluidHit.x, fluidHit.y, fluidHit.z); this.hand.swing();
+      return;
+    }
     const did = this.building.use(this.hit, fluidHit, p.crouching, pressed);
     this.useCooldown = 0.22;
     if (did) this.hand.swing();
+  }
+
+  /**
+   * Usos especiales (clic nuevo): bolas de nieve, cubo de agua sobre el Titán, Cristal vital y Báculo de raíces.
+   * Devuelve true si se usó el objeto.
+   */
+  _useSpecial(it, et) {
+    const inv = this.inventory, p = this.player, sv = this.survival;
+    const onInteractive = this.hit && Blocks.get(this.hit.id).interact && !p.crouching;
+    if (it.key === 'snowball' && !onInteractive) {
+      throwSnowball(this);
+      if (this.mode !== 'creative') inv.consumeSelected(1);
+      this.hand.swing();
+      return true;
+    }
+    if (it.key === 'water_bucket' && et && et.coolDown && et.deathTime < 0) {
+      et.coolDown(8);
+      if (this.mode !== 'creative') inv.slots[inv.selected] = { i: Items.id('bucket'), n: 1, d: 0 };
+      this.audio.play('splash', et.x, et.y, et.z); this.hand.swing();
+      return true;
+    }
+    if (it.kind === 'heart') {
+      if (sv.maxHealth >= 40) { this.ui.toast('Ya tienes el máximo de corazones (20)'); return true; }
+      sv.maxHealth += 2; sv.heal(2);
+      if (this.mode !== 'creative') inv.consumeSelected(1);
+      this.particles.emit(p.x, p.y + 1.2, p.z, 0xff4a6a, 16, 2);
+      this.audio.play('levelup');
+      this.ui.toast(`Ganas un corazón: ahora tienes ${sv.maxHealth / 2}`);
+      this.achieve('vitalidad');
+      return true;
+    }
+    if (it.tool && it.tool.type === 'staff' && !onInteractive) {
+      if (this.staffCd > 0) { this.ui.toast(`El báculo se está recargando (${Math.ceil(this.staffCd)} s)`, 1200); return true; }
+      this.staffCd = 15;
+      let n = 0;
+      for (const e of this.entities.list) {
+        if (e.removed || e.deathTime >= 0 || !(MONSTERS[e.type] || e.isBoss)) continue;
+        if (Math.hypot(e.x - p.x, e.z - p.z) > 8) continue;
+        e.rooted = e.isBoss ? 1.5 : 4; n++;
+        this.particles.emit(e.x, e.y + 0.4, e.z, 0x5aa840, 10, 2, 0.6);
+      }
+      sv.effects.add('regeneration', 6, 2);
+      this.particles.emit(p.x, p.y + 0.3, p.z, 0x6ad040, 24, 3, 2);
+      this.audio.play('magic');
+      if (this.mode !== 'creative' && inv.damageSelected(5)) { this.ui.toast('¡Se rompió el báculo de raíces!'); this.audio.play('toolbreak'); }
+      this.ui.toast(n ? `Las raíces atrapan a ${n} criatura${n > 1 ? 's' : ''}` : 'Las raíces te envuelven y te curan', 1500);
+      this.hand.swing();
+      return true;
+    }
+    return false;
   }
 
   beginEating() {
     const stack = this.inventory.getSelected();
     if (!stack || this.eating) return;
     const it = Items.get(stack.i);
-    if (!it.food) return;
-    if (this.mode === 'creative' || this.survival.hunger >= 20) { if (this.mode !== 'creative') this.ui.toast('No tienes hambre'); return; }
-    this.eating = { t: 0, dur: 1.4, slot: this.inventory.selected, last: 0 };
+    if (!it.food && !it.drink) return;
+    if (it.food && !it.food.always && (this.mode === 'creative' || this.survival.hunger >= 20)) { if (this.mode !== 'creative') this.ui.toast('No tienes hambre'); return; }
+    this.eating = { t: 0, dur: it.drink ? 1.2 : 1.4, slot: this.inventory.selected, last: 0 };
   }
   updateEating(dt, holding) {
     const e = this.eating;
     if (!e) return;
     const stack = this.inventory.slots[e.slot];
-    if (!holding || this.inventory.selected !== e.slot || !stack || !Items.get(stack.i).food) { this.eating = null; return; }
+    const sIt = stack ? Items.get(stack.i) : null;
+    if (!holding || this.inventory.selected !== e.slot || !stack || !(sIt.food || sIt.drink)) { this.eating = null; return; }
     e.t += dt;
-    if (e.t - e.last > 0.22) { e.last = e.t; this.audio.play('eat'); const it = Items.get(stack.i); this.particles.emit(this.player.x, this.player.eyeY - 0.3, this.player.z, it.key.includes('cooked') ? 0xb07a40 : 0xc04040, 2, 1.5, 0.3); }
+    if (e.t - e.last > (sIt.drink ? 0.4 : 0.22)) { e.last = e.t; this.audio.play(sIt.drink ? 'drink' : 'eat'); if (!sIt.drink) this.particles.emit(this.player.x, this.player.eyeY - 0.3, this.player.z, sIt.key.includes('cooked') ? 0xb07a40 : 0xc04040, 2, 1.5, 0.3); }
     if (e.t >= e.dur) {
-      const it = Items.get(stack.i);
-      this.survival.eat(it);
+      const it = sIt;
+      const sv = this.survival;
+      if (it.food) { sv.eat(it); sv.applyEffects(it.food.effects); }
+      if (it.drink) {
+        const d = it.drink;
+        sv.applyEffects(d.effects);
+        if (d.heal) sv.heal(d.heal);
+        if (d.cleanse) sv.effects.clearBad();
+        if (d.extinguish) sv.fire = 0;
+        if (it.key.startsWith('tonic_')) { this.achieve('alquimia'); this.audio.play('magic'); this.particles.emit(this.player.x, this.player.y + 1.4, this.player.z, 0xc070ff, 12, 1.6); }
+      }
       this.inventory.consumeSelected(1);
-      if (it.food.returns) { // el cuenco vuelve a la mano (o al inventario)
-        const back = { i: Items.id(it.food.returns), n: 1, d: 0 };
+      const ret = it.food ? it.food.returns : it.drink.returns;
+      if (ret) { // el cuenco o el frasco vuelve a la mano (o al inventario)
+        const back = { i: Items.id(ret), n: 1, d: 0 };
         if (!this.inventory.slots[e.slot]) this.inventory.slots[e.slot] = back;
         else { const rest = this.inventory.add(back); if (rest) this.dropItem(rest, this.player.x, this.player.y + 1, this.player.z); }
       }
       if (it.key === 'vegetable_stew') this.achieve('cocinero');
-      this.audio.play('burp'); this.eating = null;
+      if (it.food) this.audio.play('burp');
+      this.eating = null;
       this.onItemObtained(it.key);
     }
   }
@@ -913,6 +1107,9 @@ export class Game {
     const a = { ...atm };
     if (headFluid === 1) { const b = 0.4 + atm.day * 0.6; fogNear = 0.4; fogFar = 22; a.fog = [0.07 * b, 0.26 * b, 0.5 * b]; fogColor = a.fog; }
     else if (headFluid === 2) { fogNear = 0.1; fogFar = 3.5; a.fog = [0.7, 0.18, 0.04]; fogColor = a.fog; }
+    const fx = !this.panorama && this.survival ? this.survival.effects : null;
+    if (fx && fx.has('night_vision')) a.ambient = Math.max(a.ambient, 0.55);
+    if (fx && fx.has('darkness')) { fogNear = 0.5; fogFar = Math.min(fogFar, 11); a.fog = [0.02, 0.02, 0.03]; fogColor = a.fog; }
     this.wr.setAtmosphere(a, fogNear, fogFar, this.settings.brightness, this.elapsed);
     this.renderer.setClearColor(new THREE.Color(fogColor[0], fogColor[1], fogColor[2]));
     this.camera.fov = this.settings.fov + fovBoost;
@@ -934,6 +1131,7 @@ export class Game {
     const ex = p.x, ey = p.eyeY + bobY - p.stepSmooth, ez = p.z; // stepSmooth: suaviza la subida de escalones
     if (this.cameraMode === 0) {
       cam.position.set(ex, ey, ez);
+      if (this.shake > 0 && this.settings.bobbing) { const k = Math.min(1, this.shake) * 0.18; cam.position.x += (Math.random() - 0.5) * k; cam.position.y += (Math.random() - 0.5) * k; cam.position.z += (Math.random() - 0.5) * k; }
       cam.rotation.set(p.pitch, p.yaw, roll);
       if (this.avatar) this.avatar.root.visible = false;
     } else {
@@ -957,6 +1155,7 @@ export class Game {
     if (this.time >= 1) this.time -= 1;
     const move = (ctl.locked && this.state === 'playing') ? ctl.getMove() : { fwd: 0, strafe: 0, jump: false, sprint: false, crouch: false, crouchDown: false };
     p.autoJump = this.settings.autoJump;
+    p.speedMul = this.survival.effects.speedMul(); // velocidad / lentitud
     p.update(dt, move, w, this.survival.canSprint);
     // pasos / aterrizaje
     if (p.onGround && p.moved > 0) {
@@ -981,6 +1180,7 @@ export class Game {
     this.processBlockUpdates();
     this._structMobs();
     this._updateVillages(dt);
+    this._updateBosses(dt);
     this.audio.update(dt, this.sky.atm.day);
     // bioma actual
     this._biomeTimer -= dt;
@@ -1042,10 +1242,12 @@ export class Game {
         x: p.x, y: p.y, z: p.z, yaw: p.yaw, pitch: p.pitch, flying: p.flying,
         inv: this.inventory.serialize(), sv: this.survival.serialize(),
         discovered: [...this.discovered], ach: [...this.achievements], spawn: this.spawnPoint, stats: this.stats,
+        best: this.bestiary.serialize(),
       };
       meta.time = this.time; meta.playTime = this.playTime; meta.sleeping = sleeping; meta.be = be;
       meta.structDone = [...this.structDone]; meta.genVersion = GENERATOR_VERSION; meta.gameVersion = VERSION;
       meta.villages = Object.fromEntries(this.villages);
+      meta.bossKills = this.bossKills;
       await this.world.saveModified();
       if (this.chunkStore) await this.chunkStore.flush();
       await this.store.putWorld(meta);

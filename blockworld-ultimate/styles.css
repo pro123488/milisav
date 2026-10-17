@@ -161,6 +161,17 @@ table.keys td { padding: 5px 8px; border-bottom: 1px solid #ffffff12; } table.ke
 .offer:hover { border-color: var(--acc); background: var(--bg3); } .offer.no { opacity: .55; } .offer.sold { opacity: .35; text-decoration: line-through; }
 .o-give, .o-get { display: flex; align-items: center; gap: 6px; } .o-give img, .o-get img { width: 26px; height: 26px; image-rendering: pixelated; }
 .o-arrow { color: var(--acc2); font-weight: 800; } .o-uses { margin-left: auto; font-size: 12px; color: var(--dim, #aab); }
+.effects-hud { position: absolute; left: 10px; top: 120px; display: flex; flex-direction: column; gap: 3px; pointer-events: none; }
+.effects-hud .fx { background: rgba(10,12,20,.55); border-left: 3px solid var(--ok); border-radius: 4px; padding: 2px 8px; font: 600 12px var(--ui-font); color: #e8f0f8; display: flex; align-items: center; gap: 6px; }
+.effects-hud .fx.bad { border-left-color: var(--danger); }
+.effects-hud .fx-dot { width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 4px rgba(255,255,255,.4); }
+#hearts img.poison { filter: hue-rotate(95deg) saturate(1.3); }
+.boss-bar { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: min(560px, 70vw); text-align: center; pointer-events: none; }
+.boss-bar.hidden { display: none; }
+.boss-name { font: 800 16px var(--ui-font); color: #f6e0b0; text-shadow: 0 2px 0 #000; letter-spacing: .04em; }
+.boss-track { height: 12px; margin-top: 4px; background: rgba(10,8,14,.75); border: 2px solid #5a3a3a; border-radius: 4px; overflow: hidden; }
+.boss-fill { height: 100%; width: 100%; background: linear-gradient(180deg, #ff6a5a, #b0201a); transition: width .2s; }
+.boss-phase { font: 600 12px var(--ui-font); color: #d8c0a0; margin-top: 2px; text-shadow: 0 1px 0 #000; }
 .hud-compass { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); padding: 4px 12px; background: rgba(10,12,20,.55); border-radius: 6px; font: 600 13px var(--ui-font); color: #f2e6c0; pointer-events: none; }
 .hud-compass.hidden { display: none; }
 .craft-panel { display: flex; flex-direction: column; gap: 8px; min-width: 330px; max-width: 420px; }
@@ -187,3 +198,27 @@ table.keys td { padding: 5px 8px; border-bottom: 1px solid #ffffff12; } table.ke
 .arrow { width: 70px; height: 20px; background: #2a3442; border: 2px solid #1a2330; position: relative; border-radius: 3px; } .arrow > div { height: 100%; width: 0; background: var(--ok); }
 .ach-list { display: flex; flex-direction: column; gap: 6px; max-height: 60vh; overflow: auto; min-width: 360px; } .ach { display: flex; gap: 10px; align-items: center; background: var(--bg0); border: 2px solid var(--line); border-radius: 6px; padding: 6px 10px; opacity: .6; } .ach.done { opacity: 1; border-color: var(--acc2); } .ach-ico { font-size: 22px; }
 @media (max-width: 800px) { .form { grid-template-columns: 1fr; } .inv-top { flex-direction: column; } .catalog { grid-template-columns: repeat(7, 46px); } .opt { grid-template-columns: 1fr 120px 56px; } }
+
+/* ── Fase 4: alquimia y bestiario ── */
+.alch-layout { display: flex; gap: 18px; align-items: flex-start; justify-content: center; flex-wrap: wrap; }
+.alch-col { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 260px; }
+.alch-top { display: flex; align-items: center; gap: 12px; }
+.alch-bottles { display: flex; gap: 10px; }
+.brew-bar { width: 80px; height: 14px; background: #2a3442; border: 2px solid #1a2330; border-radius: 7px; overflow: hidden; }
+.brew-bar > div { height: 100%; width: 0; background: linear-gradient(90deg, #7af0ff, #c070ff); }
+.brew-book { max-height: 230px; overflow: auto; background: var(--bg0); border: 2px solid var(--line); border-radius: 6px; padding: 6px 8px; display: flex; flex-direction: column; gap: 3px; min-width: 250px; }
+.brew-row { display: flex; align-items: center; gap: 5px; font-size: 13px; }
+.brew-row img { width: 22px; height: 22px; image-rendering: pixelated; }
+.panel.wide { max-width: min(920px, 96vw); width: 920px; }
+.best-layout { display: flex; gap: 14px; min-height: 380px; max-height: 66vh; }
+.best-list { width: 230px; flex: none; overflow: auto; background: var(--bg0); border: 2px solid var(--line); border-radius: 6px; padding: 4px; }
+.best-list .cat { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; opacity: .7; margin: 8px 6px 2px; }
+.best-row { padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+.best-row:hover { background: rgba(255,255,255,.08); }
+.best-row.sel { background: rgba(122, 200, 255, .22); }
+.best-row.unk { opacity: .5; }
+.best-page { flex: 1; overflow: auto; padding: 0 6px; line-height: 1.45; }
+.best-page h4 { margin: 12px 0 4px; color: var(--acc2); }
+.best-page ul { margin: 4px 0; padding-left: 18px; }
+@media (max-width: 700px) { .best-layout { flex-direction: column; } .best-list { width: auto; max-height: 160px; } }
+.fx-line { color: #c8a0ff; }

@@ -166,6 +166,50 @@ item('book', 'Libro', { fuel: 10 });
 item('bandage', 'Venda', { kind: 'heal', heal: 6, stack: 16 });
 item('village_compass', 'Brújula de aldeas', { kind: 'compass', stack: 1 });
 
+// ── Fase 4: alquimia y jefes ─────────────────────────────────────
+// Frascos y tónicos (se beben manteniendo el clic derecho; devuelven el frasco vacío).
+item('glass_bottle', 'Frasco de vidrio', { kind: 'bottle', stack: 16 });
+item('water_flask', 'Frasco de agua', { kind: 'drink', stack: 8, drink: { effects: [], returns: 'glass_bottle', extinguish: true } });
+item('tonic_base', 'Tónico rúnico', { kind: 'drink', stack: 8, drink: { effects: [], returns: 'glass_bottle' } });
+const tonic = (key, name, effects, extra = {}) => item(key, name, { kind: 'drink', stack: 8, icon: 'tonic:' + key, drink: { effects, returns: 'glass_bottle', ...extra } });
+tonic('tonic_healing', 'Tónico de curación', [], { heal: 8, cleanse: true });
+tonic('tonic_regeneration', 'Tónico de regeneración', [['regeneration', 45, 1]]);
+tonic('tonic_strength', 'Tónico de fuerza', [['strength', 90, 1]]);
+tonic('tonic_speed', 'Tónico de velocidad', [['speed', 120, 1]]);
+tonic('tonic_haste', 'Tónico de prisa minera', [['haste', 120, 1]]);
+tonic('tonic_fire', 'Tónico ignífugo', [['fire_resistance', 120, 1]]);
+tonic('tonic_water', 'Tónico de branquias', [['water_breathing', 120, 1]]);
+tonic('tonic_night', 'Tónico de visión nocturna', [['night_vision', 150, 1]]);
+tonic('tonic_resistance', 'Tónico de piel pétrea', [['resistance', 90, 1]]);
+item('sun_apple', 'Manzana solar', { kind: 'food', food: { hunger: 4, sat: 9.6, always: true, effects: [['regeneration', 10, 2], ['resistance', 60, 1]] } });
+// Ofrendas que despiertan a los jefes en sus altares
+item('ancient_seed', 'Semilla ancestral', { kind: 'summon', boss: 'forest_guardian', stack: 16 });
+item('geode_heart', 'Corazón de geoda', { kind: 'summon', boss: 'crystal_colossus', stack: 16 });
+item('tide_pearl', 'Perla de marea', { kind: 'summon', boss: 'deep_queen', stack: 16 });
+item('eternal_ember', 'Brasa eterna', { kind: 'summon', boss: 'volcanic_titan', stack: 16 });
+// Recompensas
+item('heart_crystal', 'Cristal vital', { kind: 'heart', stack: 16 });
+item('essence_forest', 'Esencia del bosque');
+item('essence_crystal', 'Esencia cristalina');
+item('essence_tide', 'Esencia abisal');
+item('essence_ember', 'Esencia ígnea');
+item('root_staff', 'Báculo de raíces', {
+  stack: 1, kind: 'tool', unique: true, repair: 'apple',
+  tool: { type: 'staff', tier: 'crystal', level: 0, speed: 1, durability: 300, damage: 5, cooldown: 0.8 },
+});
+item('prism_blade', 'Hoja prismática', {
+  stack: 1, kind: 'tool', unique: true, repair: 'crystal_shard',
+  tool: { type: 'sword', tier: 'crystal', level: 4, speed: 1, durability: 1800, damage: 11, cooldown: 0.6 },
+});
+item('coral_crown', 'Corona de coral', {
+  stack: 1, kind: 'armor', unique: true, repair: 'scute', icon: 'sprite:coral_crown',
+  armor: { slot: 'head', slotIndex: 0, tier: 'crystal', defense: 3, durability: 520 },
+});
+item('titan_hammer', 'Martillo del Titán', {
+  stack: 1, kind: 'tool', unique: true, repair: 'obsidian',
+  tool: { type: 'pickaxe', tier: 'noctisite', level: 4, speed: 7, durability: 2400, damage: 8, cooldown: 1.2, area: 1 },
+});
+
 // Combustibles de bloques
 const blockFuel = {
   planks: 15, log_oak: 15, log_dark: 15, log_jungle: 15, log_pine: 15, workbench: 15, chest: 15, slab_planks: 7, sapling_oak: 5, sapling_dark: 5, sapling_jungle: 5, sapling_pine: 5,

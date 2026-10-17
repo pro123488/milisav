@@ -210,6 +210,8 @@ export class Building {
       if (b.interact && !(crouching && item) && this.interact(hit, b)) return true;
       if (B_FAMILY[hit.id] === FAM.FENCE && !crouching && this.useFence(hit)) return true;
     }
+    // Mantener pulsado sobre una puerta, cofre, valla... no coloca bloques delante (solo cuenta el clic nuevo)
+    if (hit && !pressed && !crouching && (Blocks.get(hit.id).interact || B_FAMILY[hit.id] === FAM.FENCE)) return false;
     if (!item) return false;
 
     // 2) Cubos
@@ -217,6 +219,7 @@ export class Building {
 
     // 3) Comida: se come manteniendo pulsado (lo gestiona el juego)
     if (item.food && !item.plants) { g.beginEating(); return false; }
+    if (item.drink) { g.beginEating(); return false; } // frascos y tónicos
 
     // Venda: cura al instante
     if (item.kind === 'heal') {
@@ -332,6 +335,7 @@ export class Building {
       case 'bell': if (g.ringBell) g.ringBell(hit.x, hit.y, hit.z); return true;
       case 'lectern': if (g.showVillageInfo) { g.showVillageInfo(hit.x, hit.z); return true; } return false;
       case 'alchemy': if (g.openAlchemy) { g.openAlchemy(hit.x, hit.y, hit.z); return true; } return false;
+      case 'altar': return g.useAltar ? g.useAltar(hit.x, hit.y, hit.z, b) : false;
       case 'door': return this.toggleDoor(hit.x, hit.y, hit.z);
       case 'gate': return this.toggleGate(hit.x, hit.y, hit.z);
       case 'trapdoor': return this.toggleTrapdoor(hit.x, hit.y, hit.z);
@@ -451,7 +455,8 @@ export class Building {
     }
     // Vaciar: colocar una fuente en la celda objetivo (sustituye agua o lava que corre)
     let cx = hit.x + hit.nx, cy = hit.y + hit.ny, cz = hit.z + hit.nz;
-    if (B_FLUID[hit.id] || B_REPLACEABLE[hit.id]) { cx = hit.x; cy = hit.y; cz = hit.z; }
+    // Sobre una corriente o una planta se sustituye en el sitio; sobre una fuente (de agua o de lava) se vacía al lado
+    if (B_FLUID[hit.id] ? B_FLUIDLVL[hit.id] !== 0 : B_REPLACEABLE[hit.id]) { cx = hit.x; cy = hit.y; cz = hit.z; }
     const cur = w.getBlock(cx, cy, cz);
     if (!freeCell(cur)) return false;
     if (B_FLUID[cur] && B_FLUIDLVL[cur] === 0) return false; // ya es una fuente
