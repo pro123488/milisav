@@ -68,7 +68,9 @@ export class Spawner {
 
   trySpawnAnimal(minR = 24, maxR = 60) {
     const g = this.game, p = g.player, w = g.world;
-    const near = g.entities.count((e) => ANIMALS[e.type] && !e.removed);
+    // solo cuentan los animales de la zona simulada (los persistentes lejanos quedan congelados en la lista)
+    const lim = (g.entities.simDistance || 64) + 16, inSim = (e) => Math.hypot(e.x - p.x, e.z - p.z) <= lim;
+    const near = g.entities.count((e) => ANIMALS[e.type] && !e.removed && inSim(e));
     if (near >= 34) return false;
     const a = Math.random() * Math.PI * 2, r = minR + Math.random() * (maxR - minR);
     const x = Math.floor(p.x + Math.cos(a) * r), z = Math.floor(p.z + Math.sin(a) * r);
@@ -80,7 +82,7 @@ export class Spawner {
       let depth = 0;
       for (let y = sy; y > 1 && w.getBlock(x, y, z) === ID.WATER; y--) depth++;
       const biome = w.terrain.biomeAt(x, z);
-      if (depth >= 2 && biome !== 11 && g.entities.count((e) => e.type === 'glow_fish' && !e.removed) < ANIMALS.glow_fish.cap) {
+      if (depth >= 2 && biome !== 11 && g.entities.count((e) => e.type === 'glow_fish' && !e.removed && inSim(e)) < ANIMALS.glow_fish.cap) {
         const n = 1 + Math.floor(Math.random() * 3);
         for (let i = 0; i < n; i++) g.spawnMob('glow_fish', x + 0.5 + (Math.random() - 0.5) * 3, sy - 0.8 - Math.random() * Math.min(2, depth - 1), z + 0.5 + (Math.random() - 0.5) * 3);
         return true;
@@ -95,7 +97,7 @@ export class Spawner {
     const key = pickWeighted(table);
     if (!key || key === 'glow_fish') return false;
     const def = ANIMALS[key];
-    if (g.entities.count((e) => e.type === key && !e.removed) >= def.cap) return false;
+    if (g.entities.count((e) => e.type === key && !e.removed && inSim(e)) >= def.cap) return false;
     const herd = (def.domestic || key === 'mist_deer') ? 1 + Math.floor(Math.random() * 3) : 1;
     let spawned = 0;
     for (let i = 0; i < herd; i++) {

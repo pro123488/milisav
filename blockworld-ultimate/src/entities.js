@@ -404,12 +404,12 @@ export class EntityManager {
         if (e.isBoss && e.deathTime < 0 && e.sleepAgain) { e.sleepAgain(); continue; }
         // lo persistente (vehículos, mascotas, aldeanos…) con su chunk aún cargado se congela y se oculta: se guarda
         // al descargarse el chunk (si se guardara ahora no volvería a aparecer mientras el chunk siga cargado)
-        if (e.persistent && this.game.world.isLoaded(Math.floor(e.x), Math.floor(e.z))) { if (e.obj) e.obj.visible = false; continue; }
+        if (e.persistent && this.game.world.isLoaded(Math.floor(e.x), Math.floor(e.z))) { if (e.obj) e.obj.visible = false; if (e.leashLine) e.leashLine.visible = false; continue; }
         if (e.persistent) this.game.sleepEntity(e);
         e.removed = true; continue;
       }
       // Entidades en chunks sin cargar se congelan
-      if (!this.game.world.isLoaded(Math.floor(e.x), Math.floor(e.z))) { if (e.obj) e.obj.visible = false; continue; }
+      if (!this.game.world.isLoaded(Math.floor(e.x), Math.floor(e.z))) { if (e.obj) e.obj.visible = false; if (e.leashLine) e.leashLine.visible = false; continue; }
       if (e.obj) e.obj.visible = d < this.simDistance;
       e.update(dt);
     }

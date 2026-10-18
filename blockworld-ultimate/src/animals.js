@@ -235,6 +235,7 @@ export class Animal extends Mob {
   _updateLeashLine() {
     if (!this.leashLine) return;
     if (!this.leash) return;
+    this.leashLine.visible = !this.obj || this.obj.visible; // la cuerda se ve si se ve el animal
     const a = this._leashAnchor();
     const sx = this.x, sy = this.y + this.h * 0.75, sz = this.z;
     const d = Math.hypot(a.x - sx, a.y - sy, a.z - sz);

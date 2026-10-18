@@ -38,7 +38,7 @@ Opciones de depuración por URL: `?autostart=survival|creative|adventure|peacefu
 ### Pruebas automáticas
 
 ```bash
-npm test                        # 43 + 32 + 19 + 29 + 9 + 21 pruebas de lógica: terreno, luz, inventario, crafteo, física, raycast, mallado,
+npm test                        # 43 + 32 + 19 + 29 + 9 + 22 pruebas de lógica: terreno, luz, inventario, crafteo, física, raycast, mallado,
                                 #   guardado, formas, fluidos, colocación, aldeas sin costuras, A*, comercio, aldeanos, efectos,
                                 #   alquimia, santuarios sin costuras, combates de jefes simulados, Dimensión Oscura y portales,
                                 #   energía (cables, repetidores, inversores, pistones, dispensador, tolva, cosechadora),

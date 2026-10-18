@@ -97,7 +97,7 @@ bajo ellas o que se perdían al pararse justo en el borde de un chunk; el vehíc
 mano impidiendo abrir cofres o puertas.
 
 ## Pruebas
-`tests/fase6.mjs` (Node, 21 pruebas): palanca → cable → lámpara y caída del nivel por tramo, agotamiento a los 15 tramos y
+`tests/fase6.mjs` (Node, 22 pruebas): palanca → cable → lámpara y caída del nivel por tramo, agotamiento a los 15 tramos y
 repetidor con retardo, inversor, botón y placa de presión, puerta de hierro con energía, pistón (empuja y recoge),
 dispensador, tolva hacia un cofre, cosechadora que replanta, forma automática de los raíles (rectas, curvas y rampas),
 vagoneta que recorre un circuito cerrado, vagoneta en rampa y final de vía, barca que flota y avanza, y formas/rotación/

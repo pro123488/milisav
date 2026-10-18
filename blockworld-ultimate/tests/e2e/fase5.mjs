@@ -177,18 +177,22 @@ await withPage('index.html?autostart=survival&rd=3&seed=umbral&type=normal&mobs=
     const core = g.meta.portals.overworld;
     const bounded = { dim: g.dimension, x: +p.x.toFixed(1), z: +p.z.toFixed(1), core, coreOk: !!core && g.world.getBlock(core[0], core[1], core[2]) === ID.PORTAL_CORE_ACTIVE };
     // pausa durante un viaje: se aplaza hasta llegar (no se guarda al jugador a mitad de camino)
+    const { Items } = await import('/src/items.js');
+    g.inventory.slots[g.inventory.selected] = { i: Items.id('cobble'), n: 5, d: 0 };
     const trip = g.travel('dark');
+    g.onKey('KeyQ', { shiftKey: true, preventDefault() {} }); // soltar objetos a mitad de viaje: no se hace
+    const kept = g.inventory.getSelected() ? g.inventory.getSelected().n : 0;
     document.exitPointerLock(); g.openPause(); // como pulsar Esc a mitad del viaje
     await new Promise((r) => setTimeout(r, 200));
     const during = g.state;
     await trip;
     await new Promise((r) => setTimeout(r, 200));
-    return { veil, death, bounded, during, after: g.state };
+    return { veil, death, bounded, during, after: g.state, kept };
   });
   ok('con una pantalla abierta el velo no hace viajar', !fixes.veil.traveling && fixes.veil.timer === 0, JSON.stringify(fixes.veil));
   ok('morir en la Dimensión Oscura lleva al punto de aparición sin construir un portal donde se murió', fixes.death.dim === 'overworld' && !fixes.death.portalAtDeath && fixes.death.distSpawn < 6, JSON.stringify(fixes.death));
   ok('en un mundo con límites el portal de llegada queda dentro del mundo', fixes.bounded.dim === 'overworld' && Math.abs(fixes.bounded.x) <= 128 && Math.abs(fixes.bounded.z) <= 128 && fixes.bounded.coreOk, JSON.stringify(fixes.bounded));
-  ok('la pausa pedida durante un viaje espera a que termine', fixes.during === 'playing' && fixes.after === 'paused', JSON.stringify({ during: fixes.during, after: fixes.after }));
+  ok('la pausa pedida durante un viaje espera a que termine y no se sueltan objetos a mitad de viaje', fixes.during === 'playing' && fixes.after === 'paused' && fixes.kept === 5, JSON.stringify({ during: fixes.during, after: fixes.after, kept: fixes.kept }));
 
   const errs = await ev(() => window.__errors || []);
   ok('sin errores de página', !errs.length, errs.join(' | '));

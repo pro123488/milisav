@@ -174,6 +174,18 @@ test('el pistón no empuja hornos ni hacia un chunk sin cargar', () => {
   w.setBlock(ex - 4, G, 8, ID.LEVER_ON); run(g, 0.3);
   assert.equal(w.getBlock(ex, G, 8), ID.BRICKS); assert.equal(w.getBlock(ex - 3, G, 8), ID.PISTON + 1);
 });
+test('un pistón con la cabeza en un chunk sin cargar no se recoge; una cabeza suelta delante se reaprovecha', () => {
+  const g = rig('x1b'), w = g.world;
+  let ex = 8; while (w.isLoaded(ex + 1, 8)) ex++;
+  w.setBlock(ex, G, 8, ID.PISTON_EXT + 1); // la cabeza estaría en ex+1 (chunk sin cargar), sin energía
+  run(g, 0.5);
+  assert.equal(w.getBlock(ex, G, 8), ID.PISTON_EXT + 1, 'sigue extendido hasta que se cargue la cabeza');
+  w.setBlock(4, G, 8, ID.PISTON + 1); w.setBlock(5, G, 8, ID.PISTON_HEAD + 1); w.setBlock(3, G, 8, ID.LEVER_ON);
+  run(g, 0.3);
+  assert.equal(w.getBlock(4, G, 8), ID.PISTON_EXT + 1); assert.equal(w.getBlock(5, G, 8), ID.PISTON_HEAD + 1);
+  g.energy.toggleLever(3, G, 8); run(g, 0.3);
+  assert.equal(w.getBlock(4, G, 8), ID.PISTON + 1); assert.equal(w.getBlock(5, G, 8), 0);
+});
 test('tolva → horno: lo que no cabe no atasca a lo demás (mineral a la entrada, carbón al combustible)', () => {
   const g = rig('x2'), w = g.world;
   w.setBlock(4, G, 8, ID.FURNACE); w.setBlock(4, G + 1, 8, ID.HOPPER);

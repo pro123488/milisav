@@ -280,6 +280,7 @@ export class Game {
       return;
     }
     if (this.state !== 'playing') return;
+    if (this._traveling) return; // durante un viaje entre dimensiones no se juega (ni se sueltan objetos)
     if (code === 'F3') { this.ui.debug = !this.ui.debug; return; }
     if (code === 'F1') { this.ui.hudHidden = !this.ui.hudHidden; this.ui.hud.classList.toggle('nohud', this.ui.hudHidden); return; }
     if (code === 'KeyV') { this.cameraMode = (this.cameraMode + 1) % 3; return; }
@@ -291,7 +292,7 @@ export class Game {
   }
 
   onMouseDown(button) {
-    if (this.state !== 'playing' || this.paused) return;
+    if (this.state !== 'playing' || this.paused || this._traveling) return;
     if (button === 0) this.tryAttack(true);
     else if (button === 2) { this.useCooldown = 0; this.useItem(true); }
     else if (button === 1 && this.mode === 'creative' && this.hit) {
@@ -560,6 +561,7 @@ export class Game {
     this.riding = v; v.rider = { push: false, ctl: null };
     this.mining.reset(); this.eating = null;
     const [sx, sy, sz] = v.seat(), p = this.player; p.x = sx; p.y = sy; p.z = sz; p.vx = p.vy = p.vz = 0; p.flying = false; // sentarse ya
+    this._seatPos = [sx, sy, sz];
     this.ui.toast(v.type === 'minecart' ? 'En la vagoneta: W para avanzar, C para bajar' : 'En la barca: W/S remar, A/D girar, C para bajar', 2600);
     this.audio.play('door', v.x, v.y, v.z);
     return true;
@@ -568,7 +570,7 @@ export class Game {
   dismount() {
     const v = this.riding, p = this.player;
     if (!v) return;
-    this.riding = null; v.rider = null;
+    this.riding = null; v.rider = null; this._seatPos = null;
     const w = this.world;
     const spots = [[1.2, 0], [-1.2, 0], [0, 1.2], [0, -1.2]];
     let placed = false;
@@ -587,14 +589,17 @@ export class Game {
     const v = this.riding, p = this.player;
     if (!v || v.removed) { this.riding = null; return; }
     if (move.crouch) { this.dismount(); return; }
-    // si algo movió al jugador lejos del asiento (/tp, /spawn, reaparecer…), se baja sin volver a sentarlo
-    { const [sx, sy, sz] = v.seat(); if (Math.abs(p.x - sx) > 2 || Math.abs(p.y - sy) > 2 || Math.abs(p.z - sz) > 2) { this.riding = null; v.rider = null; return; } }
+    // si algo movió al jugador desde donde lo sentó el fotograma anterior (/tp, /spawn, reaparecer…), se baja sin volver
+    // a sentarlo (se compara con esa posición, no con el asiento nuevo: un vehículo que cae rápido no lo suelta)
+    const sp0 = this._seatPos;
+    if (sp0 && (Math.abs(p.x - sp0[0]) > 0.5 || Math.abs(p.y - sp0[1]) > 0.5 || Math.abs(p.z - sp0[2]) > 0.5)) { this.riding = null; v.rider = null; this._seatPos = null; return; }
     const d = p.lookDir();
     v.rider.push = move.fwd > 0;
     v.rider.look = facingFromVector(d.x, d.z);
     v.rider.ctl = { fwd: move.fwd, turn: -move.strafe };
     const [sx, sy, sz] = v.seat();
     p.x = sx; p.y = sy; p.z = sz; p.vx = p.vy = p.vz = 0; p.onGround = true; p.fallDistance = 0; p.moved = 0; p.landed = null;
+    this._seatPos = [sx, sy, sz];
     // fluidos en el asiento (como hace Player.update): lava que quema, cabeza bajo el agua…
     const w = this.world, fx = Math.floor(sx), fz = Math.floor(sz);
     const feetF = w.fluidAt(fx, Math.floor(sy + 0.1), fz), bodyF = w.fluidAt(fx, Math.floor(sy + 0.9), fz), headF = w.fluidAt(fx, Math.floor(sy + p.eye), fz);
@@ -669,6 +674,7 @@ export class Game {
     const p = this.player, meta = this.meta;
     // una pantalla abierta (cofre, horno…) apuntaría al contenedor de la dimensión que se deja
     if (this.ui.screen) { this.ui.closeScreen(true); if (this.state === 'screen') this.state = 'playing'; }
+    this.hit = this.entityTarget = null;
     let tx = Math.floor(fromCore ? fromCore[0] : p.x), tz = Math.floor(fromCore ? fromCore[2] : p.z);
     if (opts.respawn) { const sp = this.spawnPoint || this.worldSpawn; tx = Math.floor(sp.x); tz = Math.floor(sp.z); }
     if (target === 'overworld' && meta.size > 0) { // mundo con límites: el portal de llegada queda dentro
@@ -689,6 +695,7 @@ export class Game {
       const cs = this.store ? await this.store.chunkStore(target === 'dark' ? meta.id + '~dark' : meta.id) : null;
       this.chunkStore = cs;
       if (this.riding) this.dismount();
+      if (this.ui.screen && this.ui.screen.be) { this.ui.closeScreen(true); if (this.state === 'screen') this.state = 'playing'; }
       this.createWorld(meta, cs);
       this.fluids = new FluidSim(this);
       this.energy = new EnergySystem(this);
@@ -1104,6 +1111,7 @@ export class Game {
   }
 
   tryAttack(pressed) {
+    if (this._traveling) return;
     const e = this.entityTarget;
     if (!e || this.mode === 'adventure' && false) return;
     const stack = this.inventory.getSelected();
@@ -1146,6 +1154,7 @@ export class Game {
 
   /** Clic derecho: interactuar con criatura, usar objeto o colocar bloque. */
   useItem(pressed) {
+    if (this._traveling) return;
     const inv = this.inventory, stack = inv.getSelected();
     const it = stack ? Items.get(stack.i) : null;
     const p = this.player;

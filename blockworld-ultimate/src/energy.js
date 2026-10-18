@@ -250,7 +250,11 @@ export class EnergySystem {
       case 'booster': { const want = boosterWithPower(id, on); if (want !== id) w.setBlock(x, y, z, want); break; }
       case 'piston': {
         if (on && !b.extended) this._extend(x, y, z, b.facing);
-        else if (!on && b.extended) this._retract(x, y, z, b.facing);
+        else if (!on && b.extended) {
+          // con la cabeza en un chunk sin cargar no se recoge (la cabeza se quedaría suelta): se reintenta más tarde
+          if (!w.isLoaded(x + FACING_VEC[b.facing][0], z + FACING_VEC[b.facing][1])) this.recheck.add(key);
+          else this._retract(x, y, z, b.facing);
+        }
         break;
       }
       case 'dispenser': if (on && !was) this._dispense(x, y, z, b.facing); break;
@@ -263,6 +267,8 @@ export class EnergySystem {
   _extend(x, y, z, f) {
     const w = this.world, g = this.game;
     const [dx, dz] = FACING_VEC[f];
+    // su propia cabeza ya está delante (p. ej. una partida antigua con la cabeza suelta): solo se marca extendido
+    if (w.getBlock(x + dx, y, z + dz) === ID.PISTON_HEAD + f) { w.setBlock(x, y, z, ID.PISTON_EXT + f); return true; }
     const line = [];
     let k = 1;
     for (; k <= PISTON_PUSH + 1; k++) {
