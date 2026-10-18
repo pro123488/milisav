@@ -39,8 +39,8 @@ await withPage('index.html?autostart=survival&rd=3&seed=flat3&type=flat&mobs=all
     const sx = bx - 3, sz = bz - 3;
     w.setBlock(sx, gy + 6, sz, ID.SAND);
     g.processBlockUpdates();
-    await new Promise((r) => setTimeout(r, 2500));
-    g.processBlockUpdates();
+    // cae como entidad: se espera a que aterrice (hasta 10 s; con WebGL por software el juego puede ir lento)
+    for (let t = 0; t < 100 && w.getBlock(sx, gy + 1, sz) !== ID.SAND; t++) { await new Promise((r) => setTimeout(r, 100)); g.processBlockUpdates(); }
     out.sandFell = w.getBlock(sx, gy + 6, sz) === 0 && w.getBlock(sx, gy + 1, sz) === ID.SAND;
     // ── Antorcha de pared y soporte ──
     w.setBlock(bx + 8, gy + 1, bz, ID.STONE); w.setBlock(bx + 8, gy + 2, bz, ID.STONE);
