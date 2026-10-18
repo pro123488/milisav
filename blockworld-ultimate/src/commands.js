@@ -106,7 +106,7 @@ export function runCommand(game, line) {
         if (args[1] && !type) return 'Uso: /localizar santuario [bosque|cristal|mar|fuego]';
         const sh = nearestShrine(game.world.terrain, p.x, p.z, type, 10);
         if (!sh) return 'No hay santuarios de ese tipo en 2000 bloques a la redonda.';
-        const where = sh.type === 'cristal' ? `pozo de acceso en ${sh.x + 9}, ${sh.surface + 1}, ${sh.z}; altar a ${sh.y + 1} de altura` : `altar en ${sh.x}, ${sh.y + 1}, ${sh.z}`;
+        const where = sh.type === 'cristal' ? `pozo de acceso en ${sh.x + 9}, ${sh.shaftTop}, ${sh.z}; altar a ${sh.y + 1} de altura` : `altar en ${sh.x}, ${sh.y + 1}, ${sh.z}`;
         return `${sh.name} (${BOSSES[sh.boss].short}): ${where} (a ${Math.round(Math.hypot(sh.x - p.x, sh.z - p.z))} bloques)`;
       }
       if (!/^aldea|village/.test(norm(args[0] || ''))) return 'Uso: /localizar aldea | /localizar santuario [bosque|cristal|mar|fuego]';

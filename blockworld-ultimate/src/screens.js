@@ -23,7 +23,7 @@ class SlotScreen {
     this.root.append(this.panel);
     if (title) this.panel.append(el('h2', null, { text: title }));
     this.views = [];     // {el, slots, idx, rules}
-    this.cursorEl = el('div', 'cursor-item hidden', null, el('img'), el('span', 'count'));
+    this.cursorEl = el('div', 'cursor-item hidden', null, el('img', 'icon'), el('span', 'count'));
     document.body.append(this.cursorEl);
     this.mx = 0; this.my = 0;
     this._move = (e) => { this.mx = e.clientX; this.my = e.clientY; this._placeCursor(); if (this.hover) this.ui.showTooltip(this.hover.slots[this.hover.idx], this.mx, this.my); };
@@ -308,14 +308,15 @@ export function openWorkbenchScreen(game) {
   return s;
 }
 
-export function openChestScreen(game, be) {
-  const s = new SlotScreen(game, 'Cofre', 'chest-screen');
+export function openChestScreen(game, be, title = 'Cofre') {
+  const s = new SlotScreen(game, title, 'chest-screen');
   const inv = game.inventory;
-  s.panel.append(s.grid(be.slots, 0, 27, 9));
+  const n = be.slots.length, cols = n === 9 ? 3 : n === 5 ? 5 : 9; // cofre/barril 9×3, dispensador 3×3, tolva 5
+  s.panel.append(s.grid(be.slots, 0, n, cols));
   s.panel.append(el('h3', null, { text: 'Inventario' }), s.playerInventory());
   s.onShift = (slots, idx) => {
     if (slots === be.slots) return shiftMove(slots, idx, [{ slots: inv.slots, from: 0, to: 36 }]);
-    return s.shiftFromPlayer(slots, idx, [{ slots: be.slots, from: 0, to: 27 }]);
+    return s.shiftFromPlayer(slots, idx, [{ slots: be.slots, from: 0, to: n }]);
   };
   s.refresh();
   return s;

@@ -56,7 +56,7 @@ export const BOSSES = {
     lore: {
       historia: 'Cuando la montaña se enfrió, un rayo de luz quedó atrapado entre sus vetas. Durante siglos rebotó de cristal en cristal hasta que aprendió a moverse y se construyó un cuerpo con las geodas que encontró. Los mineros lo llamaban "el eco": se oía cantar bajo la roca. Se encerró en una gruta para que nadie rompiera su corazón de geoda.',
       arena: 'Gruta de cristal: una cueva esférica de geoda bajo montañas, llanuras, nieve o costas. Una torre de geoda con un farol marca el pozo de acceso.',
-      invocacion: 'Ofrece un Corazón de geoda en el Altar de cristal (6 fragmentos de cristal, 2 cristales de cueva y 2 lingotes de oro).',
+      invocacion: 'Ofrece un Corazón de geoda en el Altar de cristal (6 fragmentos de cristal, 2 bloques de geoda de la propia gruta y 2 lingotes de oro).',
       fases: ['Resonancia: pisotones y ráfagas de esquirlas.', 'Escudo prismático (60 %): levanta 4 pilares de resonancia; mientras quede alguno apenas recibe daño.', 'Fractura (25 %): vuelve a levantar pilares y dispara esquirlas en todas direcciones.'],
       ataques: ['Pisotón: anillo de aviso alrededor; salta para esquivar la onda (8).', 'Ráfaga de esquirlas: abanico de proyectiles (4 cada uno).', 'Pilares de resonancia: protegen al coloso hasta que los rompes.'],
       debilidad: 'Los picos le hacen el doble de daño; las espadas rebotan en su cristal (60 %). Rompe los pilares para quitarle el escudo.',
@@ -243,7 +243,8 @@ export class Missile extends Entity {
         if (e === this || e === this.owner || e.removed || !e.hurt || e.deathTime >= 0 || e.type === 'item' || e.type === 'projectile') continue;
         const hw = e.w / 2 + this.size * 0.5;
         if (Math.abs(nx - e.x) < hw && Math.abs(nz - e.z) < hw && ny > e.y - 0.1 && ny < e.y + e.h + 0.1) {
-          if (this.dmg > 0 || this.kind === 'snow') e.hurt(this.dmg, this.x - this.vx, this.z - this.vz, this.kind === 'snow' ? 0.3 : 0.6, this.owner);
+          if (this.kind === 'snow') { if (!e.onSnowball && !e.isVillager && !e.isGolem && !e.isBoss) e.hurt(0, this.x - this.vx, this.z - this.vz, 0.3, this.owner); }
+          else if (this.dmg > 0) e.hurt(this.dmg, this.x - this.vx, this.z - this.vz, 0.6, this.owner);
           this._hit(e); return true;
         }
       }
@@ -328,9 +329,13 @@ export class Boss extends Mob {
     this.knockRes = 1; this.stepHeight = 1.05;
     this._weakToastCd = 0;
   }
-  get persistent() { return this.deathTime < 0 && !this.removed; }
-  serialize() { return { t: this.type, x: this.x, y: this.y, z: this.z, hp: this.hp, vd: { home: this.home, phase: this.phase } }; }
-  initFromData(vd) { if (vd) { this.home = vd.home || null; this.phase = vd.phase || 1; } this.intro = 0.5; }
+  get persistent() { return this.deathTime < 0 && !this.removed; } // al morir las recompensas ya están en el suelo
+  serialize() { return { t: this.type, x: this.x, y: this.y, z: this.z, hp: this.hp, vd: { home: this.home, phase: this.phase, rage: this.rage, py: this.pylons ? this.pylons.filter((q) => !q.removed && q.deathTime < 0).length : 0 } }; }
+  /** Restaura un jefe guardado (vida, fase, altar) con los efectos de su fase: rabia y pilares del Coloso. */
+  initFromData(vd) {
+    if (vd) { this.home = vd.home || null; this.phase = vd.phase || 1; this.rage = vd.rage || 1; this._pendingPylons = vd.py || 0; }
+    this.intro = 0.5;
+  }
   get frac() { return Math.max(0, this.hp / this.maxHp); }
   get phaseName() { return this.def.phaseNames[this.phase - 1] || ''; }
 
@@ -375,6 +380,7 @@ export class Boss extends Mob {
     if (ph > this.phase) {
       this.phase = ph;
       this.action = null; this.transition = 1.4; this.atkCd = 1.6;
+      if (this.dashing) { this.dashing = false; this.vx = this.vy = this.vz = 0; }
       const g = this.game;
       g.ui.centerMessage(`${this.def.short}: ${this.phaseName}`);
       g.audio && g.audio.play('roar', this.x, this.y, this.z);
@@ -386,18 +392,23 @@ export class Boss extends Mob {
 
   die(source) {
     if (this.deathTime >= 0) return;
-    this.deathTime = 0; this.action = null;
+    this.deathTime = 0; this.action = null; this.dashing = false;
     const g = this.game;
     g.audio && g.audio.play('roar', this.x, this.y, this.z);
     for (const m of this.minions) if (!m.removed) { m.removed = true; g.particles.emit(m.x, m.y + 0.5, m.z, 0xaaaaaa, 8, 2); }
+    for (const q of this.pylons || []) if (!q.removed) q.removed = true;
     g.mobKilled && g.mobKilled(this, source);
+    // las recompensas y la victoria se dan ya (guardar durante la animación de muerte no las pierde)
+    if (!this._looted) { this._looted = true; this._reward(); }
   }
 
   /** Recompensas al terminar la animación de muerte. */
   _reward() {
     const g = this.game, def = this.def;
-    const x = this.x, y = this.y + 1, z = this.z;
-    const drop = (key, n) => { if (n > 0) g.dropItem({ i: Items.id(key), n, d: 0 }, x, y, z, 2.4); };
+    // se sueltan sobre el altar: nunca en la lava del foso ni en el vacío
+    const h = this.home;
+    const x = h ? h.x + 0.5 : this.x, y = h ? h.y + 1.6 : this.y + 1, z = h ? h.z + 0.5 : this.z;
+    const drop = (key, n) => { if (n > 0) g.dropItem({ i: Items.id(key), n, d: 0 }, x, y, z, 1.2); };
     const first = !(g.bossKills && g.bossKills[def.key]);
     drop('heart_crystal', 1);
     drop(def.essence, 1);
@@ -479,6 +490,8 @@ export class Boss extends Mob {
     this.wishX = this.wishZ = 0; this.wantJump = false; this.flyTargetVy = 0;
     this.stun = Math.max(0, this.stun - dt); this.cool = Math.max(0, this.cool - dt); this.transition = Math.max(0, this.transition - dt);
     this.summonCd -= dt;
+    if (this.game.difficulty === 'peaceful') { this.sleepAgain(); return; } // en Pacífico los jefes vuelven a dormir
+    if (this.dashing && !(this.action && this.action.id === 'charge')) this.dashing = false;
     this.always && this.always(dt);
     const p = g.player;
     // ¿Se ha ido el jugador?
@@ -549,7 +562,7 @@ export class Boss extends Mob {
     this.obj.rotation.z = Math.sin(this.deathTime * 34) * 0.04;
     this.setTint(1, 0.55 + 0.45 * Math.sin(this.deathTime * 20), 0.5);
     if (Math.random() < 0.5) g.particles.emit(this.x + (Math.random() - 0.5) * this.w * 2, this.y + Math.random() * this.h, this.z + (Math.random() - 0.5) * this.w * 2, this.def.color, 3, 3);
-    if (this.deathTime > 2.4 && !this._looted) { this._looted = true; this._reward(); this.removed = true; g.particles.emit(this.x, this.y + this.h / 2, this.z, 0xffffff, 40, 6, 2); g.audio && g.audio.play('boom', this.x, this.y, this.z); }
+    if (this.deathTime > 2.4 && !this.removed) { this.removed = true; g.particles.emit(this.x, this.y + this.h / 2, this.z, 0xffffff, 40, 6, 2); g.audio && g.audio.play('boom', this.x, this.y, this.z); }
   }
   setTint(r, g, b) { this.model.mat.color.setRGB(r, g, b); }
 
@@ -653,6 +666,7 @@ class CrystalColossus extends Boss {
   }
   /** El escudo depende de los pilares vivos (se comprueba en cada fotograma, también durante ataques y pausas). */
   always() {
+    if (this._pendingPylons > 0) { const n = this._pendingPylons; this._pendingPylons = 0; this.raisePylons(n); } // restaurado de un guardado
     this.pylons = this.pylons.filter((q) => !q.removed && q.deathTime < 0);
     this.shield = this.pylons.length > 0;
   }
@@ -798,8 +812,10 @@ class VolcanicTitan extends Boss {
     if (!was) g.ui.toast('¡El Titán se ha enfriado! Recibe el doble de daño', 2200);
   }
   onBossHurt(dmg, source) {
-    const g = this.game;
-    if (this.phase >= 3 && source === g.player && this.cool <= 0 && !g.survival.effects.has('fire_resistance')) g.survival.fire = Math.max(g.survival.fire, 3);
+    const g = this.game, p = g.player;
+    // Coraza de magma: solo quema a quien le golpea cuerpo a cuerpo (no a las bolas de nieve ni a los proyectiles)
+    const melee = source === p && dmg > 0 && Math.hypot(p.x - this.x, p.z - this.z) < this.w / 2 + 4;
+    if (this.phase >= 3 && melee && this.cool <= 0 && !g.survival.effects.has('fire_resistance')) g.survival.fire = Math.max(g.survival.fire, 3);
   }
   behave(dt, p) {
     this.meteorCd -= dt;

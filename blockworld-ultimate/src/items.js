@@ -221,6 +221,10 @@ item('eclipse_scepter', 'Cetro del eclipse', {
 item('fungus_slice', 'Rodaja de hongo umbrío', { food: { hunger: 2, sat: 1.2 }, kind: 'food' });
 item('roasted_fungus', 'Hongo umbrío asado', { food: { hunger: 6, sat: 7.2 }, kind: 'food' });
 
+// ── Fase 6: transporte ───────────────────────────────────────────
+item('minecart', 'Vagoneta', { kind: 'cart', stack: 1 });
+item('boat', 'Barca', { kind: 'boat', stack: 1, fuel: 20 });
+
 // Combustibles de bloques
 const blockFuel = {
   planks: 15, log_oak: 15, log_dark: 15, log_jungle: 15, log_pine: 15, workbench: 15, chest: 15, slab_planks: 7, sapling_oak: 5, sapling_dark: 5, sapling_jungle: 5, sapling_pine: 5,

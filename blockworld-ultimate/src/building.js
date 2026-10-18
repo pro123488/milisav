@@ -15,7 +15,7 @@ const SANDY = new Set([ID.SAND, ID.RED_SAND, ID.SANDSTONE, ID.RED_SANDSTONE]);
 const freeCell = (id) => id === 0 || !!B_REPLACEABLE[id];
 
 /** ¿Sirve el bloque de debajo como suelo para plantas/antorchas? (sólido y sin forma de cajas abierta) */
-const solidTop = (id) => !!B_SOLID[id] && (B_FAMILY[id] === 0 || B_FAMILY[id] === FAM.FENCE || B_FAMILY[id] === FAM.WALL);
+const solidTop = (id) => !!B_SOLID[id] && (B_FAMILY[id] === 0 || B_FAMILY[id] === FAM.FENCE || B_FAMILY[id] === FAM.WALL || B_FAMILY[id] === FAM.FACING);
 
 /** ¿Puede existir el bloque `id` en (x,y,z) según lo que tiene debajo/al lado? */
 export function supportOk(world, x, y, z, id) {
@@ -125,7 +125,9 @@ export class Building {
         if (hit.ny === 0) return familyState(blk.famBase, { facing: facingFromVector(-hit.nx, -hit.nz), top: fy > 0.5 ? 1 : 0 });
         return familyState(blk.famBase, { facing: lf, top: hit.ny === -1 ? 1 : 0 });
       }
-      case FAM.CUSTOM: return blk.oriented ? blk.famBase + ((lf + 2) % 4) : blk.id; // mira hacia el jugador
+      case FAM.CUSTOM: return blk.oriented ? blk.famBase + (blk.placeAway ? lf : (lf + 2) % 4) : blk.id; // mira hacia el jugador (o hacia donde mira él)
+      case FAM.FACING: return blk.famBase + lf; // máquinas: el frente mira hacia donde mira el jugador
+      case FAM.RAIL: return blk.id; // la forma la decide rails.js al colocarlo
       default: return blk.id;
     }
   }
@@ -338,7 +340,13 @@ export class Building {
       case 'alchemy': if (g.openAlchemy) { g.openAlchemy(hit.x, hit.y, hit.z); return true; } return false;
       case 'altar': return g.useAltar ? g.useAltar(hit.x, hit.y, hit.z, b) : false;
       case 'portal': return g.usePortalCore ? g.usePortalCore(hit.x, hit.y, hit.z) : false;
-      case 'door': return this.toggleDoor(hit.x, hit.y, hit.z);
+      case 'lever': if (g.energy) { g.energy.toggleLever(hit.x, hit.y, hit.z); g.audio && g.audio.play('click', hit.x, hit.y, hit.z); } return true;
+      case 'button': if (g.energy) { g.energy.press(hit.x, hit.y, hit.z); g.audio && g.audio.play('click', hit.x, hit.y, hit.z); } return true;
+      case 'dispenser': if (g.openMachine) { g.openMachine(hit.x, hit.y, hit.z, 'dispenser'); return true; } return false;
+      case 'hopper': if (g.openMachine) { g.openMachine(hit.x, hit.y, hit.z, 'hopper'); return true; } return false;
+      case 'door':
+        if (b.sound === 'metal') { g.ui.toast('La puerta de hierro solo se abre con energía (palanca, botón, placa de presión…)'); this._denied(); return true; }
+        return this.toggleDoor(hit.x, hit.y, hit.z);
       case 'gate': return this.toggleGate(hit.x, hit.y, hit.z);
       case 'trapdoor': return this.toggleTrapdoor(hit.x, hit.y, hit.z);
       default: return false;

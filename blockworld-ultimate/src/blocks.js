@@ -81,6 +81,12 @@ function def(id, key, name, o = {}) {
     boss: o.boss ?? null,             // altares: jefe que despierta su ofrenda
     // ── Fase 5 ──
     trans: o.trans ?? false,          // se dibuja en la pasada translúcida (velo del portal)
+    // ── Fase 6 ──
+    energy: o.energy ?? null,         // source | plate | cable | repeater | inverter | lamp | piston | dispenser | hopper | harvester | booster
+    power: o.power ?? 0,              // nivel que emite (fuentes encendidas, repetidores/inversores encendidos)
+    placeAway: o.placeAway ?? false,  // al colocarlo mira en la dirección de la mirada (no hacia el jugador)
+    extended: o.extended ?? 0,        // pistón extendido
+    rail: o.rail ?? null,             // raíles: {a, b, asc, booster, on}
   };
   BLOCKS[id] = b;
   byKey.set(key, b);
@@ -375,6 +381,78 @@ def(712, 'altar_sovereign', 'Trono del Soberano', custom({
   tiles: { side: 'altar_sovereign_side', top: 'altar_sovereign_top', bottom: 'umbral_bricks' }, boxes: [[1, 0, 1, 15, 3, 15], [2, 3, 2, 14, 12, 14], [0, 12, 0, 16, 15, 16]], colBoxes: [[0, 0, 0, 16, 15, 16]],
   light: 9, hardness: 60, tool: PICK, harvest: 4, unbreakable: true, sound: 'stone', interact: 'altar', boss: 'sovereign', drops: null,
 }));
+
+// ══════════════════════ FASE 6: energía, automatización y transporte ══════════════════════
+// Fuentes de energía, cables, repetidores, inversores, consumidores, máquinas y raíles. Las variantes encendidas y
+// orientadas son IDs propios (estado como variante); la lógica vive en src/energy.js y src/rails.js.
+const thin = (o) => custom({ solid: false, plantOn: 'any', ...o });
+def(900, 'lever', 'Palanca', thin({ tiles: { side: 'lever', top: 'lever_top' }, boxes: [[5, 0, 4, 11, 2, 12], [7, 2, 9, 9, 10, 11]], hardness: 0.5, sound: 'wood', interact: 'lever', energy: 'source' }));
+def(901, 'lever_on', 'Palanca (encendida)', thin({ tiles: { side: 'lever_on', top: 'lever_top' }, boxes: [[5, 0, 4, 11, 2, 12], [7, 2, 5, 9, 10, 7]], hardness: 0.5, sound: 'wood', interact: 'lever', energy: 'source', power: 15, placeable: false, drops: 'lever', pick: 'lever' }));
+def(902, 'button', 'Botón', thin({ tiles: 'button', boxes: [[5, 0, 6, 11, 2, 10]], hardness: 0.5, sound: 'stone', interact: 'button', energy: 'source' }));
+def(903, 'button_on', 'Botón (pulsado)', thin({ tiles: 'button_on', boxes: [[5, 0, 6, 11, 1, 10]], hardness: 0.5, sound: 'stone', interact: 'button', energy: 'source', power: 15, placeable: false, drops: 'button', pick: 'button' }));
+def(904, 'pressure_plate', 'Placa de presión', thin({ tiles: 'pressure_plate', boxes: [[1, 0, 1, 15, 1, 15]], hardness: 0.5, sound: 'stone', energy: 'plate' }));
+def(905, 'pressure_plate_on', 'Placa de presión (pisada)', thin({ tiles: 'pressure_plate_on', boxes: [[1, 0, 1, 15, 0.5, 15]], hardness: 0.5, sound: 'stone', energy: 'plate', power: 15, placeable: false, drops: 'pressure_plate', pick: 'pressure_plate' }));
+def(906, 'power_block', 'Bloque de energía', { hardness: 3, tool: PICK, harvest: 1, light: 6, sound: 'metal', energy: 'source', power: 15 });
+def(907, 'cable', 'Cable de cobre', { tiles: 'cable', shape: 'box', family: 'cable', solid: false, opaque: false, atten: 0, hardness: 0.1, sound: 'metal', plantOn: 'any', energy: 'cable' });
+def(908, 'cable_on', 'Cable de cobre (con energía)', { tiles: 'cable_on', shape: 'box', family: 'cable', solid: false, opaque: false, atten: 0, hardness: 0.1, sound: 'metal', plantOn: 'any', energy: 'cable', placeable: false, drops: 'cable', pick: 'cable' });
+for (const [base, key, name, kind] of [[909, 'repeater', 'Repetidor', 'repeater'], [917, 'inverter', 'Inversor', 'inverter']]) {
+  for (let on = 0; on < 2; on++) for (let f = 0; f < 4; f++) {
+    const id = base + on * 4 + f;
+    def(id, (on ? key + '_on' : key) + (f ? '_' + DIR_SUFFIX[f] : ''), name + (on ? ' (encendido)' : ''), custom({
+      tiles: { side: key + '_side', top: `${key}${on ? '_on' : ''}_top_${f}`, bottom: 'stone' },
+      boxes: [[0, 0, 0, 16, 2, 16], [7, 2, 2, 9, 6, 4], [7, 2, 11, 9, kind === 'repeater' ? 5 : 3, 13]], solid: false, plantOn: 'any',
+      oriented: true, placeAway: true, facing: f, famBase: base, hardness: 0.2, sound: 'stone', energy: kind, power: on ? 15 : 0,
+      placeable: on === 0 && f === 0, drops: key, pick: key, light: on ? 4 : 0,
+    }));
+  }
+}
+def(925, 'energy_lamp', 'Lámpara de energía', { hardness: 0.6, sound: 'glass', energy: 'lamp' });
+def(926, 'energy_lamp_on', 'Lámpara de energía (encendida)', { hardness: 0.6, sound: 'glass', light: 15, energy: 'lamp', placeable: false, drops: 'energy_lamp', pick: 'energy_lamp' });
+// Bloques orientados de cubo completo: la cara frontal mira hacia donde miraba el jugador al colocarlos
+const FACE_OF = [5, 0, 4, 1]; // N → cara −Z, E → +X, S → +Z, O → −X
+function facingCube(base, key, name, o, frontTile, sideTile, topTile, variant = '') {
+  for (let f = 0; f < 4; f++) {
+    const t = [sideTile, sideTile, topTile, topTile, sideTile, sideTile];
+    t[FACE_OF[f]] = frontTile;
+    def(base + f, key + variant + (f ? '_' + DIR_SUFFIX[f] : ''), name, {
+      tiles: t, shape: 'box', family: 'facing', opaque: true, atten: 15, solid: true, facing: f, famBase: base, placeAway: true,
+      placeable: f === 0 && !variant, drops: o.drops ?? key, pick: key, ...o,
+    });
+  }
+}
+facingCube(927, 'piston', 'Pistón', { hardness: 1.5, tool: PICK, sound: 'wood', energy: 'piston' }, 'piston_front', 'piston_side', 'piston_side');
+facingCube(931, 'piston', 'Pistón (extendido)', { hardness: 1.5, tool: PICK, sound: 'wood', energy: 'piston', extended: 1 }, 'piston_front_open', 'piston_side', 'piston_side', '_ext');
+for (let f = 0; f < 4; f++) {
+  def(935 + f, 'piston_head' + (f ? '_' + DIR_SUFFIX[f] : ''), 'Cabeza de pistón', custom({
+    tiles: { side: 'piston_head_side', top: 'piston_head_side', north: 'piston_front', south: 'piston_front' },
+    boxes: [[0, 0, 0, 16, 16, 4], [6, 6, 4, 10, 10, 16]], oriented: true, facing: f, famBase: 935, hardness: 1.5, tool: PICK, sound: 'wood',
+    placeable: false, drops: null, pick: 'piston',
+  }));
+}
+facingCube(939, 'dispenser', 'Dispensador', { hardness: 3.5, tool: PICK, harvest: 1, sound: 'stone', energy: 'dispenser', interact: 'dispenser', container: 9 }, 'dispenser_front', 'machine_side', 'machine_top');
+def(943, 'hopper', 'Tolva', custom({
+  tiles: { side: 'hopper_side', top: 'hopper_top', bottom: 'hopper_side' }, boxes: [[0, 10, 0, 16, 16, 16], [4, 4, 4, 12, 10, 12], [6, 0, 6, 10, 4, 10]],
+  colBoxes: [[0, 10, 0, 16, 16, 16], [4, 0, 4, 12, 10, 12]], hardness: 3, tool: PICK, harvest: 1, sound: 'metal', interact: 'hopper', container: 5, energy: 'hopper',
+}));
+facingCube(944, 'harvester', 'Cosechadora', { hardness: 3, tool: PICK, harvest: 1, sound: 'metal', energy: 'harvester' }, 'harvester_front', 'machine_side', 'machine_top');
+// Raíles: rail.a/rail.b = direcciones que une (0 N, 1 E, 2 S, 3 O); asc = hacia dónde sube (-1 llano)
+const RAIL_SHAPES = [['ns', 0, 2, -1], ['ew', 1, 3, -1], ['ne', 0, 1, -1], ['es', 1, 2, -1], ['sw', 2, 3, -1], ['wn', 3, 0, -1], ['asc_n', 0, 2, 0], ['asc_e', 1, 3, 1], ['asc_s', 0, 2, 2], ['asc_w', 1, 3, 3]];
+RAIL_SHAPES.forEach(([k, a, b, asc], i) => {
+  const flat = asc < 0;
+  def(948 + i, i ? 'rail_' + k : 'rail', 'Raíl', {
+    tiles: flat ? 'rail_' + (k.length === 2 ? k : 'ns') : (asc % 2 ? 'rail_ew' : 'rail_ns'), shape: 'box', family: 'rail', solid: false, opaque: false, atten: 0,
+    hardness: 0.7, tool: PICK, sound: 'metal', plantOn: 'any', rail: { a, b, asc, booster: false, on: false }, famBase: 948,
+    placeable: i === 0, drops: 'rail', pick: 'rail',
+  });
+});
+const BOOST_SHAPES = [['ns', 0, 2, -1], ['ew', 1, 3, -1], ['asc_n', 0, 2, 0], ['asc_e', 1, 3, 1], ['asc_s', 0, 2, 2], ['asc_w', 1, 3, 3]];
+for (let on = 0; on < 2; on++) BOOST_SHAPES.forEach(([k, a, b, asc], i) => {
+  def(958 + on * 6 + i, 'booster' + (on ? '_on' : '') + (i ? '_' + k : ''), 'Raíl propulsor' + (on ? ' (activo)' : ''), {
+    tiles: `booster${on ? '_on' : ''}_${a % 2 ? 'ew' : 'ns'}`, shape: 'box', family: 'rail', solid: false, opaque: false, atten: 0, light: on ? 5 : 0,
+    hardness: 0.7, tool: PICK, sound: 'metal', plantOn: 'any', rail: { a, b, asc, booster: true, on: !!on }, energy: 'booster', famBase: 958,
+    placeable: on === 0 && i === 0, drops: 'booster', pick: 'booster',
+  });
+});
 
 // ─────────────────────────────────────────────────────────────────
 export const Blocks = {

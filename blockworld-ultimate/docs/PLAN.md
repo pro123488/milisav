@@ -54,4 +54,6 @@ pruebas E2E en Chromium, revisión adversarial, commit y push en la rama `claude
   (ver `docs/fase4-jefes.md`). El Soberano de la Dimensión Oscura se hace en la Fase 5, junto con su dimensión.
 - [x] Fase 5 — Dimensión Oscura (generador de islas, biomas, criaturas, ruinas), portales con llave y velo, guardado por
   dimensión, Ciudadela y Soberano (ver `docs/fase5-dimension-oscura.md`).
-- [ ] Fase 6
+- [x] Fase 6 — energía (palanca, botón, placa, bloque de energía, cable con niveles, repetidor, inversor), máquinas (lámpara,
+  puertas automáticas, pistón, dispensador, tolva, cosechadora), raíles automáticos con curvas, rampas y propulsores,
+  vagonetas y barcas; correcciones de la revisión de la Fase 4 (ver `docs/fase6-energia-transporte.md`).

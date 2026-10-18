@@ -308,7 +308,7 @@ export function meshChunk(world, c, opts = {}) {
         } else if (shape === SHAPE.BOX) {
           const fam = B_FAMILY[id];
           let mask = 0;
-          if (fam === FAM.FENCE || fam === FAM.WALL) {
+          if (fam === FAM.FENCE || fam === FAM.WALL || fam === FAM.CABLE) {
             for (let d = 0; d < 4; d++) if (connectsTo(fam, PB[pi + DIR_PIDX[d]], d)) mask |= 1 << d;
           }
           const boxes = renderBoxes(id, mask);

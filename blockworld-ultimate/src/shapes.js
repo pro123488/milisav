@@ -7,15 +7,15 @@
 import { BLOCKS, MAX_BLOCKS, B_OPAQUE, B_SOLID, B_SHAPE, B_HEIGHT, SHAPE_ID } from './blocks.js';
 
 export const FACING_VEC = [[0, -1], [1, 0], [0, 1], [-1, 0]];
-export const FAM = { NONE: 0, STAIRS: 1, LADDER: 2, DOOR: 3, FENCE: 4, WALL: 5, GATE: 6, TRAPDOOR: 7, CUSTOM: 8 };
-const FAM_BY_NAME = { stairs: FAM.STAIRS, ladder: FAM.LADDER, door: FAM.DOOR, fence: FAM.FENCE, wall: FAM.WALL, gate: FAM.GATE, trapdoor: FAM.TRAPDOOR, custom: FAM.CUSTOM };
+export const FAM = { NONE: 0, STAIRS: 1, LADDER: 2, DOOR: 3, FENCE: 4, WALL: 5, GATE: 6, TRAPDOOR: 7, CUSTOM: 8, CABLE: 9, RAIL: 10, FACING: 11 };
+const FAM_BY_NAME = { stairs: FAM.STAIRS, ladder: FAM.LADDER, door: FAM.DOOR, fence: FAM.FENCE, wall: FAM.WALL, gate: FAM.GATE, trapdoor: FAM.TRAPDOOR, custom: FAM.CUSTOM, cable: FAM.CABLE, rail: FAM.RAIL, facing: FAM.FACING };
 
 /** Familia de forma por ID de bloque (0 = sin familia: cubo y formas clásicas). */
 export const B_FAMILY = new Uint8Array(MAX_BLOCKS);
 for (const b of BLOCKS) if (b && b.family) B_FAMILY[b.id] = FAM_BY_NAME[b.family] || 0;
 export const isBoxShape = (id) => B_FAMILY[id] !== 0;
 /** ¿Necesita conocer a sus vecinos para su forma? (vallas y muros) */
-export const needsMask = (id) => B_FAMILY[id] === FAM.FENCE || B_FAMILY[id] === FAM.WALL;
+export const needsMask = (id) => B_FAMILY[id] === FAM.FENCE || B_FAMILY[id] === FAM.WALL || B_FAMILY[id] === FAM.CABLE;
 
 const p = (v) => v / 16;
 
@@ -69,6 +69,14 @@ pre('wallArm', [WALL_ARM_N]); pre('wallArmCol', [WALL_ARM_COL_N]);
 
 export const FULL_BOX = [0, 0, 0, 1, 1, 1];
 
+// ── Fase 6: cables (centro + brazos según vecinos) y raíles (planos o en rampa de 4 escalones) ──
+const CABLE_CORE = [p(6), 0, p(6), p(10), p(1), p(10)];
+pre('cableArm', [[p(7), 0, 0, p(9), p(1), p(6)]]);
+const RAIL_FLAT = [[0, 0, 0, 1, p(1), 1]];
+const RAIL_SEL = [[0, 0, 0, 1, p(2), 1]];
+const RAIL_SLOPE_N = [0, 1, 2, 3].map((i) => [0, (i + 1) / 4 - p(1), (3 - i) / 4, 1, (i + 1) / 4, (4 - i) / 4]);
+pre('railSlope', RAIL_SLOPE_N);
+
 // Modelos propios (family 'custom'): el bloque define `boxes` (en 1/16, orientadas al Norte) y opcionalmente
 // `colBoxes` para la colisión; se giran según su `facing`. Yunque, farol, atril, campana, mesa de alquimia...
 const CUSTOM_R = new Array(MAX_BLOCKS).fill(null), CUSTOM_C = new Array(MAX_BLOCKS).fill(null);
@@ -99,7 +107,7 @@ for (const b of BLOCKS) {
  */
 export function connectMask(get, x, y, z, id) {
   const fam = B_FAMILY[id];
-  if (fam !== FAM.FENCE && fam !== FAM.WALL) return 0;
+  if (fam !== FAM.FENCE && fam !== FAM.WALL && fam !== FAM.CABLE) return 0;
   let m = 0;
   for (let d = 0; d < 4; d++) if (connectsTo(fam, get(x + FACING_VEC[d][0], y, z + FACING_VEC[d][1]), d)) m |= 1 << d;
   return m;
@@ -107,6 +115,12 @@ export function connectMask(get, x, y, z, id) {
 /** ¿Se une una valla/muro (familia fam) al bloque vecino n, que está en la dirección d (0 N, 1 E, 2 S, 3 O)? */
 export function connectsTo(fam, n, d = -1) {
   const nf = B_FAMILY[n];
+  if (fam === FAM.CABLE) {
+    if (nf === FAM.CABLE) return true;
+    const e = BLOCKS[n] && BLOCKS[n].energy;
+    if (e === 'repeater' || e === 'inverter') return d < 0 || (BLOCKS[n].facing % 2) === (d % 2); // por delante o por detrás
+    return !!e;
+  }
   // a una puerta de valla solo si está alineada con la línea de la valla (no por su costado)
   if (nf === FAM.GATE) return d < 0 || (BLOCKS[n].facing % 2) !== (d % 2);
   return nf === fam || (B_OPAQUE[n] === 1 && B_SOLID[n] === 1);
@@ -121,8 +135,10 @@ function withArms(core, armSet, mask) {
 const MASKED = {};
 for (const [name, core, arms] of [
   ['fenceR', FENCE_POST, 'fenceArm'], ['fenceC', FENCE_POST_COL, 'fenceArmCol'], ['fenceS', FENCE_POST, 'fenceArmSel'],
-  ['wallR', WALL_POST, 'wallArm'], ['wallC', WALL_POST_COL, 'wallArmCol'],
+  ['wallR', WALL_POST, 'wallArm'], ['wallC', WALL_POST_COL, 'wallArmCol'], ['cableR', CABLE_CORE, 'cableArm'],
 ]) MASKED[name] = Array.from({ length: 16 }, (_, m) => withArms(core, arms, m));
+/** Cajas de un raíl según su forma (rampa si asc ≥ 0). */
+const railBoxes = (b) => (b.rail && b.rail.asc >= 0 ? PRE.railSlope[b.rail.asc] : RAIL_FLAT);
 
 /** Cajas que se dibujan (solo formas de familia). mask solo importa para vallas y muros. */
 export function renderBoxes(id, mask = 0) {
@@ -136,6 +152,8 @@ export function renderBoxes(id, mask = 0) {
     case FAM.GATE: return PRE[b.open ? 'gateOpen' : 'gateClosed'][b.facing];
     case FAM.TRAPDOOR: return b.open ? PRE.panel[b.facing] : (b.top ? TRAP_TOP : TRAP_BOTTOM);
     case FAM.CUSTOM: return CUSTOM_R[id];
+    case FAM.CABLE: return MASKED.cableR[mask & 15];
+    case FAM.RAIL: return railBoxes(b);
     default: return FULL;
   }
 }
@@ -149,6 +167,8 @@ export function collisionBoxes(id, mask = 0) {
     case FAM.WALL: return MASKED.wallC[mask & 15];
     case FAM.GATE: return b.open ? EMPTY : PRE.gateCol[b.facing];
     case FAM.CUSTOM: return CUSTOM_C[id];
+    case FAM.CABLE: case FAM.RAIL: return EMPTY;
+    case FAM.FACING: return FULL;
     default: return BASE_COL[id];
   }
 }
@@ -162,6 +182,9 @@ export function selectionBoxes(id, mask = 0) {
     case FAM.WALL: return MASKED.wallR[mask & 15];
     case FAM.GATE: return PRE.gateSel[b.facing]; // abierta o cerrada: la franja central (fácil de apuntar para cerrarla)
     case FAM.CUSTOM: return CUSTOM_R[id];
+    case FAM.CABLE: return RAIL_SEL;
+    case FAM.RAIL: return b.rail && b.rail.asc >= 0 ? railBoxes(b) : RAIL_SEL;
+    case FAM.FACING: return FULL;
     default: return BASE_SEL[id];
   }
 }
@@ -204,7 +227,7 @@ export function rotateBlockId(id, k) {
     return id - b.dir + [4, 1, 3, 2][(f + k) & 3];
   }
   const fam = B_FAMILY[id];
-  if (!fam || fam === FAM.FENCE || fam === FAM.WALL) return id;
+  if (!fam || fam === FAM.FENCE || fam === FAM.WALL || fam === FAM.CABLE || fam === FAM.RAIL) return id;
   if (fam === FAM.CUSTOM && !b.oriented) return id;
   return id - b.facing + ((b.facing + k) & 3);
 }

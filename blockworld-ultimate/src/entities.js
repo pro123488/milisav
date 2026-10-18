@@ -6,6 +6,7 @@ import { getItemIcon } from './atlas.js';
 import { Blocks, B_FLUID, B_SOLID } from './blocks.js';
 import { B_FAMILY } from './shapes.js';
 import { addToSlots } from './inventory.js';
+import { flowVector } from './fluids.js';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const approach = (v, t, d) => (v < t ? Math.min(v + d, t) : Math.max(v - d, t));
@@ -124,7 +125,12 @@ export class ItemEntity extends Entity {
     if (this.life <= 0) { this.removed = true; return; }
     const fl = w.fluidAt(Math.floor(this.x), Math.floor(this.y + 0.15), Math.floor(this.z));
     if (fl === 2) { this.removed = true; this.game.particles && this.game.particles.emit(this.x, this.y + 0.2, this.z, 0xff6a10, 6, 2); return; }
-    if (fl === 1) { this.vy += 18 * dt; this.vy *= 0.9; this.vx *= 0.92; this.vz *= 0.92; }
+    if (fl === 1) {
+      this.vy += 18 * dt; this.vy *= 0.9; this.vx *= 0.92; this.vz *= 0.92;
+      // la corriente arrastra los objetos (granjas automáticas: agua → tolvas)
+      const fv = flowVector(w, Math.floor(this.x), Math.floor(this.y + 0.15), Math.floor(this.z));
+      if (fv) { const l = Math.hypot(fv.x, fv.z) || 1; this.vx += (fv.x / l) * 9 * dt; this.vz += (fv.z / l) * 9 * dt; }
+    }
     else this.vy -= 22 * dt;
     // Imán hacia el jugador
     const p = this.game.player;
@@ -393,7 +399,12 @@ export class EntityManager {
       const e = this.list[i];
       if (e.removed) { e.dispose(); this.list.splice(i, 1); continue; }
       const d = Math.hypot(e.x - p.x, e.z - p.z);
-      if (d > this.simDistance + 16) { if (e.persistent) this.game.sleepEntity(e); e.removed = true; continue; }
+      if (d > this.simDistance + 16) {
+        // un jefe lejos del jugador vuelve a dormir y devuelve la ofrenda (no se guarda en un chunk que sigue cargado)
+        if (e.isBoss && e.deathTime < 0 && e.sleepAgain) { e.sleepAgain(); continue; }
+        if (e.persistent) this.game.sleepEntity(e);
+        e.removed = true; continue;
+      }
       // Entidades en chunks sin cargar se congelan
       if (!this.game.world.isLoaded(Math.floor(e.x), Math.floor(e.z))) { if (e.obj) e.obj.visible = false; continue; }
       if (e.obj) e.obj.visible = d < this.simDistance;

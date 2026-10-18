@@ -87,7 +87,7 @@ recipe('village_compass', 1, [['iron_ingot', 4], ['crystal_shard', 1], ['sun_coi
 recipe('glass_bottle', 3, [['glass', 3]], 'workbench', 'glass', 'Alquimia');
 recipe('sun_apple', 1, [['apple', 1], ['gold_ingot', 8]], 'workbench', 'gold_ingot', 'Alquimia');
 recipe('ancient_seed', 1, [['sapling_oak', 1], ['sapling_dark', 1], ['sapling_jungle', 1], ['sapling_pine', 1], ['apple', 2], ['fertilizer', 2]], 'workbench', 'fertilizer', 'Ofrendas');
-recipe('geode_heart', 1, [['crystal_shard', 6], ['cave_crystal', 2], ['gold_ingot', 2]], 'workbench', 'crystal_shard', 'Ofrendas');
+recipe('geode_heart', 1, [['crystal_shard', 6], ['geode', 2], ['gold_ingot', 2]], 'workbench', 'crystal_shard', 'Ofrendas');
 recipe('tide_pearl', 1, [['scute', 3], ['raw_fish', 4], ['crystal_shard', 2]], 'workbench', 'scute', 'Ofrendas');
 recipe('eternal_ember', 1, [['obsidian', 2], ['coal', 6], ['iron_ingot', 4]], 'workbench', 'obsidian', 'Ofrendas');
 
@@ -98,6 +98,24 @@ recipe('sovereign_sigil', 1, [['shadow_shard', 6], ['noctisite_ingot', 2], ['hea
 recipe('umbral_bricks', 4, [['umbral_stone', 4]], 'workbench', 'umbral_stone', 'Dimensión Oscura');
 recipe('umbral_brick_carved', 2, [['umbral_bricks', 2], ['shadow_shard', 1]], 'workbench', 'umbral_bricks', 'Dimensión Oscura');
 recipe('planks', 3, [['fungus_stem', 1]], 'hand', 'fungus_stem', 'Básicos');
+
+// ── Fase 6: energía, automatización y transporte ─────────────────
+recipe('lever', 1, [['stick', 1], ['cobble', 1]], 'workbench', 'copper_ingot', 'Energía');
+recipe('button', 1, [['stone', 1]], 'workbench', 'copper_ingot', 'Energía');
+recipe('pressure_plate', 1, [['stone', 2]], 'workbench', 'copper_ingot', 'Energía');
+recipe('cable', 8, [['copper_ingot', 2]], 'workbench', 'copper_ingot', 'Energía');
+recipe('power_block', 1, [['copper_ingot', 6], ['crystal_shard', 2], ['cable', 1]], 'workbench', 'copper_ingot', 'Energía');
+recipe('repeater', 1, [['cable', 2], ['stone', 3], ['crystal_shard', 1]], 'workbench', 'cable', 'Energía');
+recipe('inverter', 1, [['cable', 2], ['stone', 3], ['gold_ingot', 1]], 'workbench', 'cable', 'Energía');
+recipe('energy_lamp', 1, [['glass', 4], ['crystal_shard', 2], ['cable', 1]], 'workbench', 'cable', 'Energía');
+recipe('piston', 1, [['planks', 3], ['cobble', 4], ['iron_ingot', 1], ['cable', 1]], 'workbench', 'cable', 'Automatización');
+recipe('dispenser', 1, [['cobble', 7], ['cable', 1], ['rope', 1]], 'workbench', 'cable', 'Automatización');
+recipe('hopper', 1, [['iron_ingot', 5], ['chest', 1]], 'workbench', 'iron_ingot', 'Automatización');
+recipe('harvester', 1, [['iron_ingot', 3], ['iron_hoe', 1], ['cable', 1], ['planks', 3]], 'workbench', 'cable', 'Automatización');
+recipe('rail', 16, [['iron_ingot', 6], ['stick', 1]], 'workbench', 'iron_ingot', 'Transporte');
+recipe('booster', 6, [['gold_ingot', 6], ['stick', 1], ['cable', 1]], 'workbench', 'gold_ingot', 'Transporte');
+recipe('minecart', 1, [['iron_ingot', 5]], 'workbench', 'iron_ingot', 'Transporte');
+recipe('boat', 1, [['planks', 5]], 'workbench', null, 'Transporte');
 
 // Herramientas: cabeza + palos
 const HEAD_COST = { pickaxe: [3, 2], axe: [3, 2], shovel: [1, 2], sword: [2, 1], hoe: [2, 2] };

@@ -1,4 +1,4 @@
-# BLOCKWORLD ULTIMATE — Fase 5 (Dimensión Oscura)
+# BLOCKWORLD ULTIMATE — Fase 6 (energía, automatización y transporte)
 
 Videojuego **original** de bloques, supervivencia, construcción y exploración que se ejecuta en el navegador
 (HTML + CSS + JavaScript + three.js/WebGL). Todo el contenido —texturas, iconos, modelos, sonidos, música,
@@ -11,7 +11,10 @@ criaturas, nombres— se **genera por código** y es propio: no hay recursos, c�
 > mesa de alquimia con tónicos, cuatro santuarios generados con sus **jefes** (historia, arena, invocación, fases, ataques,
 > debilidad y recompensas únicas), música de combate y un bestiario. La **Fase 5** abre la **Dimensión Oscura**: portales
 > que se construyen y activan con una llave hecha con las esencias de los jefes, islas flotantes con generador propio, criaturas
-> nuevas, guardado separado por dimensión y la Ciudadela del **Soberano**, el jefe final. Más abajo hay una tabla **honesta** de lo que está implementado y de
+> nuevas, guardado separado por dimensión y la Ciudadela del **Soberano**, el jefe final. La **Fase 6** añade **energía**
+(palancas, botones, placas de presión, cables de cobre con niveles, repetidores e inversores), máquinas (lámparas, puertas
+automáticas, pistones, dispensadores, tolvas y cosechadoras para granjas automáticas) y **transporte** (raíles que se orientan
+solos con curvas, rampas y propulsores, vagonetas montables y barcas). Más abajo hay una tabla **honesta** de lo que está implementado y de
 > lo que queda para fases posteriores; el plan completo está en [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Cómo ejecutarlo
@@ -35,15 +38,18 @@ Opciones de depuración por URL: `?autostart=survival|creative|adventure|peacefu
 ### Pruebas automáticas
 
 ```bash
-npm test                        # 43 + 32 + 19 + 23 + 9 pruebas de lógica: terreno, luz, inventario, crafteo, física, raycast, mallado,
+npm test                        # 43 + 32 + 19 + 29 + 9 + 14 pruebas de lógica: terreno, luz, inventario, crafteo, física, raycast, mallado,
                                 #   guardado, formas, fluidos, colocación, aldeas sin costuras, A*, comercio, aldeanos, efectos,
-                                #   alquimia, santuarios sin costuras, combates de jefes simulados, Dimensión Oscura y portales
+                                #   alquimia, santuarios sin costuras, combates de jefes simulados, Dimensión Oscura y portales,
+                                #   energía (cables, repetidores, inversores, pistones, dispensador, tolva, cosechadora),
+                                #   raíles automáticos, vagonetas y barcas
 node tests/e2e/save-load.mjs    # pruebas E2E en Chromium (requieren Playwright: npm i -D playwright, o PW_MODULES=ruta/node_modules)
 npm run test:e2e                # ciclo completo: menú→mundo→crafteo→horno→cofre→muerte→guardar→continuar, cultivos, criaturas,
                                 #   la Fase 2 con ratón/teclado reales (puerta, escaleras, agua, cuerda, iconos) y la Fase 3
                                 #   (aldea, aldeanos, comercio con la interfaz, campana, guardián, brújula) y la Fase 4 (tónicos,
                                 #   alquimia, santuario, invocación, barra de jefe, los 4 jefes, bola de nieve, bestiario) y la
-                                #   Fase 5 (portal con llave, viaje y vuelta, guardado por dimensión, ciudadela, Soberano)
+                                #   Fase 5 (portal con llave, viaje y vuelta, guardado por dimensión, ciudadela, Soberano) y la
+                                #   Fase 6 (circuito con palanca real, puerta de hierro, raíles, vagoneta y barca montadas)
 node tools/mapdump.mjs semilla normal mapa.png 4096 16   # PNG de biomas + estadísticas del generador
 node tools/chunkstats.mjs semilla normal 6               # tiempos de generación y distribución de bloques
 ```
@@ -65,6 +71,10 @@ node tools/chunkstats.mjs semilla normal 6               # tiempos de generació
 | Despertar a un jefe | Clic derecho al altar del santuario con su ofrenda en la mano |
 | Bestiario | `B` (o desde la pausa) |
 | Abrir un portal umbrío / viajar | Clic derecho al Núcleo de portal con la Llave umbría / quedarse dentro del velo |
+| Palanca / botón / abrir dispensador o tolva | Clic derecho |
+| Poner una vagoneta / barca · subir · bajar | Clic derecho al raíl / al agua · clic derecho al vehículo · `C` |
+| Vagoneta: empujar · Barca: remar / girar | `W` · `W`/`S` y `A`/`D` |
+| Recoger un vehículo | Dos golpes (clic izquierdo) |
 | Copiar el bloque apuntado (Creativo) | Clic central |
 | Ranura de la barra rápida | `1`–`9` o rueda |
 | Inventario y fabricación | `E` |
@@ -74,7 +84,7 @@ node tools/chunkstats.mjs semilla normal 6               # tiempos de generació
 | Chat y comandos (`/ayuda`) | `T` o `/` |
 | Pausa | `Esc` |
 
-## Qué está implementado (Fases 1, 2 y 3)
+## Qué está implementado (Fases 1 a 6)
 
 Leyenda: ✅ hecho y probado · 🟡 hecho de forma simplificada · ❌ no implementado todavía.
 
@@ -82,7 +92,7 @@ Leyenda: ✅ hecho y probado · 🟡 hecho de forma simplificada · ❌ no imple
 |---|---|---|
 | **3. Menú principal** | ✅ | Jugar, Crear mundo, Continuar mundo, Seleccionar mundo, 4 modos de inicio rápido (Supervivencia, Creativo, Aventura, Pacífico), Opciones, Controles, Créditos; panorama 3D de fondo. Todos los botones hacen algo real. |
 | Creación de mundos | ✅ | Nombre, semilla (texto o número), tipo (Normal, Montañoso, Archipiélago, Superplano), dificultad, tamaño/límites (infinito, 1024, 512, 256), estructuras sí/no, criaturas (todas/solo animales/ninguna), modo de juego, comandos, conservar inventario. Lista de mundos guardados con borrado. |
-| **4. Bloques** | ✅ | ~150 bloques originales (264 IDs contando orientaciones y estados) con datos (dureza, herramienta, nivel de cosecha, sonido, luz, drops…) y texturas procedurales 16×16 propias: tierra, 5 céspedes, piedra, arena, grava, arcilla, barro, nieve, hielo, 4 troncos, hojas, roca profunda, 6 minerales (carbón, cobre, hierro, oro, **cristal**, **noctisita** rara), basalto, vidrio volcánico, arenisca, ladrillos, losas, bloques de metal, lámpara de cristal, cristales de cueva… **Fase 2:** escaleras de 5 materiales (4 orientaciones, normales e invertidas), escalera de mano, puertas de madera y de hierro (2 bloques), trampilla, valla de madera, muro de adoquín y puerta de valla, con modelos de cajas, iconos isométricos y texturas propias. |
+| **4. Bloques** | ✅ | ~170 bloques originales (334 IDs contando orientaciones y estados) con datos (dureza, herramienta, nivel de cosecha, sonido, luz, drops…) y texturas procedurales 16×16 propias: tierra, 5 céspedes, piedra, arena, grava, arcilla, barro, nieve, hielo, 4 troncos, hojas, roca profunda, 6 minerales (carbón, cobre, hierro, oro, **cristal**, **noctisita** rara), basalto, vidrio volcánico, arenisca, ladrillos, losas, bloques de metal, lámpara de cristal, cristales de cueva… **Fase 2:** escaleras de 5 materiales (4 orientaciones, normales e invertidas), escalera de mano, puertas de madera y de hierro (2 bloques), trampilla, valla de madera, muro de adoquín y puerta de valla, con modelos de cajas, iconos isométricos y texturas propias. **Fases 4–6:** altares, bloques de santuario, piedra y ladrillo umbríos, hongos umbríos, núcleo y velo de portal, palanca, botón, placa de presión, cables, repetidores, inversores, lámpara de energía, pistón, dispensador, tolva, cosechadora y raíles. |
 | **5. Terreno procedural** | ✅ | Ruido simplex con semilla: océanos, costas/playas, llanuras, colinas, montañas (crestas), valles, **ríos**, **lagos**, **cuevas** (cuevas amplias + túneles), **barrancos**, **mesetas y cañones** áridos, bosques, desiertos, regiones heladas con lagos congelados, pantanos, junglas, **volcanes con lava**. Mismo mundo con la misma semilla y versión del generador (`GENERATOR_VERSION`). |
 | **6. Chunks y optimización** | ✅ | Chunks 16×16×128 con **IDs de 16 bits** (hasta 4096 bloques; los mundos de la Fase 1 se migran solos al cargarlos); terreno generado en un **Web Worker** (con alternativa por tiempo si no hay Workers); mallas combinadas con caras ocultas, **AO** y **luz suave por vértice**; mallado con presupuesto de tiempo por fotograma; carga progresiva por distancia, descarga conservando cambios, remallado local al editar; partículas instanciadas; frustum culling. |
 | Iluminación | ✅ | Luz de cielo + luz de bloque (0–15) con propagación entre chunks y actualización incremental al poner/quitar bloques; antorchas y cristales iluminan. |
@@ -116,7 +126,10 @@ Leyenda: ✅ hecho y probado · 🟡 hecho de forma simplificada · ❌ no imple
 | **Dimensión Oscura** (Fase 5) | ✅ | Generador propio (islas flotantes de piedra umbría sobre un abismo de lava, cavernas, bosques de hongos gigantes luminosos, mucha noctisita, ruinas con cofres), cielo de penumbra permanente, 2 biomas, 4 criaturas propias (espectro umbrío, reptador del vacío, centinela umbrío, polilla lumínica). Ver [`docs/fase5-dimension-oscura.md`](docs/fase5-dimension-oscura.md). |
 | **Portales** (Fase 5) | ✅ | Núcleo de portal + anillo de 8 bloques de vidrio volcánico + Llave umbría (con las 4 esencias de los jefes) → velo; 1,6 s dentro del velo para viajar; portal de vuelta automático (con plataforma si hace falta); romper el marco lo cierra. Guardado por dimensión (chunks, criaturas, cofres) y se continúa la partida en la dimensión donde se dejó. |
 | **Soberano** (Fase 5) | ✅ | Quinto jefe, en lo alto de la Ciudadela: vuela, proyectiles de sombra que persiguen, espectros, teletransporte, rayo del eclipse anunciado, columnas de vacío; débil a la luz y a la Hoja prismática; suelta el Cetro del eclipse (arma a distancia) y cierra la historia con un epílogo. |
-| Maquinaria/automatización, raíles/vagonetas/barcos, multijugador, móvil/táctil | ❌ | Fases posteriores (ver `docs/PLAN.md`). |
+| **Energía** (Fase 6) | ✅ | Palanca, botón (1 s), placa de presión (jugador o criaturas), bloque de energía; **cable de cobre** que se une solo y pierde 1 nivel por tramo (de 15 a 0, también subiendo y bajando escalones); **repetidor** (vuelve a 15, 2 pulsos de retardo) e **inversor** (NO lógico). Pulsos de 0,1 s; el estado se guarda como IDs de bloque. Ver [`docs/fase6-energia-transporte.md`](docs/fase6-energia-transporte.md). |
+| **Automatización** (Fase 6) | ✅/🟡 | Lámpara de energía (luz 15); puertas, trampillas y puertas de valla automáticas (la **puerta de hierro** ya solo se abre con energía); **pistón** que empuja hasta 12 bloques, al jugador y a las criaturas; **dispensador** (cubos, abono, semillas, bolas de nieve o soltar objetos); **tolva** que recoge objetos sueltos y los pasa entre cofres, dispensadores, tolvas y hornos; **cosechadora** que recoge y replanta 3×3 cultivos maduros → granjas automáticas. 🟡 Pistones solo horizontales y no pegajosos. |
+| **Raíles y vehículos** (Fase 6) | ✅ | Raíles que toman solos su forma (rectos, 4 curvas, 4 rampas), raíles propulsores que aceleran con energía y frenan sin ella; **vagoneta** montable que sigue la vía por curvas y rampas con inercia, rozamiento y empuje del pasajero; **barca** que flota, rema y gira. Se recogen con dos golpes y se guardan con el mundo. |
+| Multijugador, móvil/táctil | ❌ | Fuera de alcance (necesitan servidor / otra interfaz; ver `docs/PLAN.md`). |
 
 ## Estructura del proyecto
 
@@ -134,6 +147,8 @@ src/bosses.js · shrines.js       Jefes (fases, ataques, recompensas) y santuari
 src/effects.js · alchemy.js      Efectos de estado; destilación de tónicos
 src/bestiary.js                  Fichas e historia de las criaturas
 src/darkterrain.js · portals.js  Generador de la Dimensión Oscura y ciudadela; portales umbríos
+src/energy.js                    Energía (cables, repetidores, inversores) y máquinas (pistón, dispensador, tolva, cosechadora)
+src/rails.js · vehicles.js       Forma automática y recorrido de los raíles; vagoneta y barca
 src/terrain.js · biomes.js       Generador procedural y definición de biomas
 src/structures.js                Estructuras y botines
 src/terrain.worker.js            Generación fuera del hilo principal
@@ -160,21 +175,32 @@ docs/                            Plan de fases y especificaciones
 - Los **monstruos de estructuras** aparecen una vez por estructura (se recuerda en el guardado).
 - El audio necesita un gesto del usuario (el primer clic) por política de los navegadores.
 - Pensado para **ratón y teclado** en escritorio; sin soporte táctil.
-- **Fase 2 — límites conocidos:** las puertas tienen la bisagra siempre en el mismo lado (sin puertas dobles); la puerta de
-  hierro se abre a mano hasta que exista la energía (Fase 6); los fluidos solo avanzan en chunks cargados y un flujo a medias
+- **Fase 2 — límites conocidos:** las puertas tienen la bisagra siempre en el mismo lado (sin puertas dobles); los fluidos solo avanzan en chunks cargados y un flujo a medias
   se queda quieto al recargar el mundo hasta que cambia un bloque vecino; el agua se extiende igual en todas direcciones
   (no busca el hueco más cercano); desde una losa se puede saltar encima de una valla (1,27 + 0,5 > 1,5); la luz del cielo
   atraviesa losas, puertas y vallas, pero no las escaleras (dan sombra).
 - **Fase 3 — límites conocidos:** los aldeanos no se reproducen; solo aparecen una vez por aldea (al acercarse) y se guardan
   con el mundo; los mundos creados antes de la Fase 3 avisan de que el generador cambió (las aldeas solo aparecen en
   terreno no guardado y pueden quedar cortadas junto a zonas ya modificadas).
-- **Fase 4 — límites conocidos:** el quinto jefe (Soberano de la Dimensión Oscura) llega con la Fase 5; los jefes no rompen
+- **Fase 4 — límites conocidos:** los jefes no rompen
   bloques (sus explosiones solo dañan); la Reina no persigue fuera de su templo y fuera del agua se debilita; no hay tónicos
   "potenciados" ni "prolongados" ni tónicos arrojadizos; los santuarios, como las aldeas, solo aparecen en terreno no guardado
   de mundos creados antes de la Fase 4; con poca potencia gráfica los combates grandes pueden bajar de fotogramas.
 - **Fase 5 — límites conocidos:** las coordenadas de las dos dimensiones son 1:1; los portales solo enlazan con el portal
   activo más cercano (20 bloques) y si no hay se construye uno; las entidades no cruzan los portales (solo el jugador); en la
   Dimensión Oscura el tiempo del mundo normal sigue corriendo; el velo no tiene animación propia.
+- **Fase 6 — límites conocidos:** los pistones empujan solo en horizontal y no tiran de los bloques al recogerse; la energía no
+  atraviesa bloques sólidos (un cable solo alimenta lo que toca) y solo se calcula en chunks cargados; las vagonetas no chocan
+  entre sí ni con criaturas y no hay vagonetas con cofre o enganchadas; las barcas solo llevan al jugador; no hay comparadores,
+  observadores ni raíles detectores.
+- **Revisión de la Fase 4 (corregido en la Fase 6):** las recompensas de un jefe se dan en el momento de su muerte y caen sobre
+  su altar (nunca en la lava ni en el vacío; guardar durante la animación ya no las pierde ni las duplica); un Coloso guardado
+  en fase 2 vuelve con sus pilares y su escudo, y los jefes guardan su rabia; la Reina deja de embestir si cambia de fase a
+  mitad de la carga; la coraza de magma del Titán solo quema a quien le golpea cuerpo a cuerpo (no al lanzar bolas de nieve);
+  las bolas de nieve no hieren a aldeanos ni guardianes; en Pacífico los jefes vuelven a dormir y devuelven la ofrenda; el
+  Corazón de geoda se fabrica con bloques de geoda (ya no pide cristales de cueva, que no se pueden obtener); las calderas
+  volcánicas ya no se generan dentro de lagos de lava, los templos sumergidos quedan lejos de la costa y la salida del pozo
+  de la gruta de cristal queda despejada a la altura real del terreno (`GENERATOR_VERSION` 4: los mundos anteriores avisan).
 - **Revisión de la Fase 2 (corregido en la Fase 4):** las escaleras ya no oscurecen ni ponen negras las caras vecinas y su techo
   no ilumina salas cerradas; la línea de visión tiene en cuenta la parte alta de vallas y muros (y los murciélagos la respetan);
   mantener el clic derecho en una puerta ya no coloca bloques delante; el agua que corre hidrata la tierra arada; las vallas no
@@ -188,7 +214,8 @@ docs/                            Plan de fases y especificaciones
 
 El texto del encargo llegaba **cortado en la sección 22 (Jefes: «Cada jefe debe tener: Historia. Arena…»)**. Las secciones posteriores
 no se recibieron; las fases siguientes se basan en la hoja de ruta propuesta (`docs/PLAN.md`): **Fase 3** (aldeas y comercio),
-**Fase 4** (jefes y arenas), **Fase 5** (dimensiones), **Fase 6** (maquinaria, automatización y transporte).
+**Fase 4** (jefes y arenas), **Fase 5** (dimensiones), **Fase 6** (maquinaria, automatización y transporte). Las seis
+fases están hechas; lo que no se hizo (multijugador, táctil) y las simplificaciones de cada fase están descritos arriba.
 
 ## Licencias
 

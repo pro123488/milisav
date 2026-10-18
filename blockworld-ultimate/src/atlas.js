@@ -523,6 +523,68 @@ P.portal_veil = (g, r) => {
 P.altar_sovereign_side = altarSide(rgb(52, 40, 66), rgb(178, 110, 255), rgb(250, 230, 255));
 P.altar_sovereign_top = altarTop(rgb(52, 40, 66), rgb(178, 110, 255), rgb(255, 240, 255));
 
+// ── Fase 6: energía, máquinas y raíles ──
+const COPPER = rgb(214, 120, 68), COPPER_D = rgb(150, 74, 40), COPPER_L = rgb(250, 170, 110), GLOW = rgb(255, 210, 90);
+P.lever = (g, r) => { P.cobble(g, r); g.rect(6, 2, 9, 13, rgb(160, 116, 60)); g.rect(6, 2, 9, 4, rgb(200, 60, 50)); };
+P.lever_on = (g, r) => { P.cobble(g, r); g.rect(6, 2, 9, 13, rgb(160, 116, 60)); g.rect(6, 2, 9, 4, rgb(80, 220, 90)); };
+P.lever_top = (g, r) => { P.cobble(g, r); g.rect(5, 4, 10, 11, rgb(90, 90, 96)); };
+P.button = (g, r) => { g.noise(rgb(130, 130, 136), 5, r); g.rect(0, 0, 15, 0, rgb(160, 160, 168)); g.rect(0, 15, 15, 15, rgb(90, 90, 96)); };
+P.button_on = (g, r) => { g.noise(rgb(110, 110, 116), 5, r); g.rect(5, 5, 10, 10, rgb(255, 210, 90)); };
+P.pressure_plate = (g, r) => { g.noise(rgb(124, 124, 130), 4, r); g.rect(0, 0, 15, 0, rgb(150, 150, 158)); g.rect(0, 0, 0, 15, rgb(150, 150, 158)); g.rect(15, 0, 15, 15, rgb(90, 90, 96)); g.rect(0, 15, 15, 15, rgb(90, 90, 96)); };
+P.pressure_plate_on = (g, r) => { P.pressure_plate(g, r); g.rect(6, 6, 9, 9, rgb(255, 210, 90)); };
+P.power_block = (g, r) => { g.noise(COPPER_D, 6, r); g.rect(2, 2, 13, 13, COPPER); g.rect(4, 4, 11, 11, rgb(90, 50, 30)); g.rect(6, 6, 9, 9, GLOW); g.set(7, 7, rgb(255, 250, 200)); for (const [x, y] of [[2, 2], [13, 2], [2, 13], [13, 13]]) g.set(x, y, COPPER_L); };
+P.cable = (g, r) => { g.fill([0, 0, 0, 0]); g.noise(COPPER, 10, r); g.specks(COPPER_D, r, 30); g.specks(COPPER_L, r, 12); };
+P.cable_on = (g, r) => { g.fill([0, 0, 0, 0]); g.noise(rgb(250, 160, 80), 10, r); g.specks(GLOW, r, 40); g.specks(rgb(255, 250, 200), r, 12); };
+for (const kind of ['repeater', 'inverter']) {
+  P[kind + '_side'] = (g, r) => { g.noise(rgb(140, 140, 146), 4, r); g.rect(0, 0, 15, 2, rgb(110, 110, 116)); };
+  for (const on of ['', '_on']) for (let f = 0; f < 4; f++) {
+    P[`${kind}${on}_top_${f}`] = (g, r) => {
+      g.noise(rgb(150, 150, 156), 4, r);
+      // flecha hacia la salida (f: 0 N arriba, 1 E derecha, 2 S abajo, 3 O izquierda)
+      const pts = [[8, 2], [12, 7], [10, 7], [10, 13], [6, 13], [6, 7], [4, 7]];
+      const rot = (x, y) => { let X = x - 8, Y = y - 8; for (let k = 0; k < f; k++) { const t = X; X = -Y; Y = t; } return [X + 8, Y + 8]; };
+      g.poly(pts.map(([x, y]) => rot(x, y)), on ? GLOW : (kind === 'repeater' ? COPPER : rgb(120, 70, 160)));
+      if (kind === 'inverter') { const [cx, cy] = rot(8, 11); g.circle(cx, cy, 1.5, on ? rgb(255, 250, 200) : rgb(60, 30, 80)); }
+    };
+  }
+}
+P.energy_lamp = (g, r) => { g.noise(rgb(110, 96, 70), 5, r); g.rect(1, 1, 14, 14, rgb(70, 60, 44)); g.rect(3, 3, 12, 12, rgb(120, 110, 90)); for (let k = 3; k <= 12; k += 3) { g.hline(3, 12, k, rgb(90, 80, 60)); g.vline(k, 3, 12, rgb(90, 80, 60)); } };
+P.energy_lamp_on = (g, r) => { g.noise(rgb(255, 220, 120), 8, r); g.rect(1, 1, 14, 14, rgb(200, 150, 60)); g.rect(3, 3, 12, 12, rgb(255, 236, 160)); for (let k = 3; k <= 12; k += 3) { g.hline(3, 12, k, rgb(240, 190, 90)); g.vline(k, 3, 12, rgb(240, 190, 90)); } };
+P.piston_side = (g, r) => { P.cobble(g, r); g.rect(0, 0, 15, 3, rgb(150, 110, 60)); g.hline(0, 15, 3, rgb(110, 80, 40)); };
+P.piston_front = (g, r) => { P.planks(g, r); g.rect(5, 5, 10, 10, rgb(110, 110, 118)); g.rect(6, 6, 9, 9, rgb(150, 150, 158)); };
+P.piston_front_open = (g, r) => { P.cobble(g, r); g.rect(5, 5, 10, 10, rgb(60, 60, 66)); g.rect(6, 6, 9, 9, rgb(150, 150, 158)); };
+P.piston_head_side = (g, r) => { P.planks(g, r); g.rect(0, 4, 15, 11, rgb(150, 150, 158)); };
+P.machine_side = (g, r) => { P.cobble(g, r); g.rect(0, 0, 15, 1, rgb(90, 90, 96)); g.rect(0, 14, 15, 15, rgb(90, 90, 96)); g.vline(7, 2, 13, COPPER_D); g.vline(8, 2, 13, COPPER); };
+P.machine_top = (g, r) => { P.cobble(g, r); g.rect(4, 4, 11, 11, rgb(90, 90, 96)); g.rect(6, 6, 9, 9, COPPER); };
+P.dispenser_front = (g, r) => { P.machine_side(g, r); g.rect(4, 4, 11, 11, rgb(40, 40, 44)); g.rect(5, 5, 10, 10, rgb(20, 20, 24)); g.set(4, 4, COPPER_L); };
+P.harvester_front = (g, r) => { P.machine_side(g, r); for (let k = 0; k < 4; k++) { g.line(2 + k * 3, 3, 4 + k * 3, 12, rgb(210, 210, 220)); g.line(3 + k * 3, 3, 5 + k * 3, 12, rgb(140, 140, 150)); } };
+P.hopper_side = (g, r) => { g.noise(rgb(70, 70, 76), 4, r); g.rect(0, 0, 15, 1, rgb(100, 100, 108)); g.specks(rgb(50, 50, 56), r, 10); };
+P.hopper_top = (g, r) => { g.noise(rgb(70, 70, 76), 4, r); g.rect(2, 2, 13, 13, rgb(30, 30, 34)); g.rect(5, 5, 10, 10, rgb(50, 50, 56)); };
+function railTile(conn, base, rail, tie) {
+  return (g, r) => {
+    g.fill([0, 0, 0, 0]);
+    // traviesas y carriles: conn = lista de direcciones (0 N, 1 E, 2 S, 3 O)
+    const set = (x, y, c) => g.set(x, y, c);
+    const has = (d) => conn.includes(d);
+    if (has(0) && has(2)) { for (let y = 1; y < 16; y += 3) g.rect(2, y, 13, y + 1, tie); for (let y = 0; y < 16; y++) { set(4, y, rail); set(11, y, rail); } }
+    else if (has(1) && has(3)) { for (let x = 1; x < 16; x += 3) g.rect(x, 2, x + 1, 13, tie); for (let x = 0; x < 16; x++) { set(x, 4, rail); set(x, 11, rail); } }
+    else {
+      // curva: arcos de radio 4 y 11 centrados en la esquina común
+      const cx = has(1) ? 16 : -1, cy = has(2) ? 16 : -1;
+      for (let a = 0; a < 16; a++) { const t = a / 15 * Math.PI / 2; for (const R of [4.5, 11.5]) { const x = cx + (cx > 0 ? -1 : 1) * Math.cos(t) * R, y = cy + (cy > 0 ? -1 : 1) * Math.sin(t) * R; set(x, y, rail); } }
+      for (let k = 0; k < 5; k++) { const t = (k + 0.5) / 5 * Math.PI / 2; const x0 = cx + (cx > 0 ? -1 : 1) * Math.cos(t) * 2.5, y0 = cy + (cy > 0 ? -1 : 1) * Math.sin(t) * 2.5, x1 = cx + (cx > 0 ? -1 : 1) * Math.cos(t) * 13.5, y1 = cy + (cy > 0 ? -1 : 1) * Math.sin(t) * 13.5; g.line(x0, y0, x1, y1, tie); }
+      for (let a = 0; a < 24; a++) { const t = a / 23 * Math.PI / 2; for (const R of [4.5, 11.5]) { const x = cx + (cx > 0 ? -1 : 1) * Math.cos(t) * R, y = cy + (cy > 0 ? -1 : 1) * Math.sin(t) * R; set(x, y, rail); } }
+    }
+    void base; void r;
+  };
+}
+const RAIL_C = rgb(170, 170, 180), TIE = rgb(110, 76, 44);
+P.rail_ns = railTile([0, 2], null, RAIL_C, TIE); P.rail_ew = railTile([1, 3], null, RAIL_C, TIE);
+P.rail_ne = railTile([0, 1], null, RAIL_C, TIE); P.rail_es = railTile([1, 2], null, RAIL_C, TIE);
+P.rail_sw = railTile([2, 3], null, RAIL_C, TIE); P.rail_wn = railTile([3, 0], null, RAIL_C, TIE);
+P.booster_ns = railTile([0, 2], null, rgb(240, 200, 60), rgb(70, 50, 30)); P.booster_ew = railTile([1, 3], null, rgb(240, 200, 60), rgb(70, 50, 30));
+P.booster_on_ns = railTile([0, 2], null, rgb(255, 240, 140), rgb(200, 90, 40)); P.booster_on_ew = railTile([1, 3], null, rgb(255, 240, 140), rgb(200, 90, 40));
+
 // Vegetación (con transparencia)
 function blade(g, x, y0, y1, c) { for (let y = y0; y <= y1; y++) g.set(x, y, c); }
 P.tall_grass = (g, r) => {
@@ -868,6 +930,8 @@ function sprites(key) {
     eclipse_scepter: () => { g.line(3, 14, 10, 7, hex('#3a2a52')); g.line(4, 14, 11, 7, hex('#1a1028')); g.circle(12, 4, 3, hex('#8e5be0')); g.circle(12, 4, 1.6, hex('#1a1028')); g.set(13, 3, hex('#f0e0ff')); g.line(8, 9, 10, 11, hex('#c8a0ff')); },
     fungus_slice: () => { g.ellipse(8, 9, 6, 4, hex('#8a3ab0')); g.ellipse(8, 8, 5, 2.6, hex('#d8c8e8')); g.set(6, 8, hex('#7af0ff')); g.set(10, 7, hex('#7af0ff')); },
     roasted_fungus: () => { g.ellipse(8, 9, 6, 4, hex('#5a2a6a')); g.ellipse(8, 8, 5, 2.6, hex('#b08a70')); g.set(6, 8, hex('#3a1a10')); g.set(10, 7, hex('#3a1a10')); },
+    minecart: () => { g.poly([[2, 5], [14, 5], [13, 11], [3, 11]], hex('#7a7c86')); g.rect(3, 6, 12, 7, hex('#4a4c56')); g.hline(2, 14, 5, hex('#b0b2bc')); g.circle(5, 12, 1.8, hex('#2a2a30')); g.circle(11, 12, 1.8, hex('#2a2a30')); },
+    boat: () => { g.poly([[1, 8], [15, 8], [12, 13], [4, 13]], hex('#9a6a3a')); g.hline(1, 15, 8, hex('#c8955a')); g.hline(4, 12, 13, hex('#6a4420')); g.line(9, 2, 6, 11, hex('#6a4420')); g.rect(9, 2, 10, 3, hex('#c8955a')); },
     crystal_shard: () => { g.poly([[8, 1], [12, 6], [9, 14], [5, 11], [4, 6]], hex('#58d6e8')); g.poly([[8, 1], [12, 6], [8, 7]], hex('#c4f7ff')); g.poly([[8, 7], [12, 6], [9, 14]], hex('#2a8aa6')); g.line(8, 1, 8, 13, hex('#8aeaf6')); },
   };
   if (S[key]) { S[key](); g.outline(); return g; }
@@ -909,7 +973,7 @@ function blockIcon(block) {
   const ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = false;
   const atlas = getAtlasCanvas();
   const src = (name) => { const i = tileOf(P[name] ? name : 'missing'); return [(i % ATLAS_COLS) * N, Math.floor(i / ATLAS_COLS) * N]; };
-  if (block.shape === 'cross' || block.shape === 'torch' || block.family === 'ladder') {
+  if (block.shape === 'cross' || block.shape === 'torch' || block.family === 'ladder' || block.family === 'rail' || block.family === 'cable') {
     const [sx, sy] = src(block.tiles[0]);
     ctx.drawImage(atlas, sx, sy, N, N, 2, 2, 28, 28);
     return c;

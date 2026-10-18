@@ -33,6 +33,10 @@ import { portalFrameOK, activatePortal, deactivatePortal, findPortalNear, buildP
 import { ISLAND_Y, FLOOR_TOP } from './darkterrain.js';
 import { OVERWORLD_BOSSES, Missile } from './bosses.js';
 import { unstick } from './physics.js';
+import { EnergySystem } from './energy.js';
+import { isRail, updateRailsAround, RAIL } from './rails.js';
+import { Minecart, Boat } from './vehicles.js';
+import { facingFromVector } from './shapes.js';
 import { AudioEngine } from './audio.js';
 import { raycastBlocks } from './raycast.js';
 import { chunkKey } from './chunk.js';
@@ -116,9 +120,9 @@ export class Game {
     this.world.fancyLeaves = !!this.settings.fancyLeaves;
     this.wr = new WorldRenderer(this.scene, this.world);
     const prevUnload = this.world.onChunkUnload;
-    this.world.onChunkUnload = (c) => { this.sleepChunk(c); prevUnload(c); };
+    this.world.onChunkUnload = (c) => { this.sleepChunk(c); if (this.energy) this.energy.unloadChunk(c); prevUnload(c); };
     this.world.onFreshChunk = (c, info) => this.onFreshChunk(c, info);
-    this.world.onChunkLoaded = (c) => this.wakeChunk(c);
+    this.world.onChunkLoaded = (c) => { this.wakeChunk(c); if (this.energy) this.energy.scanChunk(c); };
     this.world.onBlockChange = (x, y, z, o, n) => this.onBlockChange(x, y, z, o, n);
     this.meta = meta;
   }
@@ -153,6 +157,8 @@ export class Game {
     this.mining = new Mining(this); this.building = new Building(this);
     this.hand = new HandRenderer(this); this.spawner = new Spawner(this); this.ticks = new RandomTicks(this);
     this.fluids = new FluidSim(this);
+    this.energy = new EnergySystem(this); this.riding = null;
+    for (const c of w.chunks.values()) this.energy.scanChunk(c);
     this.spawner.configure(meta, this.difficulty);
     this.inventory = new Inventory(); this.survival = new Survival(this);
     this.discovered = new Set(); this.achievements = new Set(); this.stats = { blocksBroken: 0, blocksPlaced: 0, mobsKilled: 0, deaths: 0 };
@@ -330,6 +336,16 @@ export class Game {
     const be = this.getBlockEntity(x, y, z, 'furnace', 3);
     this._openScreen(openFurnaceScreen(this, be));
   }
+  /** Dispensador (9 huecos) y tolva (5): misma pantalla que el cofre. */
+  openMachine(x, y, z, kind) {
+    const be = this.getBlockEntity(x, y, z, kind, kind === 'dispenser' ? 9 : 5);
+    this._openScreen(openChestScreen(this, be, kind === 'dispenser' ? 'Dispensador' : 'Tolva'));
+  }
+  /** Lanza una bola de nieve desde un punto (dispensadores). */
+  throwFrom(x, y, z, dx, dy, dz) {
+    const sp = 18;
+    this.entities.add(new Missile(this, { x, y, z, vx: dx * sp, vy: dy * sp + 2, vz: dz * sp, color: 0xeef4fb, size: 0.22, gravity: 14, dmg: 0, owner: null, hitsPlayer: false, hitsMobs: true, kind: 'snow', life: 4, onHit: (m, t) => { if (t && t.onSnowball) t.onSnowball(); } }));
+  }
   openAlchemy(x, y, z) {
     const be = this.getBlockEntity(x, y, z, 'alchemy', ALCHEMY_SLOTS);
     this._openScreen(openAlchemyScreen(this, be));
@@ -373,7 +389,10 @@ export class Game {
   setDifficulty(d) {
     this.difficulty = d; this.meta.difficulty = d;
     this.spawner.configure(this.meta, d);
-    if (d === 'peaceful') for (const e of this.entities.list) if (MONSTERS[e.type]) e.removed = true;
+    if (d === 'peaceful') for (const e of this.entities.list) {
+      if (e.isBoss && !e.removed && e.deathTime < 0) e.sleepAgain(); // devuelve la ofrenda
+      else if (MONSTERS[e.type] || e.isPylon) e.removed = true;
+    }
   }
 
   // ═════════════ Muerte y reaparición ═════════════
@@ -529,6 +548,48 @@ export class Game {
     if (source === this.player || mob.lastHitBy === this.player || mob.isBoss) this.bestiary.kill(mob.type);
     if (mob.isVillager && (source === this.player || mob.lastHitBy === this.player)) this.villageReputation(mob.village, -20, mob);
   }
+  // ═════════════ Vehículos (Fase 6) ═════════════
+  /** Sube al vehículo `v` (vagoneta o barca). */
+  mount(v) {
+    if (this.riding || v.rider) return false;
+    this.riding = v; v.rider = { push: false, ctl: null };
+    this.mining.reset(); this.eating = null;
+    this.ui.toast(v.type === 'minecart' ? 'En la vagoneta: W para avanzar, C para bajar' : 'En la barca: W/S remar, A/D girar, C para bajar', 2600);
+    this.audio.play('door', v.x, v.y, v.z);
+    return true;
+  }
+  /** Baja del vehículo y deja al jugador de pie al lado (o encima si no hay sitio). */
+  dismount() {
+    const v = this.riding, p = this.player;
+    if (!v) return;
+    this.riding = null; v.rider = null;
+    const w = this.world;
+    const spots = [[1.2, 0], [-1.2, 0], [0, 1.2], [0, -1.2]];
+    let placed = false;
+    for (const [dx, dz] of spots) {
+      const x = v.x + dx, z = v.z + dz;
+      for (const dy of [0, 1, -1]) {
+        const y = Math.floor(v.y) + dy + 0.01;
+        if (!boxCollides(w, x, y, z, p.w, p.h) && B_SOLID[w.getBlock(Math.floor(x), Math.floor(y) - 1, Math.floor(z))]) { p.teleport(x, y, z); placed = true; break; }
+      }
+      if (placed) break;
+    }
+    if (!placed) { p.teleport(v.x, v.y + 1, v.z); unstick(w, p); }
+  }
+  /** Fotograma montado: el vehículo manda; el jugador va sentado (la cámara sigue mirando libremente). */
+  _ride(dt, move) {
+    const v = this.riding, p = this.player;
+    if (!v || v.removed) { this.riding = null; return; }
+    if (move.crouch) { this.dismount(); return; }
+    const d = p.lookDir();
+    v.rider.push = move.fwd > 0;
+    v.rider.look = facingFromVector(d.x, d.z);
+    v.rider.ctl = { fwd: move.fwd, turn: -move.strafe };
+    const [sx, sy, sz] = v.seat();
+    p.x = sx; p.y = sy; p.z = sz; p.vx = p.vy = p.vz = 0; p.onGround = true; p.fallDistance = 0; p.moved = 0; p.landed = null;
+    p.inWater = false; p.headInWater = false;
+  }
+
   // ═════════════ Dimensiones (Fase 5) ═════════════
   /** Datos propios de una dimensión dentro de los metadatos del mundo (el mundo normal usa la raíz). */
   _dimData(meta, dim = meta.dim) {
@@ -602,8 +663,10 @@ export class Game {
       meta.dim = target;
       const cs = this.store ? await this.store.chunkStore(target === 'dark' ? meta.id + '~dark' : meta.id) : null;
       this.chunkStore = cs;
+      if (this.riding) this.dismount();
       this.createWorld(meta, cs);
       this.fluids = new FluidSim(this);
+      this.energy = new EnergySystem(this);
       const D = this._dimData(meta);
       this.structDone = new Set(D.structDone || []);
       for (const [k, list] of Object.entries(D.sleeping || {})) this.sleeping.set(+k, list);
@@ -733,7 +796,11 @@ export class Game {
     if (!this.entities) return;
     for (const e of this.entities.list) {
       if (e.removed) continue;
-      if (Math.floor(e.x / 16) === c.cx && Math.floor(e.z / 16) === c.cz) { if (e.persistent) this.sleepEntity(e); e.removed = true; }
+      if (Math.floor(e.x / 16) === c.cx && Math.floor(e.z / 16) === c.cz) {
+        if (e.isBoss && e.deathTime < 0 && e.sleepAgain) { e.sleepAgain(); continue; }
+        if (e.persistent) this.sleepEntity(e);
+        e.removed = true;
+      }
     }
   }
   wakeChunk(c) {
@@ -743,6 +810,11 @@ export class Game {
     for (const s of list) this.restoreEntity(s);
   }
   restoreEntity(s) {
+    if (s.t === 'minecart' || s.t === 'boat') {
+      const v = s.t === 'minecart' ? new Minecart(this) : new Boat(this);
+      v.setPos(s.x, s.y, s.z); v.initFromData(s.vd);
+      this.entities.add(v); return;
+    }
     if (s.t === 'item') {
       const e = new ItemEntity(this, { i: s.s[0], n: s.s[1], d: s.s[2] }, 0.2);
       e.setPos(s.x, s.y, s.z); e.life = s.life ?? 300; this.entities.add(e); return;
@@ -893,6 +965,12 @@ export class Game {
       }
     }
     if (this.fluids) this.fluids.onBlockChange(x, y, z);
+    if (this.energy) this.energy.onBlockChange(x, y, z, old, nw);
+    // Raíles: al poner o quitar uno, los vecinos se reorientan
+    if ((isRail(old) !== isRail(nw) || (isRail(nw) && !isRail(old))) && !this._railFixing) {
+      this._railFixing = true;
+      try { updateRailsAround(w, x, y, z); } finally { this._railFixing = false; }
+    }
     // Portales: romper el núcleo o el marco cierra el velo
     if (old === ID.PORTAL_CORE_ACTIVE && nw !== ID.PORTAL_CORE_ACTIVE) deactivatePortal(w, x, y, z);
     else if (old === ID.OBSIDIAN && nw !== ID.OBSIDIAN) {
@@ -1022,7 +1100,7 @@ export class Game {
         this.particles.emit(e.x, e.y + e.h * 0.5, e.z, 0x9af6ff, 20, 5, 1.2);
         this.audio.blockSound('break', 'glass', e.x, e.y + 1, e.z);
         for (const o of this.entities.list) {
-          if (o === e || o.removed || !o.hurt || o.deathTime >= 0 || o.isVillager || o.tamed || o.type === 'item' || o.type === 'projectile') continue;
+          if (o === e || o.removed || !o.hurt || o.deathTime >= 0 || o.isVillager || o.isGolem || o.isVehicle || o.tamed || o.type === 'item' || o.type === 'projectile') continue;
           if (ANIMALS[o.type] && !o.isPylon) continue;
           if (Math.hypot(o.x - e.x, o.z - e.z) < 4.5) o.hurt(4, e.x, e.z, 0.5, p);
         }
@@ -1064,6 +1142,31 @@ export class Game {
       this.audio.play('eat', e.x, e.y, e.z); this.hand.swing();
       return;
     }
+    // Fase 6: subir a un vehículo; poner vagonetas en raíles y barcas en el agua
+    if (et && pressed && et.isVehicle && !et.removed) { this.mount(et); return; }
+    if (it && pressed && it.kind === 'cart' && this.hit && isRail(this.hit.id)) {
+      const c = new Minecart(this);
+      const d = p.lookDir();
+      if (c.placeOn(this.hit.x, this.hit.y, this.hit.z, facingFromVector(d.x, d.z))) {
+        this.entities.add(c); c._sync();
+        if (this.mode !== 'creative') inv.consumeSelected(1);
+        this.audio.play('door_metal', c.x, c.y, c.z); this.hand.swing();
+      } else c.dispose();
+      return;
+    }
+    if (it && pressed && it.kind === 'boat') {
+      const r = this._eyeRay();
+      const wh = raycastBlocks(this.world, r.ox, r.oy, r.oz, r.dx, r.dy, r.dz, this.reach, { fluids: true });
+      if (wh && (B_FLUID[wh.id] === 1 || this.hit)) {
+        const b = new Boat(this);
+        const onWater = B_FLUID[wh.id] === 1;
+        b.setPos(wh.x + 0.5, wh.y + (onWater ? 0.6 : 1), wh.z + 0.5); b.yaw = p.yaw;
+        this.entities.add(b);
+        if (this.mode !== 'creative') inv.consumeSelected(1);
+        this.audio.play('splash', b.x, b.y, b.z); this.hand.swing();
+        return;
+      }
+    }
     // Fase 4: objetos con uso propio
     if (it && pressed && this._useSpecial(it, et)) return;
     let fluidHit = null;
@@ -1101,7 +1204,7 @@ export class Game {
       this.audio.play('splash', et.x, et.y, et.z); this.hand.swing();
       return true;
     }
-    if (it.kind === 'heart') {
+    if (it.kind === 'heart' && !onInteractive) {
       if (sv.maxHealth >= 40) { this.ui.toast('Ya tienes el máximo de corazones (20)'); return true; }
       sv.maxHealth += 2; sv.heal(2);
       if (this.mode !== 'creative') inv.consumeSelected(1);
@@ -1173,9 +1276,9 @@ export class Game {
         if (d.extinguish) sv.fire = 0;
         if (it.key.startsWith('tonic_')) { this.achieve('alquimia'); this.audio.play('magic'); this.particles.emit(this.player.x, this.player.y + 1.4, this.player.z, 0xc070ff, 12, 1.6); }
       }
-      this.inventory.consumeSelected(1);
+      if (this.mode !== 'creative') this.inventory.consumeSelected(1);
       const ret = it.food ? it.food.returns : it.drink.returns;
-      if (ret) { // el cuenco o el frasco vuelve a la mano (o al inventario)
+      if (ret && this.mode !== 'creative') { // el cuenco o el frasco vuelve a la mano (o al inventario)
         const back = { i: Items.id(ret), n: 1, d: 0 };
         if (!this.inventory.slots[e.slot]) this.inventory.slots[e.slot] = back;
         else { const rest = this.inventory.add(back); if (rest) this.dropItem(rest, this.player.x, this.player.y + 1, this.player.z); }
@@ -1307,7 +1410,8 @@ export class Game {
     const move = (ctl.locked && this.state === 'playing') ? ctl.getMove() : { fwd: 0, strafe: 0, jump: false, sprint: false, crouch: false, crouchDown: false };
     p.autoJump = this.settings.autoJump;
     p.speedMul = this.survival.effects.speedMul(); // velocidad / lentitud
-    p.update(dt, move, w, this.survival.canSprint);
+    if (this.riding) this._ride(dt, move);
+    else p.update(dt, move, w, this.survival.canSprint);
     // pasos / aterrizaje
     if (p.onGround && p.moved > 0) {
       this.stepAcc += p.moved;
@@ -1327,6 +1431,7 @@ export class Game {
     this.spawner.update(dt);
     this.ticks.update(dt);
     this.fluids.update(dt);
+    this.energy.update(dt);
     this.tickBlockEntities(dt);
     this.processBlockUpdates();
     this._structMobs();

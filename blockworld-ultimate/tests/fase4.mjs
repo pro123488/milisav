@@ -9,6 +9,7 @@ import { Effects, EFFECTS } from '../src/effects.js';
 import { BREWS, BREW_TIME, tickAlchemy, canBrew } from '../src/alchemy.js';
 import { Container } from '../src/inventory.js';
 import { shrineAt, nearestShrine, shrinesNear, SHRINE_TYPES, SREGION } from '../src/shrines.js';
+import { SEA_LEVEL as SEA } from '../src/config.js';
 import { villagesNear } from '../src/villages.js';
 import { BOSSES, BOSS_KEYS, createBoss, bossForSummon } from '../src/bosses.js';
 import { bestiaryEntries, Bestiary } from '../src/bestiary.js';
@@ -133,7 +134,7 @@ test('la gruta de cristal tiene un pozo con escalera de mano hasta la superficie
   const sx = s.x + 9, sz = s.z;
   const b = T.generateChunk(Math.floor(sx / 16), Math.floor(sz / 16)).blocks;
   const at = (x, y, z) => b[(x & 15) | ((z & 15) << 4) | (y << 8)];
-  const top = s.surface + 2;
+  const top = s.shaftTop + 1;
   for (let y = s.y + 1; y <= top - 1; y++) assert.equal(at(sx, y, sz), ID.LADDER_E, 'escalera en y=' + y);
   for (let y = s.y + 1; y <= top; y++) assert.ok(Blocks.get(at(sx + 1, y, sz)).solid, 'soporte de la escalera en y=' + y);
 });
@@ -235,13 +236,17 @@ test('el Titán se enfría con una bola de nieve (doble daño) y suelta sus reco
   b.onSnowball(); assert.ok(b.cool > 0);
   b.hurtTime = 0; h = b.hp; b.hurt(10, 0, 0, 1, null);
   assert.ok(Math.abs((h - b.hp) - normal * 2) < 1e-6);
+  let killed = null; g.onBossDefeated = (x) => { killed = x; };
   b.hurtTime = 0; b.transition = 0; b.hp = 1; b.hurt(10, 0, 0, 1, g.player);
   assert.ok(b.deathTime >= 0);
-  let killed = null; g.onBossDefeated = (x) => { killed = x; };
-  for (let i = 0; i < 60; i++) b.update(0.05);
-  assert.ok(b.removed && killed === b);
+  // la victoria y las recompensas llegan al morir (guardar durante la animación no las pierde)
+  assert.equal(killed, b);
+  assert.equal(b.persistent, false);
   const keys = g.drops.map((d) => Items.get(d.i).key);
   for (const k of ['heart_crystal', 'essence_ember', 'titan_hammer', 'sun_coin']) assert.ok(keys.includes(k), 'suelta ' + k);
+  for (let i = 0; i < 60; i++) b.update(0.05);
+  assert.ok(b.removed);
+  assert.equal(g.drops.filter((d) => Items.get(d.i).key === 'heart_crystal').length, 1, 'sin recompensas dobles');
 });
 test('si el jugador se aleja, el jefe vuelve a dormir y deja la ofrenda en el altar', () => {
   const g = fakeGame(W);
@@ -273,6 +278,70 @@ test('serializa y restaura (vida, fase y altar)', () => {
   const c = createBoss(g, 'crystal_colossus'); c.hp = s.hp; c.initFromData(s.vd);
   assert.deepEqual(c.home, { x: 1, y: 2, z: 3 }); assert.equal(c.phase, 2); assert.equal(c.hp, 99);
   assert.equal(b.persistent, true);
+});
+
+console.log('Correcciones de la revisión de la Fase 4');
+test('la Reina deja de embestir si cambia de fase a mitad de la carga', () => {
+  const g = fakeGame(W);
+  const q = g.spawnMob('deep_queen', 8.5, G + 3, 8.5);
+  q.home = { x: 8, y: G - 1, z: 8 }; q.intro = 0;
+  q.action = { id: 'charge', t: 1.0, dur: 2.2, tele: 0.9, dir: [0, 1, 0] }; q.dashing = true; q.vy = 15;
+  q.hp = q.maxHp * 0.52; q.hurt(10, 0, 0, 1, null);
+  assert.equal(q.phase, 2); assert.equal(q.dashing, false); assert.equal(q.vy, 0);
+});
+test('un Coloso guardado en fase 2 vuelve con sus pilares y su escudo', () => {
+  const g = fakeGame(W);
+  const b = g.spawnMob('crystal_colossus', 8.5, G, 4.5);
+  b.home = { x: 8, y: G - 1, z: 8 }; b.intro = 0;
+  b.hp = b.maxHp * 0.62; b.hurt(10, 0, 0, 1, null);
+  const s = b.serialize(); assert.equal(s.vd.py, 4);
+  const g2 = fakeGame(W);
+  const c = createBoss(g2, 'crystal_colossus'); c.setPos(8.5, G, 4.5); g2.entities.add(c); c.hp = s.hp; c.initFromData(s.vd);
+  c.intro = 0; c.update(0.05);
+  assert.equal(g2.entities.list.filter((e) => e.isPylon).length, 4); assert.equal(c.shield, true);
+});
+test('la bola de nieve enfría al Titán en fase 3 sin prender fuego al jugador; el cuerpo a cuerpo sí quema', () => {
+  const g = fakeGame(W);
+  const b = g.spawnMob('volcanic_titan', 8.5, G, 4.5);
+  b.home = { x: 8, y: G - 1, z: 8 }; b.intro = 0; b.phase = 3;
+  g.player.x = 8.5; g.player.z = 20.5;
+  b.onSnowball(); b.onBossHurt(0, g.player);
+  assert.equal(g.survival.fire, 0);
+  b.cool = 0; g.player.z = 6.5; b.onBossHurt(5, g.player);
+  assert.ok(g.survival.fire > 0);
+});
+test('las recompensas caen sobre el altar y en Pacífico el jefe vuelve a dormir', () => {
+  const g = fakeGame(W);
+  const b = g.spawnMob('forest_guardian', 3.5, G, 3.5);
+  b.home = { x: 8, y: G - 1, z: 8 }; b.intro = 0;
+  const pos = []; g.dropItem = (st, x, y, z) => { pos.push([x, y, z]); g.drops.push(st); };
+  b.hp = 1; b.hurt(5, 0, 0, 1, g.player);
+  assert.ok(pos.length && pos.every(([x, , z]) => x === 8.5 && z === 8.5));
+  const g2 = fakeGame(W);
+  const c = g2.spawnMob('forest_guardian', 8.5, G, 4.5); c.home = { x: 8, y: G - 1, z: 8 }; c.intro = 0;
+  g2.difficulty = 'peaceful'; c.update(0.05);
+  assert.ok(c.removed); assert.equal(Items.get(g2.drops[0].i).key, 'ancient_seed');
+});
+test('las ofrendas se pueden fabricar con objetos que existen en el mundo', () => {
+  assert.equal(Blocks.get('geode').drops, 'geode');
+  for (const k of ['ancient_seed', 'geode_heart', 'tide_pearl', 'eternal_ember']) {
+    const r = RECIPES.find((x) => x.out === k);
+    for (const [ing] of r.in) assert.ok(!['cave_crystal'].includes(ing), k + ' usa ' + ing);
+  }
+});
+test('santuarios: caldera sin lava natural, templo lejos de la costa y salida del pozo despejada', () => {
+  const T2 = new Terrain(seedFromString('lava'), {});
+  for (let rz = -4; rz <= 4; rz++) for (let rx = -4; rx <= 4; rx++) {
+    const s = shrineAt(T2, rx, rz);
+    if (!s) continue;
+    if (s.type === 'fuego') for (let a = 0; a < 16; a++) { const c = T2.column(Math.round(s.x + Math.cos(a) * 12), Math.round(s.z + Math.sin(a) * 12)); assert.equal(c.lavaTop, 0, 'lava junto a la caldera ' + s.id); }
+    if (s.type === 'mar') for (let a = 0; a < 16; a++) { const c = T2.column(Math.round(s.x + Math.cos(a) * (s.r + 1)), Math.round(s.z + Math.sin(a) * (s.r + 1))); assert.ok(c.h < SEA - 2, 'templo en la costa ' + s.id); }
+    if (s.type === 'cristal') {
+      const sx = s.x + 9;
+      const b = T2.generateChunk(Math.floor((sx - 3) / 16), Math.floor(s.z / 16)).blocks;
+      if (Math.floor((sx - 3) / 16) === Math.floor((sx - 1) / 16)) for (let dx = 1; dx <= 3; dx++) for (let k = 0; k <= 1; k++) assert.equal(b[((sx - dx) & 15) | ((s.z & 15) << 4) | ((s.shaftTop + k) << 8)], 0, 'salida tapada ' + s.id);
+    }
+  }
 });
 
 console.log('Bestiario y contenido');

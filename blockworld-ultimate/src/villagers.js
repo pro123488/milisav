@@ -233,6 +233,7 @@ export class Villager extends Mob {
 export class StoneGuardian extends Mob {
   constructor(game) {
     super(game, GUARDIAN_DEF);
+    this.isGolem = true;
     this.village = null; this.home = null; this.atkCd = 1; this.angry = 0; this.attackAnim = 0;
     this.nav = new PathFollower(this); this.modeTimer = 0; this.target = null;
   }

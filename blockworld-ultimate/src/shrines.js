@@ -64,9 +64,16 @@ function planShrine(terrain, rx, rz) {
   return null;
 }
 
+/** Columnas de muestra alrededor de (X,Z): n puntos en el anillo de radio r (más el centro). */
+function ring(terrain, X, Z, r, n) {
+  const out = [terrain.column(X, Z)];
+  for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2; out.push(terrain.column(Math.round(X + Math.cos(a) * r), Math.round(Z + Math.sin(a) * r))); }
+  return out;
+}
 function siteFor(terrain, type, X, Z, h) {
   const T = SHRINE_TYPES[type];
   let y;
+  const plan = { type, boss: T.boss, name: T.name, x: X, z: Z, r: T.r, surface: Math.max(h, SEA) };
   if (type === 'bosque' || type === 'fuego') {
     if (h < SEA + 1 || h > WH - 30) return null;
     for (let i = 0; i < 8; i++) {
@@ -74,14 +81,24 @@ function siteFor(terrain, type, X, Z, h) {
       const hh = Math.floor(terrain.column(Math.round(X + Math.cos(a) * 10), Math.round(Z + Math.sin(a) * 10)).h);
       if (hh < SEA || Math.abs(hh - h) > 7) return null;
     }
+    // la caldera no puede quedar dentro de un lago de lava natural (la inundaría)
+    if (type === 'fuego') for (const r of [0, 6, 12, 16]) for (const c of ring(terrain, X, Z, r, 12)) if (c.lavaTop > 0) return null;
     y = h;
-  } else if (type === 'mar') y = h;
-  else {
+  } else if (type === 'mar') {
+    // todo el cilindro bajo el agua (no en la costa)
+    for (const r of [T.r - 4, T.r + 1, T.r + 3]) for (const c of ring(terrain, X, Z, r, 16)) if (c.h >= SEA - 3) return null;
+    y = h;
+  } else {
     const surf = Math.max(h, SEA);
     y = Math.max(12, Math.min(34, surf - 26));
     if (surf - y < 18) return null;
+    // altura real del pozo: la columna más alta entre la torre y su salida (al Oeste)
+    let top = SEA;
+    for (let dx = -3; dx <= 1; dx++) top = Math.max(top, Math.floor(terrain.column(X + 9 + dx, Z).h));
+    plan.shaftTop = top + 1;
   }
-  return { type, boss: T.boss, name: T.name, x: X, y, z: Z, r: T.r, surface: Math.max(h, SEA) };
+  plan.y = y;
+  return plan;
 }
 
 /** Santuarios cuya zona toca el chunk (cx,cz) ampliado `margin` bloques. */
@@ -199,8 +216,8 @@ const BUILD = {
     W.set(s.x, y0 + 1, s.z, ID.ALTAR_CRYSTAL);
     // Pozo de acceso con escalera de mano (pegada a un pilar de geoda al Este) y torre de geoda en la superficie
     const sx = s.x + 9, sz = s.z;
-    const surf = Math.max(Math.floor(terrain.column(sx, sz).h), SEA);
-    const topY = surf + 1; // primer nivel de aire sobre el suelo
+    const topY = s.shaftTop; // primer nivel de aire sobre el suelo más alto de la torre y su salida
+    const surf = topY - 1;
     const RING = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
     for (let y = y0 + 1; y <= topY + 2; y++) {
       W.set(sx + 1, y, sz, ID.GEODE);                                   // soporte de la escalera
@@ -209,7 +226,11 @@ const BUILD = {
     }
     for (const [dx, dz] of RING.concat([[0, 0]])) W.set(sx + dx, topY + 3, sz + dz, ID.GEODE); // tejado
     W.set(sx, topY + 4, sz, ID.LANTERN);
-    W.set(sx - 1, topY, sz, 0); W.set(sx - 1, topY + 1, sz, 0);          // entrada al Oeste
+    // entrada al Oeste: pasillo despejado con suelo hasta fuera de la torre
+    for (let dx = 1; dx <= 3; dx++) {
+      for (let k = 0; k <= 2; k++) W.set(sx - dx, topY + k, sz, dx === 1 && k === 2 ? ID.GEODE : 0);
+      if (W.get(sx - dx, surf, sz) === 0 || W.get(sx - dx, surf, sz) === ID.WATER) W.set(sx - dx, surf, sz, ID.GEODE);
+    }
     W.set(sx - 2, surf, sz, ID.RUNESTONE);
   },
 };
