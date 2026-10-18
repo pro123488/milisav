@@ -207,8 +207,8 @@ docs/                            Plan de fases y especificaciones
   se unen al costado de una puerta de valla; vaciar un cubo sobre una fuente de otro fluido vuelve a funcionar; los animales
   atados no rompen la cuerda al asustarse ni la sueltan si la valla está en un chunk sin cargar, y la cuerda se recupera si
   muere el animal o el jugador; ya no se pierden animales persistentes al descargar chunks muy poblados; la arena que cae sobre
-  una puerta de valla abierta se suelta como objeto; el rayo de selección sale de la cámara al subir escalones.
-  Pendiente (cosmético): el pomo de la puerta se ve junto a la bisagra en una de las dos caras.
+  una puerta de valla abierta se suelta como objeto; el rayo de selección sale de la cámara al subir escalones; y (Fase 6) el
+  pomo de la puerta queda lejos de la bisagra en las dos caras.
 
 ## Nota sobre el encargo
 
