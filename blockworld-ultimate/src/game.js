@@ -398,6 +398,7 @@ export class Game {
   // ═════════════ Muerte y reaparición ═════════════
   onPlayerDeath(cause, source) {
     this.stats.deaths++;
+    if (this.riding) this.dismount();
     const p = this.player;
     if (!this.meta.keepInventory && this.mode !== 'creative') {
       for (const s of this.inventory.takeAll()) this.dropItem(s, p.x, p.y + 1, p.z, 3);
@@ -554,6 +555,7 @@ export class Game {
     if (this.riding || v.rider) return false;
     this.riding = v; v.rider = { push: false, ctl: null };
     this.mining.reset(); this.eating = null;
+    const [sx, sy, sz] = v.seat(), p = this.player; p.x = sx; p.y = sy; p.z = sz; p.vx = p.vy = p.vz = 0; p.flying = false; // sentarse ya
     this.ui.toast(v.type === 'minecart' ? 'En la vagoneta: W para avanzar, C para bajar' : 'En la barca: W/S remar, A/D girar, C para bajar', 2600);
     this.audio.play('door', v.x, v.y, v.z);
     return true;
@@ -581,13 +583,20 @@ export class Game {
     const v = this.riding, p = this.player;
     if (!v || v.removed) { this.riding = null; return; }
     if (move.crouch) { this.dismount(); return; }
+    // si algo movió al jugador lejos del asiento (/tp, /spawn, reaparecer…), se baja sin volver a sentarlo
+    { const [sx, sy, sz] = v.seat(); if (Math.abs(p.x - sx) > 2 || Math.abs(p.y - sy) > 2 || Math.abs(p.z - sz) > 2) { this.riding = null; v.rider = null; return; } }
     const d = p.lookDir();
     v.rider.push = move.fwd > 0;
     v.rider.look = facingFromVector(d.x, d.z);
     v.rider.ctl = { fwd: move.fwd, turn: -move.strafe };
     const [sx, sy, sz] = v.seat();
     p.x = sx; p.y = sy; p.z = sz; p.vx = p.vy = p.vz = 0; p.onGround = true; p.fallDistance = 0; p.moved = 0; p.landed = null;
-    p.inWater = false; p.headInWater = false;
+    // fluidos en el asiento (como hace Player.update): lava que quema, cabeza bajo el agua…
+    const w = this.world, fx = Math.floor(sx), fz = Math.floor(sz);
+    const feetF = w.fluidAt(fx, Math.floor(sy + 0.1), fz), bodyF = w.fluidAt(fx, Math.floor(sy + 0.9), fz), headF = w.fluidAt(fx, Math.floor(sy + p.eye), fz);
+    p.inLava = feetF === 2 || bodyF === 2;
+    p.inWater = v.type !== 'boat' && (feetF === 1 || bodyF === 1); // en una barca a flote no se está "en el agua"
+    p.headInWater = headF === 1;
   }
 
   // ═════════════ Dimensiones (Fase 5) ═════════════
@@ -960,6 +969,8 @@ export class Game {
       const k = w.beKey(x, y, z);
       const be = w.blockEntities.get(k);
       if (be) {
+        // si su pantalla está abierta se cierra antes (si no, se podrían sacar otra vez los objetos ya soltados)
+        if (this.ui.screen && this.ui.screen.be === be) this.ui.closeScreen();
         for (const s of be.slots) if (s) this.dropItem(s, x + 0.5, y + 0.5, z + 0.5, 2);
         w.blockEntities.delete(k);
       }
@@ -1049,7 +1060,7 @@ export class Game {
     const r = this._eyeRay();
     const canAct = this.state === 'playing' && ctl.locked && !this.survival.dead;
     let hit = canAct ? raycastBlocks(w, r.ox, r.oy, r.oz, r.dx, r.dy, r.dz, this.reach) : null;
-    const eh = canAct ? this.entities.raycast(r.ox, r.oy, r.oz, r.dx, r.dy, r.dz, this.reach, (e) => !e.burrowed) : null;
+    const eh = canAct ? this.entities.raycast(r.ox, r.oy, r.oz, r.dx, r.dy, r.dz, this.reach, (e) => !e.burrowed && e !== this.riding) : null;
     let entityTarget = null;
     if (eh && (!hit || eh.dist < hit.dist)) { entityTarget = eh.entity; hit = null; }
     this.hit = hit; this.entityTarget = entityTarget;

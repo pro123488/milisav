@@ -402,6 +402,9 @@ export class EntityManager {
       if (d > this.simDistance + 16) {
         // un jefe lejos del jugador vuelve a dormir y devuelve la ofrenda (no se guarda en un chunk que sigue cargado)
         if (e.isBoss && e.deathTime < 0 && e.sleepAgain) { e.sleepAgain(); continue; }
+        // lo persistente (vehículos, mascotas, aldeanos…) con su chunk aún cargado se congela y se oculta: se guarda
+        // al descargarse el chunk (si se guardara ahora no volvería a aparecer mientras el chunk siga cargado)
+        if (e.persistent && this.game.world.isLoaded(Math.floor(e.x), Math.floor(e.z))) { if (e.obj) e.obj.visible = false; continue; }
         if (e.persistent) this.game.sleepEntity(e);
         e.removed = true; continue;
       }

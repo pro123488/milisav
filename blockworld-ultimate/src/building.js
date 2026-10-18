@@ -372,8 +372,8 @@ export class Building {
     return true;
   }
 
-  /** Abre/cierra una puerta (las dos mitades). Devuelve false si el nuevo estado chocaría con alguien. */
-  toggleDoor(x, y, z, wantOpen = null) {
+  /** Abre/cierra una puerta (las dos mitades). Devuelve false si ya estaba así y 'denied' si chocaría con alguien. */
+  toggleDoor(x, y, z, wantOpen = null, quiet = false) {
     const w = this.game.world;
     const b0 = Blocks.get(w.getBlock(x, y, z));
     if (b0.family !== 'door') return false;
@@ -383,7 +383,7 @@ export class Building {
     const open = wantOpen === null ? 1 - lb.open : (wantOpen ? 1 : 0);
     if (open === lb.open) return false;
     const lower = familyState(lb.famBase, { facing: lb.facing, open }), upper = familyState(lb.famBase, { facing: lb.facing, open, upper: 1 });
-    if (this.blocksEntity(x, ly, z, lower) || this.blocksEntity(x, ly + 1, z, upper)) { this._denied(); return true; }
+    if (this.blocksEntity(x, ly, z, lower) || this.blocksEntity(x, ly + 1, z, upper)) { if (!quiet) this._denied(); return 'denied'; }
     w.setBlock(x, ly, z, lower);
     if (Blocks.get(w.getBlock(x, ly + 1, z)).family === 'door') w.setBlock(x, ly + 1, z, upper);
     this.game.audio && this.game.audio.play(lb.sound === 'metal' ? 'door_metal' : 'door', x + 0.5, ly + 1, z + 0.5);
@@ -391,7 +391,7 @@ export class Building {
   }
 
   /** Puerta de valla: al abrir, las hojas se apartan del jugador. */
-  toggleGate(x, y, z, wantOpen = null) {
+  toggleGate(x, y, z, wantOpen = null, quiet = false) {
     const w = this.game.world, p = this.game.player;
     const b = Blocks.get(w.getBlock(x, y, z));
     if (b.family !== 'gate') return false;
@@ -400,20 +400,20 @@ export class Building {
     let facing = b.facing;
     if (open && wantOpen === null) facing = (b.facing % 2 === 0) ? (p.z < z + 0.5 ? 0 : 2) : (p.x > x + 0.5 ? 1 : 3);
     const nid = familyState(b.famBase, { facing, open });
-    if (this.blocksEntity(x, y, z, nid)) { this._denied(); return true; }
+    if (this.blocksEntity(x, y, z, nid)) { if (!quiet) this._denied(); return 'denied'; }
     w.setBlock(x, y, z, nid);
     this.game.audio && this.game.audio.play('door', x + 0.5, y + 0.5, z + 0.5);
     return true;
   }
 
-  toggleTrapdoor(x, y, z, wantOpen = null) {
+  toggleTrapdoor(x, y, z, wantOpen = null, quiet = false) {
     const w = this.game.world;
     const b = Blocks.get(w.getBlock(x, y, z));
     if (b.family !== 'trapdoor') return false;
     const open = wantOpen === null ? 1 - b.open : (wantOpen ? 1 : 0);
     if (open === b.open) return false;
     const nid = familyState(b.famBase, { facing: b.facing, open, top: b.top });
-    if (this.blocksEntity(x, y, z, nid)) { this._denied(); return true; }
+    if (this.blocksEntity(x, y, z, nid)) { if (!quiet) this._denied(); return 'denied'; }
     w.setBlock(x, y, z, nid);
     this.game.audio && this.game.audio.play('door', x + 0.5, y + 0.5, z + 0.5);
     return true;

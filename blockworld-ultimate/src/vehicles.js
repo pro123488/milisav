@@ -62,7 +62,8 @@ export class Minecart extends Vehicle {
     const [x, y, z] = this.cell, r = RAIL[this.world.getBlock(x, y, z)];
     if (!r) return;
     const [lx, ly, lz] = railPoint(r, this.entry, this.exit, this.t);
-    this.x = x + lx; this.y = y + ly; this.z = z + lz;
+    // siempre dentro de su celda (en el borde, x = celda + 1 caería en el chunk vecino al guardarse)
+    this.x = x + Math.min(lx, 0.999); this.y = y + ly; this.z = z + Math.min(lz, 0.999);
     const a = Math.min(1, this.t + 0.05), b = Math.max(0, this.t - 0.05);
     const p1 = railPoint(r, this.entry, this.exit, a), p0 = railPoint(r, this.entry, this.exit, b);
     this.yaw = Math.atan2(-(p1[0] - p0[0]), -(p1[2] - p0[2]));
@@ -76,10 +77,16 @@ export class Minecart extends Vehicle {
     this.hitCd = Math.max(0, this.hitCd - dt);
     if (!this.cell) { this.removed = true; return; }
     let [x, y, z] = this.cell;
+    if (!w.isLoaded(x, z)) return; // el chunk de su raíl aún no está cargado: esperar (no es que falte el raíl)
     let r = RAIL[w.getBlock(x, y, z)];
     if (!r) { // sin raíl debajo: se suelta como objeto
       if (this.rider && g.dismount) g.dismount();
       this.removed = true; g.dropItem({ i: Items.id('minecart'), n: 1, d: 0 }, this.x, this.y + 0.3, this.z); return;
+    }
+    // Si el raíl cambió de forma bajo la vagoneta, se toma el extremo más parecido a la salida que llevaba
+    if (!((this.entry === r.a && this.exit === r.b) || (this.entry === r.b && this.exit === r.a))) {
+      const diff = (a, b) => Math.min((a - b + 4) % 4, (b - a + 4) % 4);
+      this.exit = diff(this.exit, r.a) <= diff(this.exit, r.b) ? r.a : r.b; this.entry = this.exit === r.a ? r.b : r.a;
     }
     // Pendientes, propulsores, rozamiento y empuje del pasajero
     if (r.asc >= 0) { if (this.exit === r.asc) this.speed -= 5 * dt; else this.speed += 5 * dt; }

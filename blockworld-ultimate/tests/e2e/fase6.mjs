@@ -120,6 +120,30 @@ await withPage('index.html?autostart=creative&rd=3&seed=maquinas&type=flat&mobs=
   ok('con W la barca navega y flota', sail && sail.dz > 4 && Math.abs(sail.y - (sail.water + 0.575)) < 0.4, JSON.stringify(sail));
   await page.keyboard.down('KeyC'); await frames(page, 6); await page.keyboard.up('KeyC');
 
+  // ── Correcciones de la revisión: teletransporte y muerte montado, barca aparcada lejos ──
+  const fixes = await ev(async () => {
+    const g = window.__game; const p = g.player;
+    const b = g.entities.list.find((e) => e.type === 'boat' && !e.removed);
+    const wait = () => new Promise((r) => setTimeout(r, 400));
+    g.mount(b); await wait();
+    const bx = b.x, bz = b.z;
+    p.teleport(bx + 6.5, p.y + 4, bz + 0.5); p.flying = true; await wait();
+    const tp = { riding: !!g.riding, dx: +(p.x - (bx + 6.5)).toFixed(2) };
+    // aparcada a más de 80 bloques con su chunk aún cargado: no desaparece
+    p.teleport(bx + 86, p.y, bz); await wait(); await wait();
+    const loaded = g.world.isLoaded(Math.floor(bx), Math.floor(bz));
+    p.teleport(bx + 3, p.y, bz); await wait();
+    const back = g.entities.list.some((e) => e === b && !e.removed);
+    // morir montado: se reaparece fuera de la barca
+    g.mount(b); await wait();
+    g.survival.health = 0; g.survival.die('cmd'); await wait();
+    const dead = { riding: !!g.riding };
+    g.respawn(); await wait(); await wait();
+    return { tp, loaded, back, dead, after: !!g.riding, dist: +Math.hypot(p.x - b.x, p.z - b.z).toFixed(1) };
+  });
+  ok('teletransportarse o morir montado baja del vehículo; una barca aparcada lejos no desaparece', !fixes.tp.riding && Math.abs(fixes.tp.dx) < 0.6 && fixes.back && !fixes.dead.riding && !fixes.after, JSON.stringify(fixes));
+  await ensurePlaying(page);
+
   // ── Guardar: la vagoneta y la barca se guardan como entidades ──
   const saved = await ev(async () => { const g = window.__game; await g.saveGame(true); const all = Object.values(g.meta.sleeping || {}).flat(); return { cart: all.some((e) => e.t === 'minecart'), boat: all.some((e) => e.t === 'boat') }; });
   ok('vagoneta y barca se guardan con el mundo', saved.cart && saved.boat, JSON.stringify(saved));

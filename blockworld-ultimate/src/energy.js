@@ -10,6 +10,7 @@ import { B_FAMILY, FAM, FACING_VEC } from './shapes.js';
 import { boosterWithPower } from './rails.js';
 import { addToSlots } from './inventory.js';
 import { smeltRecipe } from './crafting.js';
+import { brewFor, isIngredient, isBrewBase } from './alchemy.js';
 
 export const TICK = 0.1;
 const N6 = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
@@ -28,6 +29,8 @@ export class EnergySystem {
     this.pending = new Map();     // repetidor/inversor → {state, at}
     this.buttons = new Map();     // botón pulsado → tick en que se suelta
     this.lastPowered = new Set(); // consumidores con energía en el pulso anterior
+    this.retry = new Map();       // puertas/trampillas que no pudieron cambiar (alguien en medio) → estado pedido
+    this.recheck = new Set();     // consumidores encendidos recién cargados o movidos: se comprueban en el siguiente pulso
     this.tickN = 0; this.acc = 0;
   }
   get world() { return this.game.world; }
@@ -38,9 +41,23 @@ export class EnergySystem {
     const b = c.blocks, x0 = c.cx * 16, z0 = c.cz * 16;
     for (let i = 0; i < b.length; i++) {
       const id = b[i];
-      if (id < 900 || !ALWAYS.has(E(id))) continue;
-      this.nodes.add(K(x0 + (i & 15), i >> 8, z0 + ((i >> 4) & 15)));
+      if (id < 160) continue;
+      const x = x0 + (i & 15), y = i >> 8, z = z0 + ((i >> 4) & 15);
+      if (ALWAYS.has(E(id))) this.nodes.add(K(x, y, z));
+      else if (this._activeConsumer(id)) this.recheck.add(this._consumerKey(x, y, z, id));
     }
+  }
+  /**
+   * Consumidores en estado "encendido" que solo la energía pudo poner así (lámpara encendida, pistón extendido,
+   * propulsor activo, puerta de hierro abierta). Al cargarlos o moverlos se vuelven a comprobar en el siguiente
+   * pulso: si nada les da energía, se apagan. Las puertas de madera abiertas no (se abren a mano).
+   */
+  _activeConsumer(id) {
+    const b = BLOCKS[id];
+    if (!b) return false;
+    if (b.energy === 'lamp' || b.energy === 'booster') return b.light > 0 || (b.rail && b.rail.on);
+    if (b.energy === 'piston') return !!b.extended;
+    return b.family === 'door' && b.sound === 'metal' && !!b.open && !b.upper;
   }
   unloadChunk(c) {
     for (const k of [...this.nodes]) { const [x, , z] = P(k); if (x >> 4 === c.cx && z >> 4 === c.cz) this.nodes.delete(k); }
@@ -48,6 +65,7 @@ export class EnergySystem {
   onBlockChange(x, y, z, old, nw) {
     const k = K(x, y, z);
     if (ALWAYS.has(E(nw))) this.nodes.add(k); else this.nodes.delete(k);
+    if (this._activeConsumer(nw)) this.recheck.add(this._consumerKey(x, y, z, nw));
     // romper la cabeza de un pistón lo recoge; romper un pistón extendido quita la cabeza
     if (old >= ID.PISTON_HEAD && old <= ID.PISTON_HEAD + 3 && nw === 0) {
       const f = BLOCKS[old].facing, bx = x - FACING_VEC[f][0], bz = z - FACING_VEC[f][1];
@@ -85,7 +103,8 @@ export class EnergySystem {
     const w = this.world, g = this.game;
     if (!w) return;
     this.tickN++;
-    // Botones que se sueltan
+    // Botones que se sueltan (un botón pulsado sin temporizador —partida cargada, chunk recargado— se suelta en 1 s)
+    for (const k of this.nodes) if (!this.buttons.has(k)) { const [x, y, z] = P(k); if (w.getBlock(x, y, z) === ID.BUTTON_ON) this.buttons.set(k, this.tickN + 10); }
     for (const [k, t] of this.buttons) if (this.tickN >= t) { const [x, y, z] = P(k); if (w.getBlock(x, y, z) === ID.BUTTON_ON) w.setBlock(x, y, z, ID.BUTTON); this.buttons.delete(k); }
     // Placas de presión: pisadas por el jugador o por criaturas
     for (const k of this.nodes) {
@@ -163,11 +182,12 @@ export class EnergySystem {
       const [x, y, z] = P(k), id = w.getBlock(x, y, z);
       if (this._isConsumer(id)) now.add(this._consumerKey(x, y, z, id));
     }
-    const check = new Set([...now, ...this.lastPowered]);
+    const re = this.recheck; this.recheck = new Set();
+    const check = new Set([...now, ...this.lastPowered, ...re, ...this.retry.keys()]);
     for (const k of check) {
       const [x, y, z] = P(k), id = w.getBlock(x, y, z);
-      const on = now.has(k), was = this.lastPowered.has(k);
-      this._drive(x, y, z, id, on, was);
+      const on = now.has(k), was = this.lastPowered.has(k) || re.has(k);
+      this._drive(x, y, z, id, on, was, k);
     }
     this.lastPowered = now;
     // 5) Tolvas: cada 4 pulsos
@@ -210,18 +230,21 @@ export class EnergySystem {
   _consumerKey(x, y, z, id) { const b = BLOCKS[id]; return b.family === 'door' && b.upper ? K(x, y - 1, z) : K(x, y, z); }
 
   /** Actúa sobre un consumidor según tenga energía (on) y la tuviera en el pulso anterior (was). */
-  _drive(x, y, z, id, on, was) {
+  _drive(x, y, z, id, on, was, key = K(x, y, z)) {
     const w = this.world, g = this.game, b = BLOCKS[id];
-    if (!b) return;
+    if (!b) { this.retry.delete(key); return; }
     if (b.family === 'door' || b.family === 'trapdoor' || b.family === 'gate') {
-      if (on === was) return; // solo en los flancos: a mano se siguen pudiendo abrir las de madera
+      // solo en los flancos (a mano se siguen pudiendo abrir las de madera), salvo si el cambio anterior quedó
+      // bloqueado por alguien en medio: entonces se reintenta en cada pulso mientras la energía no cambie
+      const pend = this.retry.get(key);
+      if (on === was && (pend === undefined || pend !== on)) { this.retry.delete(key); return; }
       const bd = g.building;
       if (!bd) return;
-      if (b.family === 'door') { if (!bd.toggleDoor(x, y, z, on)) { /* ya estaba así */ } }
-      else if (b.family === 'trapdoor') bd.toggleTrapdoor(x, y, z, on);
-      else bd.toggleGate(x, y, z, on);
+      const r = b.family === 'door' ? bd.toggleDoor(x, y, z, on, true) : b.family === 'trapdoor' ? bd.toggleTrapdoor(x, y, z, on, true) : bd.toggleGate(x, y, z, on, true);
+      if (r === 'denied') this.retry.set(key, on); else this.retry.delete(key);
       return;
     }
+    this.retry.delete(key);
     switch (b.energy) {
       case 'lamp': { const want = on ? ID.ENERGY_LAMP_ON : ID.ENERGY_LAMP; if (id !== want) w.setBlock(x, y, z, want); break; }
       case 'booster': { const want = boosterWithPower(id, on); if (want !== id) w.setBlock(x, y, z, want); break; }
@@ -243,10 +266,11 @@ export class EnergySystem {
     const line = [];
     let k = 1;
     for (; k <= PISTON_PUSH + 1; k++) {
+      if (!w.isLoaded(x + dx * k, z + dz * k)) return false; // no empujar hacia un chunk sin cargar (se perdería el bloque)
       const id = w.getBlock(x + dx * k, y, z + dz * k);
       if (id === 0 || B_FLUID[id] || B_REPLACEABLE[id]) break;
       const b = BLOCKS[id];
-      if (!b || b.unbreakable || b.container || b.interact === 'altar' || b.energy === 'piston' || (id >= ID.PISTON_HEAD && id <= ID.PISTON_HEAD + 3) || b.family === 'door' || id === ID.PORTAL_CORE_ACTIVE || id === ID.PORTAL_VEIL) return false;
+      if (!b || b.unbreakable || b.container || id === ID.FURNACE || id === ID.FURNACE_LIT || b.interact === 'altar' || b.energy === 'piston' || (id >= ID.PISTON_HEAD && id <= ID.PISTON_HEAD + 3) || b.family === 'door' || id === ID.PORTAL_CORE_ACTIVE || id === ID.PORTAL_VEIL) return false;
       line.push(id);
     }
     if (line.length > PISTON_PUSH) return false;
@@ -342,28 +366,28 @@ export class EnergySystem {
     const w = this.world, g = this.game;
     const be = w.blockEntities.get(w.beKey(x, y, z)) || (g.getBlockEntity ? g.getBlockEntity(x, y, z, 'hopper', 5) : null);
     if (!be) return;
-    // entregar 1 objeto al contenedor de abajo
+    // entregar 1 objeto al contenedor de abajo: el primero que quepa (un objeto que no entra no atasca a los demás)
     const below = this._container(x, y - 1, z);
     if (below) {
-      const i = be.slots.findIndex((s) => s);
-      if (i >= 0) {
-        const one = { i: be.slots[i].i, n: 1, d: be.slots[i].d || 0 };
-        const target = below.type === 'furnace' ? this._furnaceSlot(below, one) : below.slots;
-        if (target && !addToSlots(target, one)) { be.slots[i].n--; if (be.slots[i].n <= 0) be.slots[i] = null; }
+      for (let i = 0; i < be.slots.length; i++) {
+        const s = be.slots[i];
+        if (!s) continue;
+        const one = { i: s.i, n: 1, d: s.d || 0 };
+        const target = below.type === 'furnace' ? this._furnaceSlot(below, one) : below.type === 'alchemy' ? this._alchemySlots(below, one) : below.slots;
+        if (target && !addToSlots(target, one)) { s.n--; if (s.n <= 0) be.slots[i] = null; break; }
       }
     }
-    // tomar 1 objeto del contenedor de arriba (del horno, solo del hueco de salida)
+    // tomar 1 objeto del contenedor de arriba (del horno: el resultado y lo que no es combustible, como un cubo vacío;
+    // de la mesa de alquimia: los tónicos terminados)
     const above = this._container(x, y + 1, z);
     if (above) {
-      const from = above.type === 'furnace' ? [2] : above.slots.map((_, k) => k);
-      for (const k of from) {
+      for (const k of this._pullable(above)) {
         const s = above.slots[k];
         if (!s) continue;
         const one = { i: s.i, n: 1, d: s.d || 0 };
-        if (!addToSlots(be.slots, one)) { s.n--; if (s.n <= 0) above.slots[k] = null; }
-        break;
+        if (!addToSlots(be.slots, one)) { s.n--; if (s.n <= 0) above.slots[k] = null; break; }
       }
-    } else if (g.entities) {
+    } else if (g.entities && !(BLOCKS[w.getBlock(x, y + 1, z)] || {}).solid) { // no recoge a través de un bloque sólido
       // recoger objetos sueltos que caen dentro
       for (const e of g.entities.list) {
         if (e.removed || e.type !== 'item' || !e.stack) continue;
@@ -388,6 +412,22 @@ export class EnergySystem {
     const it = Items.get(one.i);
     const idx = smeltRecipe(one.i) ? 0 : it && it.fuel ? 1 : -1;
     return idx < 0 ? null : this._slotView(be, idx);
+  }
+  /** Huecos de la mesa de alquimia donde puede ir `one`: ingrediente arriba, frascos (de uno en uno) abajo. */
+  _alchemySlots(be, one) {
+    const k = Items.get(one.i).key;
+    if (isIngredient(k)) return this._slotView(be, 0);
+    if (isBrewBase(k)) { for (let i = 1; i <= 3; i++) if (!be.slots[i]) return this._slotView(be, i); }
+    return null;
+  }
+  /** Huecos de los que una tolva puede sacar objetos de un contenedor. */
+  _pullable(c) {
+    if (c.type === 'furnace') return c.slots[1] && !Items.get(c.slots[1].i).fuel ? [2, 1] : [2];
+    if (c.type === 'alchemy') {
+      const ing = c.slots[0] ? Items.get(c.slots[0].i).key : null;
+      return [1, 2, 3].filter((i) => { const s = c.slots[i]; if (!s) return false; const k = Items.get(s.i).key; return !isBrewBase(k) || (ing && !brewFor(k, ing)); });
+    }
+    return c.slots.map((_, k) => k);
   }
   _slotView(be, idx) {
     // vista de un solo hueco compatible con addToSlots (escribe en be.slots[idx])

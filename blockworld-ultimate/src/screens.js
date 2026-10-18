@@ -318,6 +318,13 @@ export function openChestScreen(game, be, title = 'Cofre') {
     if (slots === be.slots) return shiftMove(slots, idx, [{ slots: inv.slots, from: 0, to: 36 }]);
     return s.shiftFromPlayer(slots, idx, [{ slots: be.slots, from: 0, to: n }]);
   };
+  // las máquinas (tolvas, dispensadores) cambian el contenido con la pantalla abierta: repintar si cambia
+  s.update = () => {
+    s.sigCheck();
+    const sig = be.slots.map((x) => (x ? x.i + ':' + x.n : '-')).join(',');
+    if (sig !== s._beSig) { s._beSig = sig; s.refresh(); }
+  };
+  s.be = be;
   s.refresh();
   return s;
 }
@@ -351,6 +358,7 @@ export function openFurnaceScreen(game, be) {
     $('div', arrow).style.width = (rec ? Math.round((ex.cook / rec.time) * 100) : 0) + '%';
     for (const v of s.views) UI.paintSlot(v.el, v.slots[v.idx]);
   };
+  s.be = be;
   s.refresh();
   return s;
 }
@@ -389,6 +397,7 @@ export function openAlchemyScreen(game, be) {
     $('div', bubbles).style.width = (canBrew(be) ? Math.round((ex.brew / BREW_TIME) * 100) : 0) + '%';
     for (const v of s.views) UI.paintSlot(v.el, v.slots[v.idx]);
   };
+  s.be = be;
   s.refresh();
   return s;
 }

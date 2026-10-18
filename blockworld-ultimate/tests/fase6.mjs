@@ -161,7 +161,88 @@ test('cosechadora: recoge los cultivos maduros de delante y vuelve a plantar', (
   assert.ok(g.drops.some((d) => Items.get(d.stack.i).key === 'wheat'));
 });
 
+console.log('Correcciones de la revisión de la Fase 6');
+test('el pistón no empuja hornos ni hacia un chunk sin cargar', () => {
+  const g = rig('x1'), w = g.world;
+  w.setBlock(4, G, 8, ID.PISTON + 1); w.setBlock(5, G, 8, ID.FURNACE); w.setBlock(3, G, 8, ID.LEVER_ON);
+  const be = g.getBlockEntity(5, G, 8, 'furnace', 3); be.slots[2] = { i: Items.id('iron_ingot'), n: 30, d: 0 };
+  run(g, 0.3);
+  assert.equal(w.getBlock(5, G, 8), ID.FURNACE); assert.equal(w.getBlock(4, G, 8), ID.PISTON + 1); assert.equal(g.drops.length, 0);
+  // fila que llega al borde de la zona cargada: no se mueve (antes se perdía el último bloque)
+  let ex = 8; while (w.isLoaded(ex + 1, 8)) ex++;
+  w.setBlock(ex - 3, G, 8, ID.PISTON + 1); w.setBlock(ex - 2, G, 8, ID.STONE); w.setBlock(ex - 1, G, 8, ID.STONE); w.setBlock(ex, G, 8, ID.BRICKS);
+  w.setBlock(ex - 4, G, 8, ID.LEVER_ON); run(g, 0.3);
+  assert.equal(w.getBlock(ex, G, 8), ID.BRICKS); assert.equal(w.getBlock(ex - 3, G, 8), ID.PISTON + 1);
+});
+test('tolva → horno: lo que no cabe no atasca a lo demás (mineral a la entrada, carbón al combustible)', () => {
+  const g = rig('x2'), w = g.world;
+  w.setBlock(4, G, 8, ID.FURNACE); w.setBlock(4, G + 1, 8, ID.HOPPER);
+  const f = g.getBlockEntity(4, G, 8, 'furnace', 3); f.slots[0] = { i: Items.id('cobble'), n: 8, d: 0 };
+  const h = g.getBlockEntity(4, G + 1, 8, 'hopper', 5);
+  h.slots[0] = { i: Items.id('raw_iron'), n: 4, d: 0 }; h.slots[1] = { i: Items.id('coal'), n: 3, d: 0 };
+  run(g, 2.5);
+  assert.ok(f.slots[1] && Items.get(f.slots[1].i).key === 'coal', 'el carbón llega al hueco de combustible');
+  assert.equal(h.slots[0].n, 4, 'el mineral espera (la entrada tiene adoquín)');
+});
+test('tolva → mesa de alquimia: ingrediente arriba y frascos de uno en uno; no recoge a través de un bloque', () => {
+  const g = rig('x3'), w = g.world;
+  w.setBlock(4, G, 8, ID.ALCHEMY_TABLE); w.setBlock(4, G + 1, 8, ID.HOPPER);
+  const h = g.getBlockEntity(4, G + 1, 8, 'hopper', 5);
+  h.slots[0] = { i: Items.id('water_flask'), n: 2, d: 0 }; h.slots[1] = { i: Items.id('crystal_shard'), n: 2, d: 0 };
+  run(g, 4);
+  const a = w.blockEntities.get(w.beKey(4, G, 8));
+  assert.equal(Items.get(a.slots[0].i).key, 'crystal_shard');
+  assert.ok(a.slots[1] && a.slots[1].n === 1 && a.slots[2] && a.slots[2].n === 1, 'un frasco por hueco');
+  w.setBlock(8, G, 8, ID.HOPPER); w.setBlock(8, G + 1, 8, ID.STONE);
+  g.dropItem({ i: Items.id('wheat'), n: 1, d: 0 }, 8.5, G + 2.05, 8.5); run(g, 1);
+  assert.equal(g.getBlockEntity(8, G, 8, 'hopper', 5).slots.filter(Boolean).length, 0);
+});
+test('una puerta de hierro que no pudo cerrarse por alguien en medio se cierra al apartarse', () => {
+  const g = rig('x4'), w = g.world;
+  w.setBlock(6, G, 8, ID.DOOR_IRON_N); w.setBlock(6, G + 1, 8, ID.DOOR_IRON_N_SUP); w.setBlock(5, G, 8, ID.LEVER_ON);
+  run(g, 0.3); assert.equal(Blocks.get(w.getBlock(6, G, 8)).open, 1);
+  g.player.x = 6.5; g.player.y = G; g.player.z = 8.15; // en el hueco de la puerta
+  g.energy.toggleLever(5, G, 8); run(g, 0.5);
+  assert.equal(Blocks.get(w.getBlock(6, G, 8)).open, 1, 'no se cierra encima del jugador');
+  g.player.x = 30; run(g, 0.3);
+  assert.equal(Blocks.get(w.getBlock(6, G, 8)).open, 0, 'se cierra al apartarse');
+});
+test('al cargar la partida (sistema nuevo) se apaga lo que no tiene energía y se suelta un botón pulsado', () => {
+  const g = rig('x5'), w = g.world;
+  w.setBlock(4, G, 4, ID.ENERGY_LAMP_ON); w.setBlock(8, G, 4, ID.PISTON_EXT + 1); w.setBlock(9, G, 4, ID.PISTON_HEAD + 1);
+  w.setBlock(12, G, 4, ID.BUTTON_ON); w.setBlock(13, G, 4, ID.ENERGY_LAMP);
+  g.energy = new EnergySystem(g);
+  w.onBlockChange = (x, y, z, o, n) => g.energy.onBlockChange(x, y, z, o, n);
+  for (const c of w.chunks.values()) g.energy.scanChunk(c);
+  run(g, 0.3);
+  assert.equal(w.getBlock(4, G, 4), ID.ENERGY_LAMP); assert.equal(w.getBlock(8, G, 4), ID.PISTON + 1); assert.equal(w.getBlock(9, G, 4), 0);
+  assert.equal(w.getBlock(13, G, 4), ID.ENERGY_LAMP_ON, 'el botón sigue pulsado un momento');
+  run(g, 1.3);
+  assert.equal(w.getBlock(12, G, 4), ID.BUTTON); assert.equal(w.getBlock(13, G, 4), ID.ENERGY_LAMP);
+});
+test('una lámpara encendida que un pistón saca de la energía se apaga', () => {
+  const g = rig('x6'), w = g.world;
+  w.setBlock(5, G, 9, ID.POWER_BLOCK); w.setBlock(5, G, 8, ID.ENERGY_LAMP); w.setBlock(4, G, 8, ID.PISTON + 1); w.setBlock(3, G, 8, ID.BUTTON);
+  run(g, 0.3); assert.equal(w.getBlock(5, G, 8), ID.ENERGY_LAMP_ON);
+  g.energy.press(3, G, 8); run(g, 0.4);
+  assert.equal(w.getBlock(5, G, 8), ID.PISTON_HEAD + 1); assert.equal(w.getBlock(6, G, 8), ID.ENERGY_LAMP);
+});
+
 console.log('Raíles y vehículos');
+test('la vagoneta sigue la nueva forma si el raíl cambia bajo ella, y nunca queda fuera de su celda', () => {
+  const g = rig('x7'), w = g.world;
+  w.setBlock(5, G, 5, ID.RAIL);
+  const c = new Minecart(g); c.placeOn(5, G, 5, 0); g.entities.add(c);
+  for (let x = 6; x <= 9; x++) { w.setBlock(x, G, 5, ID.RAIL); updateRailsAround(w, x, G, 5); }
+  assert.equal(RAIL[w.getBlock(5, G, 5)].a % 2, 1, 'la celda pasa a Este-Oeste');
+  c.rider = { push: true, look: 1 };
+  for (let i = 0; i < 100; i++) c.update(0.05);
+  assert.ok(c.cell[0] > 5, 'sale hacia el Este: ' + c.cell.join(','));
+  // final de vía en la última columna de un chunk: la vagoneta se queda dentro de su chunk
+  for (let x = 6; x <= 15; x++) { w.setBlock(x, G, 12, ID.RAIL); updateRailsAround(w, x, G, 12); }
+  const d = new Minecart(g); d.placeOn(14, G, 12, 1); d.speed = 0.6; g.entities.add(d);
+  for (let i = 0; i < 400; i++) { d.update(0.05); assert.ok(Math.floor(d.x) <= 15, 'x = ' + d.x); }
+});
 test('los raíles se orientan solos: rectas, curvas y rampas', () => {
   const g = rig('r1'), w = g.world;
   const put = (x, y, z) => { w.setBlock(x, y, z, ID.RAIL); updateRailsAround(w, x, y, z); };
