@@ -222,3 +222,81 @@ table.keys td { padding: 5px 8px; border-bottom: 1px solid #ffffff12; } table.ke
 .best-page ul { margin: 4px 0; padding-left: 18px; }
 @media (max-width: 700px) { .best-layout { flex-direction: column; } .best-list { width: auto; max-height: 160px; } }
 .fx-line { color: #c8a0ff; }
+
+/* ── Teléfonos y tabletas: controles táctiles ── */
+html { touch-action: manipulation; -webkit-text-size-adjust: 100%; }
+body.touch { -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+#touch-ui { position: fixed; inset: 0; z-index: 4; touch-action: none; }
+#touch-ui.hidden { display: none; }
+.t-layer { position: absolute; inset: 0; touch-action: none; }
+.t-stick { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; background: #ffffff12; border: 2px solid #ffffff44; pointer-events: none; }
+.t-stick.idle { left: calc(96px + env(safe-area-inset-left, 0px)); top: auto; bottom: 36px; margin: 0 0 -60px -60px; opacity: .55; }
+.t-stick.run { border-color: var(--acc2); background: #f2b84b22; }
+.t-knob { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px; border-radius: 50%; background: #ffffff55; border: 2px solid #ffffffaa; box-shadow: 0 2px 8px #0006; }
+.t-btn { position: absolute; width: 62px; height: 62px; border-radius: 50%; background: #0c141c99; border: 2px solid #ffffff66; color: #fff; font: 700 26px/58px var(--ui-font); text-align: center; touch-action: none; box-shadow: 0 2px 8px #0006; text-shadow: 0 1px 2px #000; }
+.t-btn.on, .t-btn.latched { background: #2fd6c0aa; border-color: #2fd6c0; }
+.t-jump { right: calc(22px + env(safe-area-inset-right, 0px)); bottom: 26px; width: 78px; height: 78px; line-height: 74px; font-size: 32px; }
+.t-crouch { right: calc(112px + env(safe-area-inset-right, 0px)); bottom: 16px; }
+.t-mine { right: calc(26px + env(safe-area-inset-right, 0px)); bottom: 118px; }
+.t-use { right: calc(104px + env(safe-area-inset-right, 0px)); bottom: 92px; }
+.t-top { position: absolute; top: calc(6px + env(safe-area-inset-top, 0px)); left: calc(6px + env(safe-area-inset-left, 0px)); display: flex; gap: 6px; }
+.t-btn.t-small { position: static; width: 42px; height: 42px; border-radius: 10px; font-size: 20px; line-height: 38px; }
+.t-close { position: fixed; z-index: 45; top: calc(8px + env(safe-area-inset-top, 0px)); right: calc(8px + env(safe-area-inset-right, 0px)); width: 46px; height: 46px; border-radius: 10px; background: #2b1418ee; border: 2px solid var(--danger); color: #fff; font: 800 24px/42px var(--ui-font); text-align: center; touch-action: manipulation; cursor: pointer; }
+.t-close.hidden { display: none; }
+.touch-bar { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; font-size: 12.5px; }
+.controls-help { display: flex; flex-direction: column; gap: 8px; }
+.opt.sel { grid-template-columns: 1fr 250px; } .opt.sel select { width: 100%; }
+body.touch #hotbar { pointer-events: auto; touch-action: none; }
+body.touch .slot .keynum { display: none; }
+body.touch .effects-hud { top: 64px; }
+body.touch #hud-top-left { top: 60px; }
+body.touch #chat-log { bottom: 150px; }
+body.touch #chat-input { bottom: auto; top: 60px; }
+body.touch .boss-bar { top: 56px; }
+body.touch .hud-compass { top: 100px; }
+
+.screen-split { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.split-a, .split-b { display: flex; flex-direction: column; gap: 8px; align-items: center; min-width: 0; }
+.split-a > .creative-bar, .split-a > .catalog, .split-a > .trash { align-self: stretch; }
+
+/* Pantallas pequeñas (teléfono en horizontal o en vertical) */
+@media (max-height: 520px), (max-width: 600px) {
+  .slot { width: 40px; height: 40px; } .slot img.icon { width: 28px; height: 28px; }
+  .slot.big { width: 54px; height: 54px; } .slot.big img.icon { width: 38px; height: 38px; }
+  .panel { padding: 10px 12px; gap: 8px; max-height: 98vh; max-height: 98dvh; max-width: 98vw; }
+  .panel h2 { font-size: 19px; }
+  .screen-overlay { padding: 4px; }
+  .catalog { grid-template-columns: repeat(9, 40px); max-height: 128px; }
+  .recipe-list { max-height: 170px; } .trade-list { max-height: 170px; } .brew-book { max-height: 150px; }
+  .craft-panel { min-width: 0; }
+  .trade-screen .panel { min-width: 0; }
+  .ach-list { min-width: 0; }
+  .item-name { height: 18px; font-size: 13px; }
+  #hud-center-msg { font-size: 22px; }
+  .menu-screen { justify-content: flex-start; gap: 10px; padding: 10px; }
+  .logo-main { font-size: clamp(26px, 5vw, 40px); } .logo-sub { font-size: 12px; margin-top: 2px; }
+  .btn { padding: 8px 14px; font-size: 15px; } .btn.big { font-size: 18px; padding: 10px 16px; }
+  .best-layout { min-height: 0; max-height: 72dvh; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .panel > * { flex-shrink: 0; }
+  .screen-split { flex-direction: row; align-items: flex-start; justify-content: center; gap: 14px; }
+  .split-a { flex: 1 1 auto; max-width: 54vw; } .split-b { flex: none; }
+  .split-a .creative-bar, .split-a .catalog, .split-a .trash { width: 100%; }
+  .catalog { grid-template-columns: repeat(auto-fill, 40px); max-height: 52vh; max-height: 52dvh; }
+  .tab { padding: 4px 7px; font-size: 12px; } .search { padding: 5px 8px; font-size: 14px; width: 100%; } .creative-bar { gap: 4px; }
+  .recipe-list { max-height: 46vh; max-height: 46dvh; }
+  .panel h3 { margin: 0; font-size: 12px; } .touch-bar .dim { display: none; }
+}
+@media (max-height: 520px) and (orientation: landscape) and (max-width: 760px) {
+  .slot { width: 34px; height: 34px; } .slot img.icon { width: 24px; height: 24px; } .catalog { grid-template-columns: repeat(auto-fill, 34px); }
+}
+/* Teléfono en vertical: la barra rápida cabe y los botones suben por encima de ella */
+@media (max-width: 520px) {
+  .slot.hot { width: 36px; height: 36px; } .slot.hot img.icon { width: 26px; height: 26px; }
+  #hotbar { gap: 2px; padding: 3px; }
+  .opt { grid-template-columns: 1fr 110px 50px; } .opt.sel { grid-template-columns: 1fr; }
+  .t-jump { bottom: 150px; } .t-crouch { bottom: 140px; } .t-mine { bottom: 242px; } .t-use { bottom: 216px; }
+  .t-stick.idle { bottom: 160px; }
+  body.touch #hud-top-right { top: 56px; }
+}

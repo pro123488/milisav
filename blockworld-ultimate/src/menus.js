@@ -11,6 +11,10 @@ const OPTION_SLIDERS = [
   { key: 'brightness', label: 'Brillo', min: 0.8, max: 1.8, step: 0.05, fmt: (v) => `${Math.round(v * 100)} %` },
   { key: 'masterVolume', label: 'Volumen general', min: 0, max: 1, step: 0.05, fmt: (v) => `${Math.round(v * 100)} %` },
   { key: 'musicVolume', label: 'Volumen de música', min: 0, max: 1, step: 0.05, fmt: (v) => `${Math.round(v * 100)} %` },
+  { key: 'touchSensitivity', label: 'Sensibilidad táctil', min: 0.3, max: 3, step: 0.05, fmt: (v) => `${(+v).toFixed(2)}×` },
+];
+const OPTION_SELECTS = [
+  { key: 'touchControls', label: 'Controles táctiles', options: [['auto', 'Automático (teléfonos y tabletas)'], ['on', 'Siempre'], ['off', 'Nunca']] },
 ];
 const OPTION_TOGGLES = [
   { key: 'autoJump', label: 'Autosalto (sube bloques de 1 de alto)' },
@@ -20,6 +24,7 @@ const OPTION_TOGGLES = [
   { key: 'fancyLeaves', label: 'Hojas detalladas (más lento)' },
   { key: 'invertY', label: 'Invertir eje Y del ratón' },
   { key: 'showFps', label: 'Mostrar FPS' },
+  { key: 'touchFullscreen', label: 'Pantalla completa al jugar con controles táctiles' },
 ];
 
 /** Panel de opciones reutilizable (menú principal y pausa). onChange(key, value) se llama al instante. */
@@ -33,6 +38,12 @@ export function buildOptionsPanel(settings, onChange) {
       settings[o.key] = v; val.textContent = o.fmt(v); saveSettings(settings); onChange(o.key, v);
     });
     box.append(el('label', 'opt', null, el('span', 'lbl', { text: o.label }), input, val));
+  }
+  for (const o of OPTION_SELECTS) {
+    const sel = el('select');
+    for (const [v, t] of o.options) { const op = el('option', null, { value: v, text: t }); if ((settings[o.key] || o.options[0][0]) === v) op.selected = true; sel.append(op); }
+    sel.addEventListener('change', () => { settings[o.key] = sel.value; saveSettings(settings); onChange(o.key, sel.value); });
+    box.append(el('label', 'opt sel', null, el('span', 'lbl', { text: o.label }), sel));
   }
   for (const o of OPTION_TOGGLES) {
     const input = el('input', null, { type: 'checkbox' }); input.checked = !!settings[o.key];

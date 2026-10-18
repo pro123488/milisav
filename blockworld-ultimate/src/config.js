@@ -2,7 +2,7 @@
 // Cambiar CHUNK_SIZE / WORLD_HEIGHT / SEA_LEVEL rompe la compatibilidad de los mundos guardados.
 
 export const GAME_NAME = 'BLOCKWORLD ULTIMATE';
-export const VERSION = '0.6.0 (Fase 6)';
+export const VERSION = '0.6.1 (Fase 6 + móvil)';
 /** Se guarda con cada mundo. Si cambia el generador, los chunks sin modificar se regenerarían distinto. */
 export const GENERATOR_VERSION = 4; // 2: aldeas (Fase 3) · 3: santuarios de jefes (Fase 4) · 4: santuarios corregidos
 
@@ -32,6 +32,9 @@ export const DEFAULT_SETTINGS = {
   particles: true,
   showFps: false,
   invertY: false,
+  touchControls: 'auto',  // controles táctiles: auto (teléfonos y tabletas) | on | off
+  touchSensitivity: 1.0,
+  touchFullscreen: true,  // pantalla completa al jugar con controles táctiles
   fancyLeaves: false,
 };
 

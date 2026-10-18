@@ -43,7 +43,7 @@ pruebas E2E en Chromium, revisión adversarial, commit y push en la rama `claude
 - Raíles (rectos, curvas, rampas, propulsores), vagonetas montables y barcos.
 
 ## Fuera de alcance (se documenta)
-- Multijugador (necesita servidor), soporte táctil completo.
+- Multijugador (necesita servidor).
 
 ## Estado
 - [x] Fase 1 — juego jugable (commit 11072e3).
@@ -57,3 +57,4 @@ pruebas E2E en Chromium, revisión adversarial, commit y push en la rama `claude
 - [x] Fase 6 — energía (palanca, botón, placa, bloque de energía, cable con niveles, repetidor, inversor), máquinas (lámpara,
   puertas automáticas, pistón, dispensador, tolva, cosechadora), raíles automáticos con curvas, rampas y propulsores,
   vagonetas y barcas; correcciones de la revisión de la Fase 4 (ver `docs/fase6-energia-transporte.md`).
+- [x] Extra — teléfonos y tabletas: controles táctiles, pantallas adaptadas y ajustes de rendimiento (ver `docs/movil.md`).

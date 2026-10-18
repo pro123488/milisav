@@ -14,6 +14,26 @@ import { EFFECTS } from './effects.js';
 
 const KEY_LABEL = (c) => c.replace('Key', '').replace('Arrow', '↑↓←→'.charAt(['Up', 'Down', 'Left', 'Right'].findIndex((d) => c.endsWith(d))) || '').replace('Space', 'Espacio').replace('ShiftLeft', 'Shift').replace('ShiftRight', 'Shift').replace('Slash', '/');
 
+/**
+ * Toques en pantallas táctiles: tocar = clic; mantener (≥ 0,42 s) = clic derecho (`long`). Evita los eventos de ratón
+ * sintéticos que el navegador manda después del toque (si no, cada toque contaría dos veces).
+ */
+function onTap(node, screen, fn) {
+  let t0 = 0, x = 0, y = 0;
+  node.addEventListener('touchstart', (e) => {
+    const t = e.changedTouches[0]; t0 = performance.now(); x = t.clientX; y = t.clientY;
+    if (screen) { screen.mx = x; screen.my = y; screen._placeCursor(); }
+  }, { passive: true });
+  node.addEventListener('touchend', (e) => {
+    const t = e.changedTouches[0];
+    if (!t0 || Math.hypot(t.clientX - x, t.clientY - y) > 14) { t0 = 0; return; } // era un desplazamiento
+    e.preventDefault();
+    const long = performance.now() - t0 > 420; t0 = 0;
+    fn({ button: long ? 2 : 0, shiftKey: !!(screen && screen.quickMove), long, preventDefault() {} });
+    if (screen) screen.ui.hideTooltip();
+  });
+}
+
 /** Base común de las pantallas con huecos. */
 class SlotScreen {
   constructor(game, title, cls = '') {
@@ -22,6 +42,12 @@ class SlotScreen {
     this.panel = el('div', 'panel');
     this.root.append(this.panel);
     if (title) this.panel.append(el('h2', null, { text: title }));
+    this.quickMove = false; // táctil: los toques actúan como Mayús+clic (mover a la otra zona)
+    if (game.touch && game.touch.active) {
+      const qb = el('button', 'btn small', { text: '⇄ Mover rápido: no' });
+      qb.addEventListener('click', () => { this.quickMove = !this.quickMove; qb.textContent = '⇄ Mover rápido: ' + (this.quickMove ? 'sí' : 'no'); qb.classList.toggle('primary', this.quickMove); });
+      this.panel.append(el('div', 'touch-bar', null, qb, el('span', 'dim', { text: 'Mantén pulsado: la mitad de la pila o de uno en uno' })));
+    }
     this.views = [];     // {el, slots, idx, rules}
     this.cursorEl = el('div', 'cursor-item hidden', null, el('img', 'icon'), el('span', 'count'));
     document.body.append(this.cursorEl);
@@ -58,6 +84,7 @@ class SlotScreen {
     const d = el('div', 'slot ' + cls, null, el('img', 'icon'), el('span', 'count'), el('div', 'dur', null, el('div')));
     if (rules.label) d.append(el('span', 'slot-label', { text: rules.label }));
     d.addEventListener('mousedown', (e) => { e.preventDefault(); this.onSlot(slots, idx, rules, e); });
+    onTap(d, this, (ev) => this.onSlot(slots, idx, rules, ev));
     d.addEventListener('dblclick', () => this.onDouble(slots, idx));
     d.addEventListener('mouseenter', () => { this.hover = { slots, idx }; this.ui.showTooltip(slots[idx], this.mx, this.my); });
     d.addEventListener('mouseleave', () => { this.hover = null; this.ui.hideTooltip(); });
@@ -66,7 +93,7 @@ class SlotScreen {
   }
 
   grid(slots, from, to, cols, rules = () => ({}), cls = '') {
-    const g = el('div', 'slot-grid', { style: `grid-template-columns: repeat(${cols}, 44px)` });
+    const g = el('div', 'slot-grid', { style: `grid-template-columns: repeat(${cols}, max-content)` });
     for (let i = from; i < to; i++) g.append(this.slot(slots, i, rules(i), cls));
     return g;
   }
@@ -121,6 +148,11 @@ class SlotScreen {
   }
 
   /** Inventario del jugador (3 filas + barra rápida). */
+  /** Dos zonas: la del bloque (cofre, horno, fabricación…) y la del jugador. Apiladas, o lado a lado en un teléfono en horizontal. */
+  split(a, b) {
+    return el('div', 'screen-split', null, el('div', 'split-a', null, ...[a].flat()), el('div', 'split-b', null, ...[b].flat()));
+  }
+
   playerInventory() {
     const inv = this.game.inventory;
     const box = el('div', 'inv-block');
@@ -204,13 +236,15 @@ class CraftingPanel {
         ing.append(el('span', 'ing' + (have >= n ? '' : ' miss'), { title: label }, el('img', null, { src: getItemIconURL(icon) }), `${have}/${n}`));
       }
       card.append(ico, el('div', 'r-name', null, el('b', null, { text: out.name }), ing));
-      card.addEventListener('mousedown', (e) => {
+      const doCraft = (e) => {
         e.preventDefault();
         const times = e.shiftKey ? Math.max(1, maxCrafts(r, inv.slots)) : 1;
         if (!can) { g.audio && g.audio.play('click'); return; }
         const done = craft(r, inv.slots, times);
         if (done > 0) { g.audio && g.audio.play('craft'); g.onItemObtained(out.key); this.screen.refresh(); } else g.ui.toast('No hay espacio en el inventario');
-      });
+      };
+      card.addEventListener('mousedown', doCraft);
+      onTap(card, this.screen, (ev) => doCraft({ ...ev, shiftKey: ev.shiftKey || ev.long })); // mantener: fabricar todo lo posible
       this.list.append(card);
     }
     if (!this.list.children.length) this.list.append(el('div', 'empty', { text: 'No hay recetas disponibles. ¡Reúne materiales para descubrir más!' }));
@@ -265,13 +299,15 @@ export function openInventoryScreen(game) {
         if (!filter(it)) continue;
         if (q && !norm(it.name).includes(norm(q)) && !norm(it.key).includes(norm(q))) continue;
         const d = el('div', 'slot cat-item', { title: it.name }, el('img', 'icon', { src: getItemIconURL(it) }));
-        d.addEventListener('mousedown', (e) => {
+        const pick = (e) => {
           e.preventDefault();
           const n = e.button === 2 ? 1 : (it.stack > 1 ? it.stack : 1);
           if (e.shiftKey) { const rest = addToSlots(inv.slots, makeStack(it.id, n)); void rest; }
           else inv.cursor = makeStack(it.id, n);
           s.refresh();
-        });
+        };
+        d.addEventListener('mousedown', pick);
+        onTap(d, s, pick);
         d.addEventListener('mouseenter', () => s.ui.showTooltip(makeStack(it.id, 1), s.mx, s.my));
         d.addEventListener('mouseleave', () => s.ui.hideTooltip());
         grid.append(d);
@@ -280,19 +316,17 @@ export function openInventoryScreen(game) {
     search.addEventListener('input', () => { q = search.value; fill(); });
     search.addEventListener('keydown', (e) => e.stopPropagation());
     fill();
-    s.panel.append(bar, grid);
     // Papelera: soltar aquí destruye
     const trash = el('div', 'trash', { text: '🗑 Papelera (suelta aquí)' });
     trash.addEventListener('mousedown', (e) => { e.preventDefault(); inv.cursor = null; s.refresh(); });
-    s.panel.append(trash);
-    s.panel.append(el('div', 'creative-row', null, s.armorColumn(), s.playerInventory()));
+    s.panel.append(s.split([bar, grid, trash], el('div', 'creative-row', null, s.armorColumn(), s.playerInventory())));
   } else {
     const top = el('div', 'inv-top');
     top.append(s.armorColumn());
     const cp = new CraftingPanel(s, 'hand');
     s.onRefresh = () => cp.refresh();
     top.append(cp.root);
-    s.panel.append(top, s.playerInventory());
+    s.panel.append(s.split(top, s.playerInventory()));
   }
   s.refresh();
   return s;
@@ -303,7 +337,7 @@ export function openWorkbenchScreen(game) {
   s.onShift = (slots, idx) => s.shiftFromPlayer(slots, idx);
   const cp = new CraftingPanel(s, 'workbench');
   s.onRefresh = () => cp.refresh();
-  s.panel.append(cp.root, el('h3', null, { text: 'Inventario' }), s.playerInventory());
+  s.panel.append(s.split(cp.root, [el('h3', null, { text: 'Inventario' }), s.playerInventory()]));
   s.refresh();
   return s;
 }
@@ -312,8 +346,7 @@ export function openChestScreen(game, be, title = 'Cofre') {
   const s = new SlotScreen(game, title, 'chest-screen');
   const inv = game.inventory;
   const n = be.slots.length, cols = n === 9 ? 3 : n === 5 ? 5 : 9; // cofre/barril 9×3, dispensador 3×3, tolva 5
-  s.panel.append(s.grid(be.slots, 0, n, cols));
-  s.panel.append(el('h3', null, { text: 'Inventario' }), s.playerInventory());
+  s.panel.append(s.split(s.grid(be.slots, 0, n, cols), [el('h3', null, { text: 'Inventario' }), s.playerInventory()]));
   s.onShift = (slots, idx) => {
     if (slots === be.slots) return shiftMove(slots, idx, [{ slots: inv.slots, from: 0, to: 36 }]);
     return s.shiftFromPlayer(slots, idx, [{ slots: be.slots, from: 0, to: n }]);
@@ -341,8 +374,7 @@ export function openFurnaceScreen(game, be) {
   const fire = el('div', 'flame', null, el('div'));
   const arrow = el('div', 'arrow', null, el('div'));
   const col = el('div', 'furnace-col', null, s.slot(be.slots, 0, rules[0]), fire, s.slot(be.slots, 1, rules[1]));
-  s.panel.append(el('div', 'furnace-row', null, col, arrow, s.slot(be.slots, 2, rules[2], 'big')));
-  s.panel.append(el('h3', null, { text: 'Inventario' }), s.playerInventory());
+  s.panel.append(s.split(el('div', 'furnace-row', null, col, arrow, s.slot(be.slots, 2, rules[2], 'big')), [el('h3', null, { text: 'Inventario' }), s.playerInventory()]));
   s.onShift = (slots, idx) => {
     if (slots === be.slots) return shiftMove(slots, idx, [{ slots: inv.slots, from: 0, to: 36 }]);
     const st = slots[idx];
@@ -377,8 +409,7 @@ export function openAlchemyScreen(game, be) {
   const book = el('div', 'brew-book');
   const icon = (k) => { const it = Items.get(k); return el('img', null, { src: getItemIconURL(it), title: it.name }); };
   for (const b of BREWS) book.append(el('div', 'brew-row', null, icon(b.base), el('span', null, { text: '+' }), icon(b.ing), el('span', null, { text: '→' }), icon(b.out), el('span', 'dim', { text: Items.get(b.out).name })));
-  s.panel.append(el('div', 'alch-layout', null, el('div', 'alch-col', null, top, bottles, el('p', 'dim small', { text: 'Llena frascos de vidrio con agua (clic derecho sobre el agua) y destílalos con un ingrediente.' })), book));
-  s.panel.append(el('h3', null, { text: 'Inventario' }), s.playerInventory());
+  s.panel.append(s.split(el('div', 'alch-layout', null, el('div', 'alch-col', null, top, bottles, el('p', 'dim small', { text: 'Llena frascos de vidrio con agua (clic derecho sobre el agua) y destílalos con un ingrediente.' })), book), [el('h3', null, { text: 'Inventario' }), s.playerInventory()]));
   s.onShift = (slots, idx) => {
     if (slots === be.slots) return shiftMove(slots, idx, [{ slots: inv.slots, from: 0, to: 36 }]);
     const st = slots[idx];
@@ -536,7 +567,15 @@ export function buildControlsPanel() {
   ];
   const t = el('table', 'keys');
   for (const [a, k] of rows) t.append(el('tr', null, null, el('td', null, { text: a }), el('td', 'k', null, el('kbd', null, { text: k }))));
-  return t;
+  const touch = [
+    ['Moverse (al borde: correr)', 'Joystick (mitad izquierda)'], ['Mirar', 'Arrastrar (mitad derecha)'], ['Usar / colocar / abrir', 'Tocar la pantalla o ✋'],
+    ['Romper / atacar', 'Mantener el dedo quieto o ⛏'], ['Comer, beber, colocar seguido', 'Mantener ✋'], ['Saltar (doble toque: volar en Creativo)', '⤒'],
+    ['Agacharse / bajar del vehículo (toque: fijo)', '⤓'], ['Ranura de la barra rápida', 'Tocarla'], ['Pausa · inventario · bestiario · cámara · soltar · chat', '⏸ 🎒 📖 👁 ⇩ 💬'],
+    ['En el inventario: coger / dejar · la mitad o de uno en uno', 'Tocar · mantener'], ['Mover a la otra zona (como Mayús+clic)', '⇄ Mover rápido'], ['Cerrar la pantalla', '✕'],
+  ];
+  const t2 = el('table', 'keys');
+  for (const [a, k] of touch) t2.append(el('tr', null, null, el('td', null, { text: a }), el('td', 'k', null, el('kbd', null, { text: k }))));
+  return el('div', 'controls-help', null, t, el('h3', null, { text: 'Pantalla táctil (teléfonos y tabletas)' }), t2);
 }
 export function openControlsScreen(onBack) {
   const root = el('div', 'screen-overlay dim');

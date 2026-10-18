@@ -1,4 +1,4 @@
-# BLOCKWORLD ULTIMATE — Fase 6 (energía, automatización y transporte)
+# BLOCKWORLD ULTIMATE — Fase 6 (energía, automatización y transporte) · también en el teléfono
 
 Videojuego **original** de bloques, supervivencia, construcción y exploración que se ejecuta en el navegador
 (HTML + CSS + JavaScript + three.js/WebGL). Todo el contenido —texturas, iconos, modelos, sonidos, música,
@@ -49,12 +49,16 @@ npm run test:e2e                # ciclo completo: menú→mundo→crafteo→horn
                                 #   (aldea, aldeanos, comercio con la interfaz, campana, guardián, brújula) y la Fase 4 (tónicos,
                                 #   alquimia, santuario, invocación, barra de jefe, los 4 jefes, bola de nieve, bestiario) y la
                                 #   Fase 5 (portal con llave, viaje y vuelta, guardado por dimensión, ciudadela, Soberano) y la
-                                #   Fase 6 (circuito con palanca real, puerta de hierro, raíles, vagoneta y barca montadas)
+                                #   Fase 6 (circuito con palanca real, puerta de hierro, raíles, vagoneta y barca montadas) y
+                                #   los controles táctiles emulando un teléfono (node tests/e2e/movil.mjs)
 node tools/mapdump.mjs semilla normal mapa.png 4096 16   # PNG de biomas + estadísticas del generador
 node tools/chunkstats.mjs semilla normal 6               # tiempos de generación y distribución de bloques
 ```
 
 ## Controles
+
+En **teléfonos y tabletas** hay controles táctiles (joystick a la izquierda, arrastrar para mirar, tocar para usar, mantener
+para romper y botones); ver [`docs/movil.md`](docs/movil.md). Con teclado y ratón:
 
 | Acción | Tecla |
 |---|---|
@@ -129,7 +133,8 @@ Leyenda: ✅ hecho y probado · 🟡 hecho de forma simplificada · ❌ no imple
 | **Energía** (Fase 6) | ✅ | Palanca, botón (1 s), placa de presión (jugador o criaturas), bloque de energía; **cable de cobre** que se une solo y pierde 1 nivel por tramo (de 15 a 0, también subiendo y bajando escalones); **repetidor** (vuelve a 15, 2 pulsos de retardo) e **inversor** (NO lógico). Pulsos de 0,1 s; el estado se guarda como IDs de bloque. Ver [`docs/fase6-energia-transporte.md`](docs/fase6-energia-transporte.md). |
 | **Automatización** (Fase 6) | ✅/🟡 | Lámpara de energía (luz 15); puertas, trampillas y puertas de valla automáticas (la **puerta de hierro** ya solo se abre con energía); **pistón** que empuja hasta 12 bloques, al jugador y a las criaturas; **dispensador** (cubos, abono, semillas, bolas de nieve o soltar objetos); **tolva** que recoge objetos sueltos y los pasa entre cofres, dispensadores, tolvas y hornos; **cosechadora** que recoge y replanta 3×3 cultivos maduros → granjas automáticas. 🟡 Pistones solo horizontales y no pegajosos. |
 | **Raíles y vehículos** (Fase 6) | ✅ | Raíles que toman solos su forma (rectos, 4 curvas, 4 rampas), raíles propulsores que aceleran con energía y frenan sin ella; **vagoneta** montable que sigue la vía por curvas y rampas con inercia, rozamiento y empuje del pasajero; **barca** que flota, rema y gira. Se recogen con dos golpes y se guardan con el mundo. |
-| Multijugador, móvil/táctil | ❌ | Fuera de alcance (necesitan servidor / otra interfaz; ver `docs/PLAN.md`). |
+| **Teléfonos y tabletas** | ✅/🟡 | Controles táctiles que se activan solos sin ratón: joystick, arrastrar para mirar, tocar para usar, mantener para romper, botones de saltar/agacharse/romper/usar y de menú, inventario con toques (la mitad, mover rápido), pantallas en dos columnas en horizontal, pantalla completa y ajustes de rendimiento. Ver [`docs/movil.md`](docs/movil.md). 🟡 Probado con emulación de Chromium, no en teléfonos reales. |
+| Multijugador | ❌ | Fuera de alcance (necesita un servidor; ver `docs/PLAN.md`). |
 
 ## Estructura del proyecto
 
@@ -149,6 +154,7 @@ src/bestiary.js                  Fichas e historia de las criaturas
 src/darkterrain.js · portals.js  Generador de la Dimensión Oscura y ciudadela; portales umbríos
 src/energy.js                    Energía (cables, repetidores, inversores) y máquinas (pistón, dispensador, tolva, cosechadora)
 src/rails.js · vehicles.js       Forma automática y recorrido de los raíles; vagoneta y barca
+src/touch.js                     Controles táctiles para teléfonos y tabletas
 src/terrain.js · biomes.js       Generador procedural y definición de biomas
 src/structures.js                Estructuras y botines
 src/terrain.worker.js            Generación fuera del hilo principal
@@ -174,7 +180,7 @@ docs/                            Plan de fases y especificaciones
 - Los **ticks aleatorios** (crecimiento) y los hornos solo avanzan en chunks cargados cerca del jugador.
 - Los **monstruos de estructuras** aparecen una vez por estructura (se recuerda en el guardado).
 - El audio necesita un gesto del usuario (el primer clic) por política de los navegadores.
-- Pensado para **ratón y teclado** en escritorio; sin soporte táctil.
+- Se juega con **ratón y teclado** o, en teléfonos y tabletas, con **controles táctiles** ([`docs/movil.md`](docs/movil.md)).
 - **Fase 2 — límites conocidos:** las puertas tienen la bisagra siempre en el mismo lado (sin puertas dobles); los fluidos solo avanzan en chunks cargados y un flujo a medias
   se queda quieto al recargar el mundo hasta que cambia un bloque vecino; el agua se extiende igual en todas direcciones
   (no busca el hueco más cercano); desde una losa se puede saltar encima de una valla (1,27 + 0,5 > 1,5); la luz del cielo
@@ -219,7 +225,8 @@ docs/                            Plan de fases y especificaciones
 El texto del encargo llegaba **cortado en la sección 22 (Jefes: «Cada jefe debe tener: Historia. Arena…»)**. Las secciones posteriores
 no se recibieron; las fases siguientes se basan en la hoja de ruta propuesta (`docs/PLAN.md`): **Fase 3** (aldeas y comercio),
 **Fase 4** (jefes y arenas), **Fase 5** (dimensiones), **Fase 6** (maquinaria, automatización y transporte). Las seis
-fases están hechas; lo que no se hizo (multijugador, táctil) y las simplificaciones de cada fase están descritos arriba.
+fases están hechas, y además se puede jugar en teléfonos y tabletas; lo que no se hizo (multijugador) y las
+simplificaciones de cada fase están descritos arriba.
 
 ## Licencias
 

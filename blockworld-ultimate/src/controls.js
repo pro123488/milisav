@@ -1,4 +1,5 @@
 // Entrada: teclado, ratón (pointer lock), rueda y atajos. Mantiene el estado de las teclas y emite eventos de alto nivel.
+// En modo táctil (touch.js) el bloqueo del puntero se emula y el joystick y el giro con el dedo llegan por aquí.
 
 export const DEFAULT_KEYS = {
   forward: ['KeyW', 'ArrowUp'], back: ['KeyS', 'ArrowDown'], left: ['KeyA', 'ArrowLeft'], right: ['KeyD', 'ArrowRight'],
@@ -15,6 +16,10 @@ export class Controls {
     this.sensitivity = 1; this.invertY = false;
     this.locked = false;
     this.enabled = false;       // solo procesa entrada de juego cuando está activo
+    this.touchMode = false;     // controles táctiles: el "bloqueo" se emula (sin pointer lock)
+    this.stick = null;          // joystick táctil {x, y, mag} (x derecha, y abajo, −1..1)
+    this.touchLookX = 0; this.touchLookY = 0; // giro de cámara del dedo, en radianes
+    this.onTouchRelease = null; // suelta los gestos táctiles en curso
     this.bindings = DEFAULT_KEYS;
     // callbacks
     this.onKeyDown = null;      // (code, event) — para atajos (E, Esc, F3, números...)
@@ -48,6 +53,7 @@ export class Controls {
     }, { passive: false });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     document.addEventListener('pointerlockchange', () => {
+      if (this.touchMode) return;
       this.locked = document.pointerLockElement === canvas;
       this._skipMove = this.locked ? 1 : 0;
       if (!this.locked) { this.mouse = [false, false, false]; this.keys.clear(); }
@@ -76,20 +82,27 @@ export class Controls {
   /** Movimiento para el jugador. */
   getMove() {
     const k = (a) => (this.isDown(a) ? 1 : 0);
+    const clamp1 = (v) => Math.max(-1, Math.min(1, v));
+    const st = this.stick;
     return {
-      fwd: k('forward') - k('back'), strafe: k('right') - k('left'),
-      jump: this.isDown('jump'), sprint: this.isDown('sprint'), crouch: this.isDown('crouch'), crouchDown: this.isDown('crouch'),
+      fwd: clamp1(k('forward') - k('back') - (st ? st.y : 0)), strafe: clamp1(k('right') - k('left') + (st ? st.x : 0)),
+      jump: this.isDown('jump'), sprint: this.isDown('sprint') || (!!st && st.mag > 0.92 && st.y < -0.5), crouch: this.isDown('crouch'), crouchDown: this.isDown('crouch'),
     };
   }
 
+  /** Giro acumulado: ratón en píxeles (dx, dy) y dedo en radianes (tx, ty). */
   consumeLook() {
-    const r = { dx: this.mouseDX, dy: this.mouseDY };
-    this.mouseDX = 0; this.mouseDY = 0;
+    const r = { dx: this.mouseDX, dy: this.mouseDY, tx: this.touchLookX, ty: this.touchLookY };
+    this.mouseDX = 0; this.mouseDY = 0; this.touchLookX = 0; this.touchLookY = 0;
     return r;
   }
   consumeWheel() { const w = this.wheel; this.wheel = 0; return w; }
 
   lock() {
+    if (this.touchMode) { // sin ratón que capturar: se "bloquea" al instante
+      if (!this.locked) { this.locked = true; if (this.onLockChange) this.onLockChange(true); }
+      return;
+    }
     try {
       const p = this.canvas.requestPointerLock({ unadjustedMovement: true });
       if (p && p.catch) p.catch(() => { try { const q = this.canvas.requestPointerLock(); if (q && q.catch) q.catch(() => {}); } catch (e) { /* sin bloqueo */ } });
@@ -97,5 +110,14 @@ export class Controls {
       try { this.canvas.requestPointerLock(); } catch (e2) { /* sin bloqueo */ }
     }
   }
-  unlock() { if (document.pointerLockElement) document.exitPointerLock(); }
+  unlock() {
+    if (this.touchMode) {
+      if (!this.locked) return;
+      this.locked = false; this.mouse = [false, false, false]; this.keys.clear(); this.stick = null;
+      if (this.onTouchRelease) this.onTouchRelease();
+      if (this.onLockChange) this.onLockChange(false);
+      return;
+    }
+    if (document.pointerLockElement) document.exitPointerLock();
+  }
 }

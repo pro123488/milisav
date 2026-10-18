@@ -39,6 +39,7 @@ import { isRail, updateRailsAround, RAIL } from './rails.js';
 import { Minecart, Boat } from './vehicles.js';
 import { facingFromVector } from './shapes.js';
 import { AudioEngine } from './audio.js';
+import { TouchControls, touchWanted, isTouchDevice } from './touch.js';
 import { raycastBlocks } from './raycast.js';
 import { chunkKey } from './chunk.js';
 import { rollLoot } from './structures.js';
@@ -56,7 +57,8 @@ export class Game {
     this.canvas = canvas;
     this.settings = settings;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    // en teléfonos y tabletas, menos píxeles (pantallas de densidad 3 con GPU modesta)
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isTouchDevice() ? 1 : 1.5));
     this.renderer.autoClear = false;
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(settings.fov, 1, 0.07, 1400);
@@ -66,6 +68,8 @@ export class Game {
     this.audio = new AudioEngine(settings);
     this.player = new Player();
     this.ui = new UI(this);
+    this.touch = new TouchControls(this);
+    this.touch.setActive(touchWanted(settings));
     this.versionText = VERSION;
     this.world = null; this.wr = null; this.meta = null;
     this.state = 'menu';           // menu | loading | playing | screen | paused | dead
@@ -260,7 +264,7 @@ export class Game {
   afterChat() { if (this.state === 'playing') this.controls.lock(); }
 
   onLockChange(locked, error) {
-    if (locked) { if (this.state === 'screen' && !this.ui.screen) this.state = 'playing'; return; }
+    if (locked) { if (this.state === 'screen' && !this.ui.screen) this.state = 'playing'; if (this.controls.touchMode) this.touch.enterPlay(); return; }
     if (error) { this.ui.toast('El navegador no permitió capturar el ratón. Pulsa en el juego otra vez o ábrelo en su propia pestaña.', 6000); return; }
     if (this._expectUnlock) { this._expectUnlock = false; return; }
     if (this.state === 'playing' && !this.ui.hasScreen) this.openPause();
@@ -381,6 +385,7 @@ export class Game {
       case 'renderDistance': if (this.world) this.world.setRenderDistance(v); break;
       case 'masterVolume': case 'musicVolume': this.audio.applyVolumes(); break;
       case 'particles': if (this.particles) this.particles.enabled = v; break;
+      case 'touchControls': this.touch.setActive(touchWanted(this.settings)); break;
       case 'fancyLeaves': if (this.world) { this.world.fancyLeaves = v; for (const c of this.world.chunks.values()) c.meshDirty = true; } break;
       default: break;
     }
@@ -1350,6 +1355,7 @@ export class Game {
     this.elapsed += dt;
     const fs = this.frameStats; fs.acc += dt; fs.frames++;
     if (fs.acc >= 0.5) { fs.fps = Math.round(fs.frames / fs.acc); fs.frames = 0; fs.acc = 0; }
+    this.touch.update();
     const w = this.world;
     if (!w) { this.renderer.clear(); return; }
     const cam = this.camera;
@@ -1369,9 +1375,9 @@ export class Game {
     const p = this.player, ctl = this.controls;
     const simulating = (this.state === 'playing' || this.state === 'screen' || this.state === 'dead') && !this.paused && !this.frozen;
     if (ctl.locked && this.state === 'playing') {
-      const { dx, dy } = ctl.consumeLook();
+      const { dx, dy, tx, ty } = ctl.consumeLook();
       const k = 0.0022 * this.settings.sensitivity;
-      p.yaw -= dx * k; p.pitch -= dy * k * (this.settings.invertY ? -1 : 1);
+      p.yaw -= dx * k + tx; p.pitch -= (dy * k + ty) * (this.settings.invertY ? -1 : 1);
       p.pitch = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, p.pitch));
     } else ctl.consumeLook();
 

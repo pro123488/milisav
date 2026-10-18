@@ -4,6 +4,7 @@ import { Menus } from './menus.js';
 import { SaveStore, loadSettings, newWorldId } from './save.js';
 import { seedFromString } from './terrain.js';
 import { VERSION, GENERATOR_VERSION, DIFFICULTY_NAMES, GAMEMODE_NAMES } from './config.js';
+import { isTouchDevice } from './touch.js';
 
 const TIPS = [
   'Consejo: mantén pulsado el clic izquierdo para romper bloques; cada herramienta tiene su nivel.',
@@ -13,12 +14,15 @@ const TIPS = [
   'Consejo: C te agacha y evita que caigas por los bordes al construir.',
   'Consejo: alimenta a los animales con su comida para que se reproduzcan.',
   'Consejo: usa F3 para ver coordenadas, luz y rendimiento.',
+  'Consejo: en el teléfono, mantén el dedo quieto sobre un bloque para romperlo y tócalo para usarlo.',
 ];
 
 class App {
   async init() {
     const canvas = document.getElementById('gl');
     this.settings = loadSettings();
+    // primera vez en un teléfono o tableta: menos distancia de visión (GPU y memoria modestas)
+    try { if (isTouchDevice() && !localStorage.getItem('bwu.settings.v1')) this.settings.renderDistance = 4; } catch (e) { /* sin almacenamiento */ }
     try {
       this.game = new Game(canvas, this.settings);
     } catch (e) {
@@ -110,7 +114,10 @@ class App {
     g.state = 'paused'; g.paused = true;
     const root = document.createElement('div'); root.className = 'screen-overlay ready';
     const panel = document.createElement('div'); panel.className = 'panel narrow';
-    panel.innerHTML = `<h2>${meta.name}</h2><p class="center dim">${GAMEMODE_NAMES[meta.mode]} · ${DIFFICULTY_NAMES[meta.difficulty]}</p><p class="center">Haz clic para jugar</p><p class="center dim">Esc pausa · E inventario · F3 depuración · T chat</p>`;
+    const touch = g.touch && g.touch.active;
+    panel.innerHTML = `<h2>${meta.name}</h2><p class="center dim">${GAMEMODE_NAMES[meta.mode]} · ${DIFFICULTY_NAMES[meta.difficulty]}</p>` + (touch
+      ? '<p class="center">Toca «Jugar» para empezar</p><p class="center dim">Joystick a la izquierda · arrastra para mirar · toca para usar · mantén para romper · ⏸ pausa · 🎒 inventario</p>'
+      : '<p class="center">Haz clic para jugar</p><p class="center dim">Esc pausa · E inventario · F3 depuración · T chat</p>');
     const b = document.createElement('button'); b.className = 'btn primary big'; b.textContent = 'Jugar';
     b.addEventListener('click', () => { this.audio.resume(); g.resume(); window.__ready = true; });
     panel.append(b); root.append(panel);
