@@ -1,6 +1,7 @@
 // Orquestador del juego: renderizador, mundo, jugador, interacción, entidades, guardado y bucle principal.
 import * as THREE from 'three';
 import { World } from './world.js';
+import { Terrain } from './terrain.js';
 import { WorldRenderer } from './render.js';
 import { Sky } from './sky.js';
 import { Player } from './player.js';
@@ -171,7 +172,8 @@ export class Game {
     let sx, sz;
     this.spawnPoint = null;
     // Punto de aparición del mundo
-    const wsp = w.terrain.findSpawn();
+    // (siempre del mundo normal, aunque la partida se dejara en la Dimensión Oscura)
+    const wsp = (w.dimension === 'dark' ? new Terrain(meta.seed, { type: meta.type, structures: meta.structures }) : w.terrain).findSpawn();
     this.worldSpawn = { x: wsp.x + 0.5, z: wsp.z + 0.5 };
     if (saved) {
       this.inventory = Inventory.deserialize(saved.inv);
@@ -227,6 +229,7 @@ export class Game {
   }
 
   async endSession() {
+    if (this._travelPromise) await this._travelPromise; // no guardar a mitad de un viaje entre dimensiones
     if (this.world && this.state !== 'menu') await this.saveGame(true);
     this.controls.unlock();
     this.ui.closeScreen(true);
@@ -357,6 +360,7 @@ export class Game {
   }
   openPause() {
     if (this.state !== 'playing') return;
+    if (this._traveling) { this._pauseAfterTravel = true; return; } // se pausa al terminar el viaje
     this.state = 'paused'; this.paused = true; this._expectUnlock = false;
     this.controls.unlock();
     const show = () => this.ui.setScreen(openPauseScreen(this, {
@@ -416,7 +420,7 @@ export class Game {
     this.survival.respawn();
     if (this.dimension === 'dark') { // se reaparece en el mundo normal
       this.ui.closeScreen(true); this.state = 'playing'; this.paused = false;
-      this.travel('overworld').then(() => this.teleportToSpawn());
+      this.travel('overworld', null, { respawn: true });
       this.controls.lock();
       return;
     }
@@ -622,7 +626,7 @@ export class Game {
     const p = this.player, w = this.world;
     this.portalCooldown = Math.max(0, this.portalCooldown - dt);
     const inVeil = [p.y + 0.2, p.y + 1.2].some((yy) => w.getBlock(Math.floor(p.x), Math.floor(yy), Math.floor(p.z)) === ID.PORTAL_VEIL);
-    if (!inVeil || this._traveling) { if (!inVeil) this.portalCooldown = Math.min(this.portalCooldown, 0.5); this.portalTimer = 0; return; }
+    if (!inVeil || this._traveling || this.state !== 'playing') { if (!inVeil) this.portalCooldown = Math.min(this.portalCooldown, 0.5); this.portalTimer = 0; return; }
     if (this.portalCooldown > 0) return;
     this.portalTimer += dt;
     if (Math.random() < 0.5) this.particles.emit(p.x, p.y + 1, p.z, 0xb070ff, 2, 1.5, 0.6);
@@ -654,18 +658,30 @@ export class Game {
    * Viaja a la otra dimensión: guarda la actual, cambia de mundo (otro generador y otro almacén de chunks), espera a
    * que se cargue el destino y busca un portal cercano o construye uno de vuelta. Devuelve una promesa.
    */
-  async travel(target, fromCore = null) {
-    if (this._traveling || target === this.dimension || !this.meta) return false;
+  travel(target, fromCore = null, opts = {}) {
+    if (this._traveling || target === this.dimension || !this.meta) return Promise.resolve(false);
     this._traveling = true;
+    this._travelPromise = this._travel(target, fromCore, opts).finally(() => { this._travelPromise = null; });
+    return this._travelPromise;
+  }
+  /** opts.respawn: volver al mundo normal tras morir (se carga el punto de reaparición; no se construye portal). */
+  async _travel(target, fromCore, opts) {
     const p = this.player, meta = this.meta;
-    const tx = Math.floor(fromCore ? fromCore[0] : p.x), tz = Math.floor(fromCore ? fromCore[2] : p.z);
+    // una pantalla abierta (cofre, horno…) apuntaría al contenedor de la dimensión que se deja
+    if (this.ui.screen) { this.ui.closeScreen(true); if (this.state === 'screen') this.state = 'playing'; }
+    let tx = Math.floor(fromCore ? fromCore[0] : p.x), tz = Math.floor(fromCore ? fromCore[2] : p.z);
+    if (opts.respawn) { const sp = this.spawnPoint || this.worldSpawn; tx = Math.floor(sp.x); tz = Math.floor(sp.z); }
+    if (target === 'overworld' && meta.size > 0) { // mundo con límites: el portal de llegada queda dentro
+      const h = meta.size / 2 - 6;
+      tx = Math.max(-h, Math.min(h - 1, tx)); tz = Math.max(-h, Math.min(h - 1, tz));
+    }
     this.ui.centerMessage(target === 'dark' ? 'Entrando en la Dimensión Oscura…' : 'Volviendo al mundo…', 2500);
     this.audio.play('summon');
     this.frozen = true;
     try {
       meta.portals = meta.portals || {};
       if (fromCore) meta.portals[this.dimension] = fromCore;
-      await this.saveGame(true);           // guarda chunks y criaturas de la dimensión que se deja
+      await this.saveGame(true, true);     // guarda chunks y criaturas de la dimensión que se deja
       this.entities.clear();
       this.sleeping = new Map(); this.structQueue = []; this.updateQueue = []; this.updateSet = new Set();
       this.mining.reset(); this.eating = null;
@@ -690,24 +706,28 @@ export class Game {
         };
         tick();
       });
-      let core = findPortalNear(this.world, tx, tz, 20);
-      if (!core) {
-        const y = this._portalSiteY(tx, tz);
-        buildPortal(this.world, tx, y, tz, target === 'dark' ? ID.UMBRAL_STONE : ID.COBBLE);
-        core = [tx, y, tz];
+      if (!opts.respawn) {
+        let core = findPortalNear(this.world, tx, tz, 20);
+        if (!core) {
+          const y = this._portalSiteY(tx, tz);
+          buildPortal(this.world, tx, y, tz, target === 'dark' ? ID.UMBRAL_STONE : ID.COBBLE);
+          core = [tx, y, tz];
+        }
+        meta.portals[target] = core;
+        p.teleport(core[0] + 0.5, core[1] + 1, core[2] + 2.5);
+        unstick(this.world, p);
+        this.portalCooldown = 3; this.portalTimer = 0;
+        if (target === 'dark') this.achieve('portal');
+        this.ui.centerMessage(target === 'dark' ? 'Dimensión Oscura' : biomeName(this.world.terrain.biomeAt(tx, tz)), 3000);
       }
-      meta.portals[target] = core;
-      p.teleport(core[0] + 0.5, core[1] + 1, core[2] + 2.5);
-      unstick(this.world, p);
-      this.portalCooldown = 3; this.portalTimer = 0;
-      if (target === 'dark') this.achieve('portal');
-      this.ui.centerMessage(target === 'dark' ? 'Dimensión Oscura' : biomeName(this.world.terrain.biomeAt(tx, tz)), 3000);
-      await this.saveGame(true);
+      if (opts.respawn) this.teleportToSpawn(); // la zona ya está cargada: coloca al jugador en el acto
+      await this.saveGame(true, true);
     } catch (e) {
       console.error('Error al viajar entre dimensiones', e);
       this.ui.toast('⚠ No se pudo completar el viaje');
     } finally {
       this.frozen = false; this._traveling = false;
+      if (this._pauseAfterTravel) { this._pauseAfterTravel = false; if (!this.controls.locked) this.openPause(); }
     }
     return true;
   }
@@ -1168,7 +1188,10 @@ export class Game {
     if (it && pressed && it.kind === 'boat') {
       const r = this._eyeRay();
       const wh = raycastBlocks(this.world, r.ox, r.oy, r.oz, r.dx, r.dy, r.dz, this.reach, { fluids: true });
-      if (wh && (B_FLUID[wh.id] === 1 || this.hit)) {
+      // en el agua, o encima de un bloque con sitio libre (no sobre cofres, puertas o palancas: esos se usan)
+      const hb = this.hit && Blocks.get(this.hit.id);
+      const onLand = !!hb && this.hit.ny === 1 && !(hb.interact && !p.crouching) && !boxCollides(this.world, this.hit.x + 0.5, this.hit.y + 1.01, this.hit.z + 0.5, 1.3, 0.55);
+      if (wh && (B_FLUID[wh.id] === 1 || onLand)) {
         const b = new Boat(this);
         const onWater = B_FLUID[wh.id] === 1;
         b.setPos(wh.x + 0.5, wh.y + (onWater ? 0.6 : 1), wh.z + 0.5); b.yaw = p.yaw;
@@ -1492,8 +1515,9 @@ export class Game {
   }
 
   // ═════════════ Guardado ═════════════
-  async saveGame(quiet = false) {
+  async saveGame(quiet = false, duringTravel = false) {
     if (!this.world || !this.meta || !this.store || this.saving || this.panorama) return;
+    if (this._traveling && !duringTravel) return; // a mitad de viaje el jugador está esperando en el aire
     this.saving = true;
     try {
       const meta = this.meta, p = this.player;

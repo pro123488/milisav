@@ -33,9 +33,11 @@ Se activan si están **junto a** una fuente encendida, un cable con energía o l
 | **Raíl propulsor** | Encendido acelera la vagoneta; apagado la frena. |
 
 ### Tolva
-No necesita energía. Cada 0,4 s toma **1 objeto** de arriba (de un cofre, dispensador u otra tolva; de un horno, solo el
-resultado) o recoge los objetos sueltos que caen sobre ella, y entrega 1 objeto al contenedor de abajo (a un horno: lo que se
-funde va a la entrada y el combustible a su hueco). Tiene 5 huecos y se abre con clic derecho.
+No necesita energía. Cada 0,4 s toma **1 objeto** de arriba (de un cofre, dispensador u otra tolva; de un horno, el resultado
+y lo que no es combustible, como el cubo vacío que deja la lava; de una mesa de alquimia, los tónicos terminados) o recoge los
+objetos sueltos que caen sobre ella (también a través de tierra arada o losas, no de un bloque entero), y entrega al
+contenedor de abajo el primer objeto que quepa (a un horno: lo que se funde va a la entrada y el combustible a su hueco; a
+una mesa de alquimia: el ingrediente arriba y los frascos de uno en uno). Tiene 5 huecos y se abre con clic derecho.
 
 **Granja automática:** cultivos sobre tierra arada regada + cosechadora con un reloj o una palanca + tolvas debajo del campo
 (o al final del canal de agua que arrastra las cosechas) que llenan un cofre.
@@ -84,8 +86,18 @@ funde va a la entrada y el combustible a su hueco). Tiene 5 huecos y se abre con
 - Las barcas no chocan con las criaturas y solo llevan al jugador.
 - No hay comparadores, observadores, raíles detectores ni raíles de activación.
 
+## Revisión adversarial (corregido)
+Una revisión con verificación independiente encontró y se corrigieron: pistones que movían hornos (y una pantalla abierta
+permitía duplicar su contenido) o empujaban hacia chunks sin cargar (se perdía un bloque); tolvas que se atascaban con un
+objeto que no cabía; puertas de hierro que se quedaban abiertas si alguien estaba en medio al quitar la energía; lámparas,
+pistones y puertas que seguían encendidos tras cargar la partida o al moverlos un pistón; botones que se quedaban pulsados al
+guardar; vehículos y mascotas que desaparecían al alejarse unos 80 bloques y volver; reaparecer o usar `/tp` montado que
+devolvía al jugador al vehículo; lava y ahogo mal calculados al ir montado; vagonetas atascadas si el raíl cambiaba de forma
+bajo ellas o que se perdían al pararse justo en el borde de un chunk; el vehículo propio tapando la mira; y la barca en la
+mano impidiendo abrir cofres o puertas.
+
 ## Pruebas
-`tests/fase6.mjs` (Node, 14 pruebas): palanca → cable → lámpara y caída del nivel por tramo, agotamiento a los 15 tramos y
+`tests/fase6.mjs` (Node, 21 pruebas): palanca → cable → lámpara y caída del nivel por tramo, agotamiento a los 15 tramos y
 repetidor con retardo, inversor, botón y placa de presión, puerta de hierro con energía, pistón (empuja y recoge),
 dispensador, tolva hacia un cofre, cosechadora que replanta, forma automática de los raíles (rectas, curvas y rampas),
 vagoneta que recorre un circuito cerrado, vagoneta en rampa y final de vía, barca que flota y avanza, y formas/rotación/

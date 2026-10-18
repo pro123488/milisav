@@ -196,6 +196,10 @@ test('tolva → mesa de alquimia: ingrediente arriba y frascos de uno en uno; no
   w.setBlock(8, G, 8, ID.HOPPER); w.setBlock(8, G + 1, 8, ID.STONE);
   g.dropItem({ i: Items.id('wheat'), n: 1, d: 0 }, 8.5, G + 2.05, 8.5); run(g, 1);
   assert.equal(g.getBlockEntity(8, G, 8, 'hopper', 5).slots.filter(Boolean).length, 0);
+  // bajo tierra arada sí recoge (granja automática con tolvas bajo el campo)
+  w.setBlock(11, G, 8, ID.HOPPER); w.setBlock(11, G + 1, 8, ID.FARMLAND_WET);
+  g.dropItem({ i: Items.id('wheat'), n: 1, d: 0 }, 11.5, G + 1.95, 8.5); run(g, 1);
+  assert.equal(g.getBlockEntity(11, G, 8, 'hopper', 5).slots.filter(Boolean).length, 1);
 });
 test('una puerta de hierro que no pudo cerrarse por alguien en medio se cierra al apartarse', () => {
   const g = rig('x4'), w = g.world;

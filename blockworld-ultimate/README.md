@@ -38,7 +38,7 @@ Opciones de depuración por URL: `?autostart=survival|creative|adventure|peacefu
 ### Pruebas automáticas
 
 ```bash
-npm test                        # 43 + 32 + 19 + 29 + 9 + 14 pruebas de lógica: terreno, luz, inventario, crafteo, física, raycast, mallado,
+npm test                        # 43 + 32 + 19 + 29 + 9 + 21 pruebas de lógica: terreno, luz, inventario, crafteo, física, raycast, mallado,
                                 #   guardado, formas, fluidos, colocación, aldeas sin costuras, A*, comercio, aldeanos, efectos,
                                 #   alquimia, santuarios sin costuras, combates de jefes simulados, Dimensión Oscura y portales,
                                 #   energía (cables, repetidores, inversores, pistones, dispensador, tolva, cosechadora),
@@ -193,6 +193,10 @@ docs/                            Plan de fases y especificaciones
   atraviesa bloques sólidos (un cable solo alimenta lo que toca) y solo se calcula en chunks cargados; las vagonetas no chocan
   entre sí ni con criaturas y no hay vagonetas con cofre o enganchadas; las barcas solo llevan al jugador; no hay comparadores,
   observadores ni raíles detectores.
+- **Revisión de las Fases 5 y 6 (corregido):** ver la lista en [`docs/fase6-energia-transporte.md`](docs/fase6-energia-transporte.md);
+  además, una pantalla abierta al cruzar un portal ya no permite duplicar objetos, morir en la Dimensión Oscura ya no construye
+  un portal donde se murió, guardar y salir a mitad de viaje ya no deja al jugador en el aire, en mundos con límites el portal
+  de llegada queda dentro y el punto de aparición se conserva al continuar una partida dejada en la Dimensión Oscura.
 - **Revisión de la Fase 4 (corregido en la Fase 6):** las recompensas de un jefe se dan en el momento de su muerte y caen sobre
   su altar (nunca en la lava ni en el vacío; guardar durante la animación ya no las pierde ni las duplica); un Coloso guardado
   en fase 2 vuelve con sus pilares y su escudo, y los jefes guardan su rabia; la Reina deja de embestir si cambia de fase a

@@ -10,7 +10,9 @@
 5. Quédate 1,6 s dentro del velo para viajar. Al llegar se busca un portal activo a menos de 20 bloques; si no hay, se
    construye uno de vuelta con una plataforma de 5×5 (sobre el abismo queda flotando a la altura de las islas).
 
-Romper el núcleo o cualquier bloque del anillo cierra el velo. Las coordenadas son 1:1 entre dimensiones.
+Romper el núcleo o cualquier bloque del anillo cierra el velo. Las coordenadas son 1:1 entre dimensiones; en un mundo
+normal con límites (p. ej. 256×256), un portal oscuro que cae fuera lleva al borde del mundo, dentro de él. El velo no hace
+viajar mientras hay una pantalla abierta (cofre, inventario…), y la pausa pedida a mitad de viaje espera a la llegada.
 
 ## Guardado por dimensión
 - Los chunks de la Dimensión Oscura se guardan en otro espacio de claves (`<idMundo>~dark/cx,cz`); borrar un mundo borra
@@ -20,7 +22,8 @@ Romper el núcleo o cualquier bloque del anillo cierra el velo. Las coordenadas 
   en cada una.
 - Al viajar se guarda la dimensión que se deja, se cambia de `World` (otro generador, otro almacén) y se cargan los datos de
   la de destino. Al continuar una partida guardada en la Dimensión Oscura se aparece allí.
-- Morir en la Dimensión Oscura devuelve al punto de reaparición del mundo normal. No se puede dormir allí.
+- Morir en la Dimensión Oscura devuelve al punto de reaparición del mundo normal (sin construir ningún portal). No se
+  puede dormir allí. El punto de aparición del mundo siempre se calcula con el generador del mundo normal.
 
 ## Generador (`src/darkterrain.js`)
 - Abismo: roca base, piedra umbría ondulada y lagos de lava hasta y = 5.

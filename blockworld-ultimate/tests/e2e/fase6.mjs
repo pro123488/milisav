@@ -139,9 +139,20 @@ await withPage('index.html?autostart=creative&rd=3&seed=maquinas&type=flat&mobs=
     g.survival.health = 0; g.survival.die('cmd'); await wait();
     const dead = { riding: !!g.riding };
     g.respawn(); await wait(); await wait();
-    return { tp, loaded, back, dead, after: !!g.riding, dist: +Math.hypot(p.x - b.x, p.z - b.z).toFixed(1) };
+    // con una barca en la mano, clic derecho a un cofre lo abre (no pone la barca encima)
+    const { ID } = await import('/src/blocks.js'); const { Items } = await import('/src/items.js');
+    const cx = Math.floor(p.x) + 2, cy = Math.floor(p.y), cz = Math.floor(p.z);
+    g.world.setBlock(cx, cy, cz, ID.CHEST);
+    g.inventory.slots[2] = { i: Items.id('boat'), n: 1, d: 0 }; g.inventory.selected = 2;
+    const boats0 = g.entities.list.filter((e) => e.type === 'boat' && !e.removed).length;
+    g.hit = { x: cx, y: cy, z: cz, nx: 0, ny: 1, nz: 0, id: ID.CHEST, dist: 2 }; g.entityTarget = null;
+    g.useItem(true);
+    const chest = { opened: g.state === 'screen', boats: g.entities.list.filter((e) => e.type === 'boat' && !e.removed).length - boats0 };
+    if (g.ui.screen) g.ui.closeScreen();
+    return { tp, loaded, back, dead, after: !!g.riding, dist: +Math.hypot(p.x - b.x, p.z - b.z).toFixed(1), chest };
   });
   ok('teletransportarse o morir montado baja del vehículo; una barca aparcada lejos no desaparece', !fixes.tp.riding && Math.abs(fixes.tp.dx) < 0.6 && fixes.back && !fixes.dead.riding && !fixes.after, JSON.stringify(fixes));
+  ok('con una barca en la mano, clic derecho a un cofre lo abre', fixes.chest.opened && fixes.chest.boats === 0, JSON.stringify(fixes.chest));
   await ensurePlaying(page);
 
   // ── Guardar: la vagoneta y la barca se guardan como entidades ──

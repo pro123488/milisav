@@ -83,6 +83,12 @@ await withPage('index.html?autostart=survival&rd=3&seed=umbral&type=normal&mobs=
   await page.click('.ready button'); await frames(page, 3);
   const cont = await ev(async (m) => { const g = window.__game; const { ID } = await import('/src/blocks.js'); return { dim: g.dimension, sky: g.sky.dark, iron: g.world.getBlock(m.x, m.y, m.z) === ID.BLOCK_IRON }; }, darkMark);
   ok('al continuar el mundo se vuelve a la Dimensión Oscura con sus bloques', cont.dim === 'dark' && cont.sky && cont.iron, JSON.stringify(cont));
+  const spawnChk = await ev(async () => {
+    const g = window.__game; const { Terrain } = await import('/src/terrain.js');
+    const sp = new Terrain(g.meta.seed, { type: g.meta.type, structures: g.meta.structures }).findSpawn();
+    return { ws: g.worldSpawn, sp };
+  });
+  ok('al continuar en la Dimensión Oscura el punto de aparición sigue siendo el del mundo normal', spawnChk.ws.x === spawnChk.sp.x + 0.5 && spawnChk.ws.z === spawnChk.sp.z + 0.5, JSON.stringify(spawnChk));
 
   // ── Ciudadela y Soberano ──
   const cit = await ev(async () => {
@@ -140,6 +146,49 @@ await withPage('index.html?autostart=survival&rd=3&seed=umbral&type=normal&mobs=
     return g.entities.list.filter((e) => e.type === 'projectile' && e.kind === 'shadow' && e.owner === g.player && !e.removed).length;
   });
   ok('el Cetro del eclipse dispara proyectiles de sombra', scepter >= 1, String(scepter));
+
+  // ── Correcciones de la revisión: velo con una pantalla abierta, morir en la Dimensión Oscura, mundos con límites ──
+  const fixes = await ev(async () => {
+    const g = window.__game; const { ID } = await import('/src/blocks.js'); const { findPortalNear } = await import('/src/portals.js');
+    const p = g.player;
+    // con el inventario abierto dentro de un velo no se viaja
+    const vx = Math.floor(p.x), vy = Math.floor(p.y), vz = Math.floor(p.z);
+    const prev = g.world.getBlock(vx, vy, vz);
+    g.world.setBlock(vx, vy, vz, ID.PORTAL_VEIL); g.portalCooldown = 0; g.portalTimer = 0;
+    g.openInventory(); g._updatePortal(2); g._updatePortal(2);
+    const veil = { traveling: !!g._traveling, timer: g.portalTimer };
+    g.ui.closeScreen(); g.world.setBlock(vx, vy, vz, prev);
+    // morir en la Dimensión Oscura: se vuelve al punto de aparición sin construir un portal donde se murió
+    g.setMode('survival'); p.flying = false;
+    const dx = Math.floor(p.x), dz = Math.floor(p.z);
+    g.survival.health = 0; g.survival.die('cmd');
+    await new Promise((r) => setTimeout(r, 300));
+    g.respawn();
+    while (g._travelPromise) await g._travelPromise;
+    await new Promise((r) => setTimeout(r, 500));
+    const sp = g.spawnPoint || g.worldSpawn;
+    const death = { dim: g.dimension, portalAtDeath: !!findPortalNear(g.world, dx, dz, 20), distSpawn: +Math.hypot(p.x - sp.x, p.z - sp.z).toFixed(1), y: +p.y.toFixed(1) };
+    // mundo de 256×256: un portal oscuro fuera de los límites lleva a un portal dentro del mundo
+    g.setMode('creative');
+    await g.travel('dark');
+    g.meta.size = 256;
+    p.teleport(400.5, 70, 400.5);
+    await g.travel('overworld', [400, 64, 400]);
+    const core = g.meta.portals.overworld;
+    const bounded = { dim: g.dimension, x: +p.x.toFixed(1), z: +p.z.toFixed(1), core, coreOk: !!core && g.world.getBlock(core[0], core[1], core[2]) === ID.PORTAL_CORE_ACTIVE };
+    // pausa durante un viaje: se aplaza hasta llegar (no se guarda al jugador a mitad de camino)
+    const trip = g.travel('dark');
+    document.exitPointerLock(); g.openPause(); // como pulsar Esc a mitad del viaje
+    await new Promise((r) => setTimeout(r, 200));
+    const during = g.state;
+    await trip;
+    await new Promise((r) => setTimeout(r, 200));
+    return { veil, death, bounded, during, after: g.state };
+  });
+  ok('con una pantalla abierta el velo no hace viajar', !fixes.veil.traveling && fixes.veil.timer === 0, JSON.stringify(fixes.veil));
+  ok('morir en la Dimensión Oscura lleva al punto de aparición sin construir un portal donde se murió', fixes.death.dim === 'overworld' && !fixes.death.portalAtDeath && fixes.death.distSpawn < 6, JSON.stringify(fixes.death));
+  ok('en un mundo con límites el portal de llegada queda dentro del mundo', fixes.bounded.dim === 'overworld' && Math.abs(fixes.bounded.x) <= 128 && Math.abs(fixes.bounded.z) <= 128 && fixes.bounded.coreOk, JSON.stringify(fixes.bounded));
+  ok('la pausa pedida durante un viaje espera a que termine', fixes.during === 'playing' && fixes.after === 'paused', JSON.stringify({ during: fixes.during, after: fixes.after }));
 
   const errs = await ev(() => window.__errors || []);
   ok('sin errores de página', !errs.length, errs.join(' | '));

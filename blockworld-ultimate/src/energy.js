@@ -4,7 +4,7 @@
 // dispensadores, cosechadoras y raíles propulsores. Las tolvas mueven objetos solas.
 // El estado visible (encendido/apagado, pistón extendido…) son IDs de bloque, así que se guarda con el mundo; los
 // niveles se recalculan en cada pulso (TICK s). Lógica sobre `game` (o un objeto de pruebas con world, etc.).
-import { BLOCKS, ID, B_FLUID, B_FLUIDLVL, B_REPLACEABLE, Blocks } from './blocks.js';
+import { BLOCKS, ID, B_FLUID, B_FLUIDLVL, B_REPLACEABLE, B_OPAQUE, B_SHAPE, Blocks } from './blocks.js';
 import { Items, rollDrops } from './items.js';
 import { B_FAMILY, FAM, FACING_VEC } from './shapes.js';
 import { boosterWithPower } from './rails.js';
@@ -387,7 +387,8 @@ export class EnergySystem {
         const one = { i: s.i, n: 1, d: s.d || 0 };
         if (!addToSlots(be.slots, one)) { s.n--; if (s.n <= 0) above.slots[k] = null; break; }
       }
-    } else if (g.entities && !(BLOCKS[w.getBlock(x, y + 1, z)] || {}).solid) { // no recoge a través de un bloque sólido
+    } else if (g.entities && !(B_OPAQUE[w.getBlock(x, y + 1, z)] && B_SHAPE[w.getBlock(x, y + 1, z)] === 1)) {
+      // recoge lo que cae encima (también a través de tierra arada o losas), no a través de un bloque entero
       // recoger objetos sueltos que caen dentro
       for (const e of g.entities.list) {
         if (e.removed || e.type !== 'item' || !e.stack) continue;
