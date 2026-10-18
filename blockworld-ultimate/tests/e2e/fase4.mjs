@@ -108,7 +108,8 @@ await withPage('index.html?autostart=survival&rd=4&seed=aldea&type=normal&mobs=a
   });
   ok('el hacha hace daño doble y el jefe muere', Math.abs(fight.dmg - fight.expect) < 0.01 && fight.dead, JSON.stringify(fight));
   // la animación de muerte dura 2,4 s de juego (con WebGL por software el juego puede ir lento)
-  await page.waitForFunction(() => window.__game.achievements.has('jefe_bosque'), null, { timeout: 60000 }).catch(() => {});
+  // (las recompensas y el logro llegan al morir; la barra y la música se quitan en cuanto el jefe deja de estar activo)
+  await page.waitForFunction(() => { const g = window.__game; return g.achievements.has('jefe_bosque') && !g.activeBoss && !g.audio.combat; }, null, { timeout: 60000 }).catch(() => {});
   const reward = await ev(async () => {
     const g = window.__game; const { Items } = await import('/src/items.js');
     const drops = g.entities.list.filter((e) => e.type === 'item' && !e.removed).map((e) => Items.get(e.stack.i).key);

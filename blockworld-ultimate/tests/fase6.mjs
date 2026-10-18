@@ -210,6 +210,10 @@ test('la barca flota en el agua y avanza con el remo', () => {
   const z0 = b.z;
   for (let i = 0; i < 30; i++) b.update(0.05);
   assert.ok(z0 - b.z > 2, 'avanza hacia el Norte: ' + (z0 - b.z).toFixed(2));
+  // una barca hundida hasta el fondo vuelve a la superficie
+  b.rider = null; b.setPos(8, G - 2, 8); b.vy = 0;
+  for (let i = 0; i < 80; i++) b.update(0.05);
+  assert.ok(Math.abs(b.y - (G - 1 + 0.875 - 0.3)) < 0.25, 'sale a flote: ' + b.y.toFixed(2));
 });
 
 console.log('Contenido');

@@ -139,9 +139,16 @@ export class Boat extends Vehicle {
     ]);
     this.w = 1.3; this.h = 0.55; this.rowPhase = 0;
   }
+  /** Altura de la superficie del agua en la columna de la barca (o null si no está en el agua). */
   _waterLevel() {
     const w = this.world, x = Math.floor(this.x), z = Math.floor(this.z);
-    for (let y = Math.floor(this.y + 0.6); y >= Math.floor(this.y) - 1; y--) if (B_FLUID[w.getBlock(x, y, z)] === 1 && !B_FLUID[w.getBlock(x, y + 1, z)]) return y + 0.875;
+    let y = Math.floor(this.y + 0.6);
+    if (B_FLUID[w.getBlock(x, y, z)] === 1) {
+      // hundida: busca la superficie hacia arriba para volver a flotar
+      for (let k = 0; k < 6 && B_FLUID[w.getBlock(x, y + 1, z)] === 1; k++) y++;
+      return B_FLUID[w.getBlock(x, y + 1, z)] ? null : y + 0.875;
+    }
+    for (y--; y >= Math.floor(this.y) - 1; y--) if (B_FLUID[w.getBlock(x, y, z)] === 1) return y + 0.875;
     return null;
   }
   update(dt) {
