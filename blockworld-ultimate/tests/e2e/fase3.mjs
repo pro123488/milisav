@@ -76,13 +76,19 @@ await withPage('index.html?autostart=survival&rd=4&seed=aldea&type=normal&mobs=a
 
   // ── Guardián contra un monstruo ──
   const fight = await ev(async (v) => {
-    const g = window.__game;
+    const g = window.__game; const { boxCollides } = await import('/src/physics.js'); const { B_SOLID } = await import('/src/blocks.js');
     g.mode = 'creative'; // que el monstruo no persiga al jugador
     const guard = g.entities.list.find((e) => e.type === 'stone_guardian' && !e.removed);
-    const m = g.spawnMob('night_stalker', guard.x + 4, guard.y + 0.5, guard.z);
+    // un sitio libre y con suelo junto al guardián (no dentro de una pared ni en otro nivel)
+    let at = [guard.x + 3, guard.y, guard.z];
+    for (const [dx, dz] of [[3, 0], [-3, 0], [0, 3], [0, -3], [2, 2], [-2, -2], [2, -2], [-2, 2], [4, 0], [0, 4]]) {
+      const x = guard.x + dx, z = guard.z + dz, y = guard.y + 0.01;
+      if (!boxCollides(g.world, x, y, z, 0.6, 1.8) && B_SOLID[g.world.getBlock(Math.floor(x), Math.floor(y) - 1, Math.floor(z))]) { at = [x, guard.y, z]; break; }
+    }
+    const m = g.spawnMob('night_stalker', at[0], at[1] + 0.05, at[2]);
     const hp0 = m.hp;
-    await new Promise((r) => setTimeout(r, 8000));
-    return { hp0, hp: m.hp, dead: m.deathTime >= 0 || m.removed };
+    for (let t = 0; t < 200 && m.hp >= hp0 && !m.removed; t++) await new Promise((r) => setTimeout(r, 100));
+    return { hp0, hp: m.hp, dead: m.deathTime >= 0 || m.removed, dg: +Math.hypot(guard.x - g.player.x, guard.z - g.player.z).toFixed(1) };
   }, vinfo);
   ok('el guardián ataca al monstruo', fight.dead || fight.hp < fight.hp0, JSON.stringify(fight));
   await ev(() => { window.__game.mode = 'survival'; });
