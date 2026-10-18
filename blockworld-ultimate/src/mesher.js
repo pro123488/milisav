@@ -38,6 +38,25 @@ const VOFF = FACES.map((f) => f.v.map((p) => {
   return { f: toIdx(n), s1: toIdx(vec(n, e1)), s2: toIdx(vec(n, e2)), c: toIdx(vec(n, e1, e2)), s1y: n[1] + e1[1], s2y: n[1] + e2[1], cy: n[1] + e1[1] + e2[1] };
 }));
 const NIDX = FACES.map((f) => f.n[0] + f.n[2] * PW + f.n[1] * PSTRIDE_Y);
+
+// Puertas: caras grandes cuya textura se espeja para que el pomo quede siempre lejos de la bisagra (en las dos caras).
+// La bisagra está en la esquina noroeste de la hoja orientada al Norte y gira con ella: (x, z) → (1 − z, x).
+const B_UFLIP = new Uint8Array(BLOCKS.length);
+for (const b of BLOCKS) {
+  if (!b || b.family !== 'door') continue;
+  let hx = 0, hz = 0;
+  for (let k = 0; k < (b.facing & 3); k++) { const nx = 1 - hz; hz = hx; hx = nx; }
+  const box = renderBoxes(b.id)[0];
+  let m = 0;
+  // posición de u = 0,78 (el pomo) a lo largo del eje de la cara: caras ±X → z; caras ±Z → x
+  const knob = [0.22, 0.78, 0, 0, 0.78, 0.22];
+  for (const f of [0, 1, 4, 5]) {
+    const alongZ = f < 2, len = alongZ ? box[5] - box[2] : box[3] - box[0];
+    if (len < 0.5) continue; // canto de la hoja
+    if ((knob[f] < 0.5) === ((alongZ ? hz : hx) < 0.5)) m |= 1 << f;
+  }
+  B_UFLIP[b.id] = m;
+}
 /** Desplazamiento en los arrays rellenos de cada dirección horizontal (N, E, S, O). */
 const DIR_PIDX = [-PW, 1, PW, -1];
 
@@ -162,6 +181,7 @@ function cornerH(pi, ox, oz, ft) {
 // ── Modelos de cajas (escaleras, puertas, vallas...) ─────────────
 /** Emite las caras de una caja de un bloque. Las caras en el borde de la celda se ocultan contra vecinos opacos. */
 function emitBox(buf, x, y, z, pi, id, b, ownL) {
+  const flip = B_UFLIP[id];
   for (let f = 0; f < 6; f++) {
     const onEdge = f === 0 ? b[3] >= 1 : f === 1 ? b[0] <= 0 : f === 2 ? b[4] >= 1 : f === 3 ? b[1] <= 0 : f === 4 ? b[5] >= 1 : b[2] <= 0;
     let lv;
@@ -194,6 +214,7 @@ function emitBox(buf, x, y, z, pi, id, b, ownL) {
         case 4: u = px; v = 1 - py; break;
         default: u = 1 - px; v = 1 - py;
       }
+      if ((flip >> f) & 1) u = 1 - u;
       buf.vert(x + px, y + py, z + pz, u0 + u * ts, v0 + v * ts, sk, bl, sh);
     }
     buf.quad(false);
