@@ -172,11 +172,17 @@ await withPage('index.html?autostart=survival&rd=4&seed=aldea&type=normal&mobs=a
     const b = g.entities.list.find((e) => e.type === 'volcanic_titan' && !e.removed);
     b.intro = 0;
     const p = g.player; p.flying = false;
-    p.teleport(b.x, b.y, b.z + 6); p.yaw = 0; p.pitch = -0.25;
+    p.teleport(b.x, b.y, b.z + 6);
     g.inventory.slots[4] = { i: Items.id('snowball'), n: 4, d: 0 }; g.inventory.selected = 4;
-    g.entityTarget = null; g.hit = null; g.useItem(true);
-    const proj = g.entities.list.filter((e) => e.kind === 'snow' && !e.removed).length;
-    for (let i = 0; i < 300 && b.cool <= 0; i++) await new Promise((r) => setTimeout(r, 50));
+    // hasta 3 lanzamientos apuntando al centro del Titán (con pocos FPS se acerca y una bola puede dar en el suelo)
+    let proj = 0;
+    for (let t = 0; t < 3 && b.cool <= 0; t++) {
+      const dx = b.x - p.x, dz = b.z - p.z, dy = b.y + b.h * 0.5 - p.eyeY;
+      p.yaw = Math.atan2(-dx, -dz); p.pitch = Math.atan2(dy, Math.hypot(dx, dz)) + 0.08;
+      g.entityTarget = null; g.hit = null; g.useCooldown = 0; g.useItem(true);
+      proj = Math.max(proj, g.entities.list.filter((e) => e.kind === 'snow' && !e.removed).length);
+      for (let i = 0; i < 100 && b.cool <= 0 && g.entities.list.some((e) => e.kind === 'snow' && !e.removed); i++) await new Promise((r) => setTimeout(r, 50));
+    }
     const m = g.entities.list.find((e) => e.kind === 'snow');
     return { cool: b.cool, proj, fps: g.frameStats.fps, b: [b.x, b.y, b.z].map((v) => +v.toFixed(1)), p: [p.x, p.y, p.z].map((v) => +v.toFixed(1)), m: m && [m.x, m.y, m.z, m.removed] };
   });
