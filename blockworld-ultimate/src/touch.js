@@ -9,6 +9,7 @@
 const LOOK_RAD_PER_PX = 0.0045; // giro por píxel arrastrado (× sensibilidad táctil)
 const TAP_MS = 260, HOLD_MS = 300, MOVE_TOL = 12;
 const STICK_R = 56;
+const MIN_PRESS = 120;
 
 /** ¿El dispositivo se maneja con el dedo (teléfono, tableta)? */
 export function isTouchDevice() {
@@ -63,16 +64,29 @@ export class TouchControls {
       b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('lostpointercapture', up);
       root.append(b); return b;
     };
-    hold('t-jump', '⤒', 'Saltar', () => ctl.keys.add('Space'), () => ctl.keys.delete('Space'));
+    // una tecla virtual se mantiene al menos MIN_PRESS ms: un toque muy rápido (o un teléfono a pocos FPS) no se pierde
+    // (una pulsación nueva cancela la suelta pendiente de la anterior)
+    this._rel = {};
+    const press = (code) => { clearTimeout(this._rel[code]); ctl.keys.add(code); };
+    const release = (code, t0) => {
+      const left = MIN_PRESS - (performance.now() - t0);
+      clearTimeout(this._rel[code]);
+      if (left > 0) this._rel[code] = setTimeout(() => ctl.keys.delete(code), left); else ctl.keys.delete(code);
+    };
+    hold('t-jump', '⤒', 'Saltar', () => { this._jumpT0 = performance.now(); press('Space'); }, () => release('Space', this._jumpT0));
     this.crouchBtn = hold('t-crouch', '⤓', 'Agacharse / bajar del vehículo', () => {
-      this._crouchT0 = performance.now(); this._crouchWas = this.crouchLatched; ctl.keys.add('KeyC');
+      this._crouchT0 = performance.now(); this._crouchWas = this.crouchLatched; this._crouchRide = !!this.game.riding;
+      if (this._crouchRide) { this.game.dismount(); return; } // bajar del vehículo al instante (no se queda agachado)
+      press('KeyC');
     }, () => {
+      if (this._crouchRide) return;
       const quick = performance.now() - this._crouchT0 < 250;
-      this.crouchLatched = quick && !this._crouchWas; // toque corto: queda fijo (o se suelta si ya lo estaba)
-      if (!this.crouchLatched) ctl.keys.delete('KeyC');
+      // toque corto: queda fijo (o se suelta si ya lo estaba)
+      this.crouchLatched = quick && !this._crouchWas;
+      if (!this.crouchLatched) release('KeyC', this._crouchT0);
       this.crouchBtn.classList.toggle('latched', this.crouchLatched);
     });
-    hold('t-mine', '⛏', 'Romper / atacar (mantener)', () => { ctl.mouse[0] = true; ctl.onMouseDown && ctl.onMouseDown(0); }, () => { ctl.mouse[0] = false; });
+    hold('t-mine', '⛏', 'Romper / atacar (mantener)', () => { this._mineBtn = true; this._syncMine(); ctl.onMouseDown && ctl.onMouseDown(0); }, () => { this._mineBtn = false; this._syncMine(); });
     hold('t-use', '✋', 'Usar / colocar (mantener para comer o colocar seguido)', () => { ctl.mouse[2] = true; ctl.onMouseDown && ctl.onMouseDown(2); }, () => { ctl.mouse[2] = false; });
     // fila superior
     const top = mk('div', 't-top');
@@ -122,9 +136,20 @@ export class TouchControls {
     this.update();
   }
 
+  /** Romper: el botón ⛏ y mantener el dedo quieto son dos fuentes; soltar una no corta la otra. */
+  _syncMine() { this.ctl.mouse[0] = !!this._mineBtn || !!(this.look && this.look.holding); }
+  /** Quita el agachado fijo (al subir a un vehículo). */
+  unlatchCrouch() {
+    if (!this.crouchLatched) return;
+    this.crouchLatched = false; this.ctl.keys.delete('KeyC');
+    if (this.crouchBtn) this.crouchBtn.classList.remove('latched');
+  }
+
   /** Suelta todo (al pausar, abrir una pantalla o perder el foco). */
   reset() {
     const ctl = this.ctl;
+    this._mineBtn = false;
+    for (const k in this._rel || {}) clearTimeout(this._rel[k]);
     this.stick = null; ctl.stick = null;
     if (this.look && this.look.timer) clearTimeout(this.look.timer);
     this.look = null;
@@ -175,7 +200,7 @@ export class TouchControls {
     lk.timer = setTimeout(() => {
       // mantener quieto: romper / atacar mientras dure
       if (this.look !== lk || lk.moved) return;
-      lk.holding = true; this.ctl.mouse[0] = true; this.ctl.onMouseDown && this.ctl.onMouseDown(0);
+      lk.holding = true; this._syncMine(); this.ctl.onMouseDown && this.ctl.onMouseDown(0);
     }, HOLD_MS);
   }
   _move(e) {
@@ -211,7 +236,7 @@ export class TouchControls {
     if (lk && e.pointerId === lk.id) {
       clearTimeout(lk.timer);
       this.look = null;
-      if (lk.holding) { ctl.mouse[0] = false; return; }
+      if (lk.holding) { this._syncMine(); return; }
       // toque corto sin arrastrar: usar / colocar donde apunta la mira
       if (e.type === 'pointerup' && !lk.moved && performance.now() - lk.t0 < TAP_MS + HOLD_MS && ctl.locked && ctl.onMouseDown) ctl.onMouseDown(2);
     }

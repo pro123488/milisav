@@ -277,6 +277,8 @@ export class Game {
       if (this.state === 'paused') { this.resume(); return; }
       if (this.ui.screen && this.state === 'screen') { this.closeScreen(); return; }
       if (this.state === 'dead') return;
+      // con ratón la pausa llega al soltarse el puntero; en modo táctil (tableta con teclado) no hay puntero que soltar
+      if (this.state === 'playing' && this.controls.touchMode && !this._traveling) this.openPause();
       return;
     }
     if (this.state === 'screen') {
@@ -564,6 +566,7 @@ export class Game {
   mount(v) {
     if (this.riding || v.rider) return false;
     this.riding = v; v.rider = { push: false, ctl: null };
+    if (this.touch) this.touch.unlatchCrouch(); // un agachado fijo bajaría al jugador en el acto
     this.mining.reset(); this.eating = null;
     const [sx, sy, sz] = v.seat(), p = this.player; p.x = sx; p.y = sy; p.z = sz; p.vx = p.vy = p.vz = 0; p.flying = false; // sentarse ya
     this._seatPos = [sx, sy, sz];
@@ -739,7 +742,7 @@ export class Game {
       this.ui.toast('⚠ No se pudo completar el viaje');
     } finally {
       this.frozen = false; this._traveling = false;
-      if (this._pauseAfterTravel) { this._pauseAfterTravel = false; if (!this.controls.locked) this.openPause(); }
+      if (this._pauseAfterTravel) { this._pauseAfterTravel = false; if (!this.controls.locked || this.controls.touchMode) this.openPause(); }
     }
     return true;
   }

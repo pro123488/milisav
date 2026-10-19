@@ -82,7 +82,7 @@ await withPage('index.html?autostart=creative&rd=3&seed=movil&type=flat&mobs=non
   const [cx, cy] = await box('.t-crouch');
   await page.touchscreen.tap(cx, cy); await frames(page, 4);
   const crouchOn = await ev(() => window.__game.player.crouching);
-  await page.touchscreen.tap(cx, cy); await frames(page, 4);
+  await page.touchscreen.tap(cx, cy); await wait(250); await frames(page, 2); // la tecla se suelta a los 120 ms
   const crouchOff = await ev(() => window.__game.player.crouching);
   ok('un toque en agacharse lo deja fijo y otro lo quita', crouchOn && !crouchOff, JSON.stringify({ crouchOn, crouchOff }));
   const [hx, hy] = await box('#hotbar .slot.hot[data-i="4"]');
@@ -120,6 +120,35 @@ await withPage('index.html?autostart=creative&rd=3&seed=movil&type=flat&mobs=non
   const closed = await ev(() => ({ state: window.__game.state, locked: window.__game.controls.locked }));
   ok('✕ cierra el inventario y se sigue jugando', closed.state === 'playing' && closed.locked, JSON.stringify(closed));
 
+  // ── Chat: abre el chat (no la pausa) y ✕ lo cierra ──
+  const [chx, chy] = await box('.t-top .t-btn:nth-child(6)');
+  await page.touchscreen.tap(chx, chy); await frames(page, 4);
+  const chat = await ev(() => ({ open: window.__game.ui.chatOpen, state: window.__game.state, close: !document.querySelector('.t-close').classList.contains('hidden') }));
+  await page.locator('.t-close').tap(); await frames(page, 4);
+  const chat2 = await ev(() => ({ open: window.__game.ui.chatOpen, state: window.__game.state, locked: window.__game.controls.locked }));
+  ok('💬 abre el chat sin pausar y ✕ lo cierra', chat.open && chat.state === 'playing' && chat.close && !chat2.open && chat2.state === 'playing' && chat2.locked, JSON.stringify({ chat, chat2 }));
+
+  // ── Vehículo: ⤓ baja sin dejar el agachado fijo, y se puede volver a subir ──
+  const ride = await ev(async () => {
+    const g = window.__game; const { Boat } = await import('/src/vehicles.js');
+    const b = new Boat(g); b.setPos(g.player.x + 2, g.player.y, g.player.z); g.entities.add(b);
+    g.mount(b);
+    return { riding: g.riding === b };
+  });
+  await page.touchscreen.tap(cx, cy); await frames(page, 6);
+  const off = await ev(() => ({ riding: !!window.__game.riding, crouchKey: window.__game.controls.keys.has('KeyC'), latched: window.__game.touch.crouchLatched }));
+  await ev(() => { const g = window.__game; const b = g.entities.list.find((e) => e.type === 'boat' && !e.removed); g.mount(b); });
+  await frames(page, 8);
+  const again = await ev(() => !!window.__game.riding);
+  await page.touchscreen.tap(cx, cy); await frames(page, 6);
+  ok('⤓ baja del vehículo sin quedarse agachado y se puede volver a subir', ride.riding && !off.riding && !off.crouchKey && !off.latched && again, JSON.stringify({ ride, off, again }));
+
+  // ── Esc con un teclado (tableta): pausa ──
+  await page.keyboard.press('Escape'); await frames(page, 4);
+  const escP = await ev(() => window.__game.state);
+  await page.keyboard.press('Escape'); await frames(page, 4);
+  ok('con teclado, Esc pausa y reanuda también en modo táctil', escP === 'paused' && (await ev(() => window.__game.state)) === 'playing', escP);
+
   // ── Pausa ──
   const [px, py] = await box('.t-top .t-btn:nth-child(1)');
   await page.touchscreen.tap(px, py); await frames(page, 4);
@@ -138,10 +167,21 @@ await withPage('index.html?autostart=survival&rd=2&seed=movil2&type=flat&mobs=no
   await page.tap('#gl'); await frames(page, 6);
   const lay = await page.evaluate(() => {
     const r = (s) => document.querySelector(s).getBoundingClientRect();
-    const hb = r('#hotbar'), j = r('.t-jump'), u = r('.t-use');
+    const hb = r('#hotbar'), j = r('.t-jump'), u = r('.t-use'), st = r('#stats-row');
     const overlap = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
-    return { w: innerWidth, hbL: Math.round(hb.left), hbR: Math.round(hb.right), jumpOver: overlap(hb, j), useOver: overlap(hb, u), state: window.__game.state };
+    return { w: innerWidth, hbL: Math.round(hb.left), hbR: Math.round(hb.right), stL: Math.round(st.left), stR: Math.round(st.right), jumpOver: overlap(hb, j), useOver: overlap(hb, u), state: window.__game.state };
   });
   await page.screenshot({ path: S + '/m3_portrait.png' });
-  ok('en vertical la barra rápida cabe en la pantalla y los botones no la tapan', lay.hbL >= 0 && lay.hbR <= lay.w && !lay.jumpOver && !lay.useOver && lay.state === 'playing', JSON.stringify(lay));
+  ok('en vertical la barra rápida y los corazones caben y los botones no los tapan', lay.hbL >= 0 && lay.hbR <= lay.w && lay.stL >= 0 && lay.stR <= lay.w && !lay.jumpOver && !lay.useOver && lay.state === 'playing', JSON.stringify(lay));
+  // inventario en vertical (Creativo): todo dentro del panel, también la columna de armadura
+  await page.evaluate(() => { const g = window.__game; g.setMode('creative'); g.openInventory(); });
+  await frames(page, 6);
+  const pinv = await page.evaluate(() => {
+    const panel = document.querySelector('.screen-overlay .panel').getBoundingClientRect();
+    const arm = document.querySelector('.armor-col').getBoundingClientRect();
+    const grid = [...document.querySelectorAll('.screen-overlay .slot-grid')].pop().getBoundingClientRect();
+    return { pl: Math.round(panel.left), pr: Math.round(panel.right), al: Math.round(arm.left), gr: Math.round(grid.right) };
+  });
+  await page.screenshot({ path: S + '/m4_portrait_inv.png' });
+  ok('en vertical el inventario de Creativo cabe (armadura incluida)', pinv.al >= pinv.pl && pinv.gr <= pinv.pr, JSON.stringify(pinv));
 }, { readyFlag: '__ready', readyTimeout: 120000, w: 390, h: 844, mobile: true });

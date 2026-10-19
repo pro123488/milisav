@@ -303,9 +303,9 @@ export class UI {
   openChat(prefix = '') {
     this.chatInput.classList.remove('hidden');
     this.chatInput.value = prefix;
+    this.chatOpen = true; // antes de soltar el puntero: en modo táctil se suelta al instante y si no se abriría la pausa
     this.game.controls.unlock();
     setTimeout(() => this.chatInput.focus(), 0);
-    this.chatOpen = true;
   }
   closeChat() {
     this.chatInput.classList.add('hidden'); this.chatInput.blur(); this.chatOpen = false;

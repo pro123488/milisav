@@ -255,7 +255,7 @@ body.touch #chat-input { bottom: auto; top: 60px; }
 body.touch .boss-bar { top: 56px; }
 body.touch .hud-compass { top: 100px; }
 
-.screen-split { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.screen-split { display: flex; flex-direction: column; gap: 12px; align-items: center; align-items: safe center; }
 .split-a, .split-b { display: flex; flex-direction: column; gap: 8px; align-items: center; min-width: 0; }
 .split-a > .creative-bar, .split-a > .catalog, .split-a > .trash { align-self: stretch; }
 
@@ -299,4 +299,10 @@ body.touch .hud-compass { top: 100px; }
   .t-jump { bottom: 150px; } .t-crouch { bottom: 140px; } .t-mine { bottom: 242px; } .t-use { bottom: 216px; }
   .t-stick.idle { bottom: 160px; }
   body.touch #hud-top-right { top: 56px; }
+  #hearts img, #hunger img, #armor-row img, #bubbles-row img { width: 15px; height: 15px; } #stats-row { gap: 8px; }
+}
+@media (max-width: 430px) {
+  .creative-row, .inv-top { flex-direction: column; align-items: center; gap: 8px; } .armor-col { flex-direction: row; }
+  .slot { width: 34px; height: 34px; } .slot img.icon { width: 24px; height: 24px; }
+  .slot.hot { width: 36px; height: 36px; } .catalog { grid-template-columns: repeat(auto-fill, 34px); }
 }

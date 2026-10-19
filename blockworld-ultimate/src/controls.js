@@ -31,14 +31,14 @@ export class Controls {
     document.addEventListener('keyup', (e) => { this.keys.delete(e.code); });
     window.addEventListener('blur', () => { this.keys.clear(); this.mouse = [false, false, false]; });
     canvas.addEventListener('mousedown', (e) => {
-      if (!this.locked) return;
+      if (!this.locked || this.touchMode) return; // en modo táctil, la capa táctil se encarga
       this.mouse[e.button] = true;
       if (this.onMouseDown) this.onMouseDown(e.button);
       e.preventDefault();
     });
     document.addEventListener('mouseup', (e) => { this.mouse[e.button] = false; });
     document.addEventListener('mousemove', (e) => {
-      if (!this.locked) return;
+      if (!this.locked || this.touchMode) return; // sin puntero capturado, mover el ratón no gira la cámara
       // Algunos navegadores envían un salto enorme justo al capturar el ratón: se descarta.
       if (this._skipMove > 0) { this._skipMove--; return; }
       const mx = e.movementX || 0, my = e.movementY || 0;
