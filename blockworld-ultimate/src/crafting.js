@@ -81,7 +81,7 @@ recipe('alchemy_table', 1, [['cobble', 3], ['crystal_shard', 1], ['glass', 2]], 
 recipe('bell', 1, [['gold_ingot', 5], ['stick', 2]], 'workbench', 'gold_ingot', 'Aldea');
 recipe('plaster', 4, [['clay_ball', 2], ['sand', 2]], 'workbench', 'clay_ball', 'Aldea');
 recipe('bandage', 2, [['paper', 2], ['mushroom_glow', 1]], 'workbench', 'paper', 'Aldea');
-recipe('village_compass', 1, [['iron_ingot', 4], ['crystal_shard', 1], ['sun_coin', 1]], 'workbench', 'sun_coin', 'Aldea');
+recipe('village_compass', 1, [['iron_ingot', 4], ['crystal_shard', 1]], 'workbench', 'iron_ingot', 'Aldea'); // sin moneda: sirve para encontrar la primera aldea
 
 // ── Fase 4: alquimia y jefes ─────────────────────────────────────
 recipe('glass_bottle', 3, [['glass', 3]], 'workbench', 'glass', 'Alquimia');

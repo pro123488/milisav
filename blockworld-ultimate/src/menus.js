@@ -157,20 +157,22 @@ export class Menus {
     const mode = sel(GAMEMODES.map((m) => [m, GAMEMODE_NAMES[m]]), f.mode);
     const mobs = sel([['all', 'Todas (animales y monstruos)'], ['animals', 'Solo animales'], ['none', 'Ninguna']], f.mobs);
     const chk = (label, val) => { const i = el('input', null, { type: 'checkbox' }); i.checked = val; return [el('label', 'opt chk', null, i, el('span', 'lbl', { text: label })), i]; };
-    const [structL, structI] = chk('Generar estructuras (ruinas, templos, mazmorras)', f.structures);
+    const [structL, structI] = chk('Generar estructuras (aldeas, ruinas, templos, santuarios…)', f.structures);
+    const [vilL, vilI] = chk('Empezar junto a una aldea', f.villageStart !== false);
     const [cmdL, cmdI] = chk('Permitir comandos y trucos (T o /)', f.commands);
     const [keepL, keepI] = chk('Conservar el inventario al morir', f.keepInventory);
     const form = el('div', 'form', null,
       fld('Nombre del mundo', name), fld('Semilla', seed, 'La misma semilla y versión del generador crean el mismo mundo.'),
       fld('Tipo de mundo', type), fld('Modo de juego', mode), fld('Dificultad', diff), fld('Tamaño / límites del mundo', size),
-      fld('Aparición de criaturas', mobs), structL, cmdL, keepL);
-    const note = el('div', 'note', { html: '<b>No incluido todavía (fases posteriores):</b> dimensiones, aldeas y comercio, jefes, maquinaria automática, multijugador. El juego te avisará si una opción aún no existe.' });
+      fld('Aparición de criaturas', mobs), structL, vilL, cmdL, keepL);
+    const note = el('div', 'note', { html: 'Hay aldeas con aldeanos y comercio, santuarios con jefes, la Dimensión Oscura, energía y máquinas, raíles y barcas. <b>No incluido:</b> multijugador.' });
     const go = el('button', 'btn primary', { text: 'Crear mundo' });
     go.addEventListener('click', () => {
       app.audio.resume();
       app.createWorld({
         name: name.value.trim() || 'Mundo nuevo', seedText: seed.value.trim(), type: type.value, difficulty: diff.value, size: WORLD_SIZES[size.value].size,
         structures: structI.checked, mobs: mobs.value, mode: mode.value, commands: cmdI.checked, keepInventory: keepI.checked,
+        villageStart: structI.checked && vilI.checked,
       });
     });
     const back = el('button', 'btn', { text: 'Cancelar' }); back.addEventListener('click', () => this.showMain());

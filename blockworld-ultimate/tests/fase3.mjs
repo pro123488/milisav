@@ -5,7 +5,8 @@ import { Blocks, BLOCKS, ID } from '../src/blocks.js';
 import { Items } from '../src/items.js';
 import { Terrain, seedFromString } from '../src/terrain.js';
 import { World } from '../src/world.js';
-import { villageAt, nearestVillage, villagesNear, villageFootprints, pieceToWorld, VREGION } from '../src/villages.js';
+import { villageAt, nearestVillage, villagesNear, villageFootprints, pieceToWorld, VREGION, spawnNearVillage } from '../src/villages.js';
+import { SEA_LEVEL } from '../src/config.js';
 import { findPath, standable } from '../src/navigation.js';
 import { PROFESSIONS, newTradeState, offersFor, canTrade, executeTrade, restock, LEVEL_XP, COIN } from '../src/trading.js';
 import { rotateBlockId, renderBoxes, collisionBoxes, B_FAMILY, FAM } from '../src/shapes.js';
@@ -82,6 +83,24 @@ test('las estaciones de trabajo dan oficio a los aldeanos', () => {
 test('las estructuras de un solo chunk no aparecen dentro de una aldea', () => {
   // en ningún chunk de la aldea hay cofres de botín de cabaña/ruina/templo
   assert.ok(info.chests.every((c) => c.table === 'village' || c.table === 'smithy'), JSON.stringify(info.chests.map((c) => c.table)));
+});
+
+test('«Empezar junto a una aldea»: se aparece en tierra firme, a la vista de una aldea y mirándola', () => {
+  for (const sd of ['a1', 'b2', 'c3', 'd4', 'e5', 'f6']) {
+    const t = new Terrain(seedFromString(sd), { type: 'normal', structures: true });
+    const sp = t.findSpawn();
+    const vs = spawnNearVillage(t, sp.x, sp.z);
+    assert.ok(vs, 'sin aldea cerca con la semilla ' + sd);
+    const v = nearestVillage(t, vs.x, vs.z, 1);
+    const d = Math.hypot(v.x - vs.x, v.z - vs.z);
+    assert.ok(d > 15 && d < 64, `a ${d.toFixed(0)} bloques (${sd})`);
+    assert.ok(t.column(Math.floor(vs.x), Math.floor(vs.z)).h >= SEA_LEVEL + 1, 'en el agua (' + sd + ')');
+    const fx = -Math.sin(vs.yaw), fz = -Math.cos(vs.yaw);
+    assert.ok(fx * (v.x - vs.x) + fz * (v.z - vs.z) > 0.9 * d, 'no mira a la aldea (' + sd + ')');
+    assert.deepEqual(spawnNearVillage(new Terrain(seedFromString(sd), { type: 'normal', structures: true }), sp.x, sp.z), vs, 'determinista');
+  }
+  const r = RECIPES.find((x) => x.out === 'village_compass');
+  assert.ok(r && !r.in.some(([k]) => k === 'sun_coin'), 'la brújula de aldeas se fabrica sin moneda');
 });
 
 console.log('Rotación de bloques');

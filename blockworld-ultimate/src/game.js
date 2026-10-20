@@ -21,7 +21,7 @@ import { Spawner } from './spawner.js';
 import { RandomTicks, tickFurnace } from './ticks.js';
 import { FluidSim, flowVector } from './fluids.js';
 import { VILLAGE_MOBS, createVillageMob } from './villagers.js';
-import { villageAt, nearestVillage } from './villages.js';
+import { villageAt, nearestVillage, spawnNearVillage } from './villages.js';
 import { PROFESSION_BY_STATION, villagerName } from './trading.js';
 import { HandRenderer } from './hand.js';
 import { UI } from './ui.js';
@@ -177,8 +177,14 @@ export class Game {
     this.spawnPoint = null;
     // Punto de aparición del mundo
     // (siempre del mundo normal, aunque la partida se dejara en la Dimensión Oscura)
-    const wsp = (w.dimension === 'dark' ? new Terrain(meta.seed, { type: meta.type, structures: meta.structures }) : w.terrain).findSpawn();
-    this.worldSpawn = { x: wsp.x + 0.5, z: wsp.z + 0.5 };
+    const T = w.dimension === 'dark' ? new Terrain(meta.seed, { type: meta.type, structures: meta.structures }) : w.terrain;
+    if (!meta.spawn) {
+      const wsp = T.findSpawn();
+      // «Empezar junto a una aldea» (mundos nuevos): el punto de aparición queda a la vista de la aldea más cercana
+      const vs = meta.villageStart && meta.structures ? spawnNearVillage(T, wsp.x, wsp.z) : null;
+      meta.spawn = vs ? { x: vs.x, z: vs.z, yaw: vs.yaw } : { x: wsp.x + 0.5, z: wsp.z + 0.5 };
+    }
+    this.worldSpawn = { x: meta.spawn.x, z: meta.spawn.z };
     if (saved) {
       this.inventory = Inventory.deserialize(saved.inv);
       this.survival.load(saved.sv);
@@ -217,6 +223,7 @@ export class Game {
     });
     if (saved) this.player.teleport(saved.x, saved.y, saved.z);
     else {
+      if (meta.spawn.yaw !== undefined) this.player.yaw = meta.spawn.yaw; // mirando hacia la aldea
       const sp = w.findGroundStand(sx, sz);
       if (sp) this.player.teleport(sp.x, sp.y, sp.z);
       else { let y = w.findStandY(Math.floor(sx), Math.floor(sz)); if (y < 0) y = SEA_LEVEL + 20; this.player.teleport(sx, y, sz); }

@@ -109,3 +109,17 @@ await withPage('index.html?autostart=survival&rd=4&seed=aldea&type=normal&mobs=a
   const errs = await ev(() => window.__errors || []);
   ok('sin errores de página', !errs.length, errs.join(' | '));
 }, { readyFlag: '__ready', readyTimeout: 120000, w: 1280, h: 720 });
+
+// ── Mundo nuevo con «Empezar junto a una aldea»: se aparece a la vista de una aldea y se descubre al momento ──
+await withPage('index.html?autostart=survival&rd=4&seed=junto&type=normal&mobs=none&structures=1&village=1', async (page) => {
+  await page.waitForTimeout(500);
+  await page.waitForFunction(() => window.__game.achievements.has('aldea'), null, { timeout: 30000 }).catch(() => {});
+  const r = await page.evaluate(async () => {
+    const g = window.__game; const { nearestVillage } = await import('/src/villages.js');
+    const p = g.player, v = nearestVillage(g.world.terrain, p.x, p.z, 2);
+    const d = v ? Math.hypot(v.x - p.x, v.z - p.z) : -1;
+    const fx = -Math.sin(p.yaw), fz = -Math.cos(p.yaw);
+    return { d: Math.round(d), facing: v ? +(((fx * (v.x - p.x)) + (fz * (v.z - p.z))) / d).toFixed(2) : 0, ach: g.achievements.has('aldea'), spawn: g.meta.spawn };
+  });
+  console.log((r.d > 0 && r.d < 64 && r.facing > 0.8 && r.ach ? 'PASS ' : 'FAIL ') + 'con «Empezar junto a una aldea» se aparece mirando a una aldea cercana y se descubre — ' + JSON.stringify(r));
+}, { readyFlag: '__ready', readyTimeout: 120000 });

@@ -255,6 +255,30 @@ export function nearestVillage(terrain, x, z, maxRegions = 5) {
   return best;
 }
 
+/**
+ * Punto de aparición junto a la aldea más cercana a (x, z): en terreno firme y seco a unos 10 bloques de las casas, del
+ * lado por el que se llega, mirando hacia el pozo. Devuelve {x, z, yaw, village} o null si no hay aldea cerca.
+ */
+export function spawnNearVillage(terrain, x, z, maxRegions = 8) {
+  const v = nearestVillage(terrain, x, z, maxRegions);
+  if (!v) return null;
+  let r = 12;
+  for (const p of v.pieces) for (const [px, pz] of [[p.x0, p.z0], [p.x1, p.z0], [p.x0, p.z1], [p.x1, p.z1]]) r = Math.max(r, Math.hypot(px - v.x, pz - v.z));
+  const base = Math.atan2(x - v.x, z - v.z);
+  for (let k = 0; k < 24; k++) {
+    const a = base + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * (Math.PI / 12);
+    const d = r + 8 + (k >= 16 ? 6 : 0);
+    const px = Math.round(v.x + Math.sin(a) * d), pz = Math.round(v.z + Math.cos(a) * d);
+    const c = terrain.column(px, pz);
+    if (c.h < SEA + 1 || c.lavaTop) continue;
+    let lo = c.h, hi = c.h;
+    for (const [dx, dz] of [[2, 0], [-2, 0], [0, 2], [0, -2]]) { const n = terrain.column(px + dx, pz + dz).h; lo = Math.min(lo, n); hi = Math.max(hi, n); }
+    if (hi - lo > 2 || lo < SEA + 1) continue;
+    return { x: px + 0.5, z: pz + 0.5, yaw: Math.atan2(-(v.x - px), -(v.z - pz)), village: v.id };
+  }
+  return null;
+}
+
 // ── Construcción recortada a un chunk ────────────────────────────
 const BX = (lx, y, lz) => lx + (lz << 4) + (y << 8);
 

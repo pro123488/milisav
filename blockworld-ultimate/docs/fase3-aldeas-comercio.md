@@ -65,3 +65,13 @@ Unitarias: plan determinista e idéntico desde cualquier chunk, piezas sin solap
 parcelas, cofres/aldeanos devueltos una sola vez, A* (rodea obstáculos, cruza puertas), ofertas y niveles de comercio,
 reposición, reputación. E2E: localizar y visitar una aldea, comerciar con la interfaz, aldeanos vuelven a casa de noche,
 guardián contra un monstruo, captura de pantalla.
+
+## Encontrar aldeas (añadido después)
+- Al crear un mundo, la opción **«Empezar junto a una aldea»** (activada por defecto, y siempre en el inicio rápido) pone el
+  punto de aparición a unos 10 bloques de las casas de la aldea más cercana (en tierra firme, mirando hacia el pozo). Se
+  calcula una vez y se guarda con el mundo (`meta.spawn`); los mundos anteriores no cambian. Sin la opción, la aldea más
+  cercana queda de media a unos 330 bloques del inicio.
+- La **brújula de aldeas** se fabrica con 4 lingotes de hierro y 1 fragmento de cristal (antes pedía una Moneda de sol, que
+  solo se consigue comerciando en una aldea). Con ella en la mano se ve el nombre, la distancia y la dirección de la aldea
+  más cercana.
+- `/localizar aldea` da sus coordenadas.

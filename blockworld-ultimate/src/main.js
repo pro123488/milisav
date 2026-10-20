@@ -53,6 +53,7 @@ class App {
     const form = {
       name: 'Prueba', seedText: params.get('seed') || 'prueba', type: params.get('type') || 'normal', difficulty: params.get('diff') || 'normal',
       size: 0, structures: params.get('structures') !== '0', mobs: params.get('mobs') || 'all', mode: mode === 'peaceful' ? 'survival' : mode, commands: true, keepInventory: false,
+      villageStart: params.get('village') === '1', // en las pruebas, solo si se pide (las posiciones de inicio no cambian)
     };
     if (mode === 'peaceful') form.difficulty = 'peaceful';
     this.menus.hide();
@@ -69,7 +70,7 @@ class App {
     const seed = seedFromString(f.seedText);
     return {
       id: newWorldId(), name: f.name, seed, seedText: f.seedText || String(seed), type: f.type, difficulty: f.difficulty, mode: f.mode,
-      size: f.size, structures: f.structures, mobs: f.mobs, commands: f.commands, keepInventory: f.keepInventory,
+      size: f.size, structures: f.structures, mobs: f.mobs, commands: f.commands, keepInventory: f.keepInventory, villageStart: !!f.villageStart,
       genVersion: GENERATOR_VERSION, gameVersion: VERSION, created: Date.now(), lastPlayed: Date.now(), playTime: 0,
     };
   }
@@ -79,7 +80,7 @@ class App {
     const names = { survival: 'Supervivencia', creative: 'Creativo', adventure: 'Aventura', peaceful: 'Pacífico' };
     await this.createWorld({
       name: `Mundo ${names[kind]} ${n}`, seedText: '', type: 'normal', difficulty: kind === 'peaceful' ? 'peaceful' : 'normal', size: 0,
-      structures: true, mobs: 'all', mode: kind === 'peaceful' ? 'survival' : kind, commands: true, keepInventory: false,
+      structures: true, mobs: 'all', mode: kind === 'peaceful' ? 'survival' : kind, commands: true, keepInventory: false, villageStart: true,
     });
   }
 
