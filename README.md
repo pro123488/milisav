@@ -1,6 +1,6 @@
-# Inmobiliaria Bosch · sitio web
+# HomeBridge · sitio web
 
-Página web de **Inmobiliaria Bosch** (Instagram [@inmobiliariabosch](https://www.instagram.com/inmobiliariabosch/)):
+Página web de **HomeBridge** (Instagram [@inmobiliariabosch](https://www.instagram.com/inmobiliariabosch/)):
 compra, venta y financiamiento de propiedades en Colombia, con atención de un ejecutivo.
 Lema de la página: **«Tómate tu tiempo»**.
 
@@ -13,13 +13,14 @@ servicios (lista) · **simulador de cuota con las 3 mejores tasas de banco** · 
 propiedades · testimonios (opcional) · trabaja con nosotros · preguntas frecuentes · contacto (formulario → WhatsApp) · pie (con botón
 «Pausar animaciones»).
 
-## Para Google Sites
+## Publicado en GitHub Pages
 
-Google Sites solo permite pegar código dentro de bloques (*Insertar → Incorporar → Código para insertar*), así que el sitio
-también está separado **por partes** en la carpeta [`google-sites/`](google-sites/): un archivo por parte (inicio, servicios,
-simulador, cómo funciona, tu ejecutivo, propiedades, trabaja con nosotros, preguntas, contacto, pie…), cada uno con su diseño, código y datos.
-Las instrucciones paso a paso, los altos de cada bloque y qué se puede editar están en
-[`google-sites/LEEME.md`](google-sites/LEEME.md). Si publicas en otro lado (tu dominio, Netlify, GitHub Pages…), usa `index.html`.
+El sitio se publica solo con **GitHub Pages** desde este repositorio: cada cambio que se sube queda en línea en uno o
+dos minutos. La dirección es `https://<usuario>.github.io/<nombre-del-repositorio>/`.
+
+Para que la dirección sea **`https://pro123488.github.io/HomeBridge/`**, el repositorio debe llamarse `HomeBridge`:
+en GitHub, **Settings → General → Repository name** → escribe `HomeBridge` → **Rename**. La dirección anterior deja de
+funcionar (GitHub Pages no la redirige), así que comparte la nueva.
 
 ## Ver el sitio
 
@@ -101,7 +102,6 @@ En `index.html`, cambia `og:image` por la URL completa de la imagen
 ## Estructura
 
 ```
-google-sites/          El sitio separado por partes para pegar en Google Sites (ver LEEME.md)
 index.html              Sitio final (estilo Nebulosa: diseño, código, tipografías, tasas y datos editables)
 estilos.html            51 estilos para probar (versión anterior, selector «Estilos»)
 assets/og-image.jpg     Imagen al compartir el enlace
