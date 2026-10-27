@@ -10,14 +10,14 @@ conexión para las tipografías. Usa el estilo **Nebulosa** (azul noche con mage
 
 **Secciones:** menú flotante · inicio con selector «Comprar / Vender / Financiar» (abre WhatsApp) · cinta animada ·
 servicios (lista) · **simulador de cuota con las 3 mejores tasas de banco** · cómo funciona (5 pasos) · tu ejecutivo ·
-propiedades · testimonios (opcional) · preguntas frecuentes · contacto (formulario → WhatsApp) · pie (con botón
+propiedades · testimonios (opcional) · trabaja con nosotros · preguntas frecuentes · contacto (formulario → WhatsApp) · pie (con botón
 «Pausar animaciones»).
 
 ## Para Google Sites
 
 Google Sites solo permite pegar código dentro de bloques (*Insertar → Incorporar → Código para insertar*), así que el sitio
 también está separado **por partes** en la carpeta [`google-sites/`](google-sites/): un archivo por parte (inicio, servicios,
-simulador, cómo funciona, tu ejecutivo, propiedades, preguntas, contacto, pie…), cada uno con su diseño, código y datos.
+simulador, cómo funciona, tu ejecutivo, propiedades, trabaja con nosotros, preguntas, contacto, pie…), cada uno con su diseño, código y datos.
 Las instrucciones paso a paso, los altos de cada bloque y qué se puede editar están en
 [`google-sites/LEEME.md`](google-sites/LEEME.md). Si publicas en otro lado (tu dominio, Netlify, GitHub Pages…), usa `index.html`.
 

@@ -99,6 +99,7 @@ html[data-secciones] .stack, .stack { margin-top: 0 !important; }
         <li><a data-ir="comoFunciona" data-ir-ocultar href="#">Cómo funciona</a></li>
         <li><a data-ir="tuEjecutivo" data-ir-ocultar href="#">Tu ejecutivo</a></li>
         <li><a data-ir="propiedades" data-ir-ocultar href="#">Propiedades</a></li>
+        <li><a data-ir="trabaja" data-ir-ocultar href="#">Únete</a></li>
         <li><a data-ir="contacto" data-ir-ocultar href="#">Contacto</a></li>
       </ul>
     </nav>
@@ -122,7 +123,7 @@ html[data-secciones] .stack, .stack { margin-top: 0 !important; }
 
   /* ENLACES a otras partes de tu sitio (opcional). Pega la dirección de la página de Google Sites que corresponda;
      si dejas "" el botón usa WhatsApp (o se oculta si no tiene sentido sin el enlace). */
-  var ENLACES = { inicio: "", servicios: "", simulador: "", comoFunciona: "", tuEjecutivo: "", propiedades: "", preguntas: "", contacto: "" };
+  var ENLACES = { inicio: "", servicios: "", simulador: "", comoFunciona: "", tuEjecutivo: "", propiedades: "", trabaja: "", preguntas: "", contacto: "" };
   var ABRIR_EN = "_top";   // "_top" = en la misma pestaña · "_blank" = en una pestaña nueva
   $$("[data-ir]").forEach(function (a) {
     var url = ENLACES[a.getAttribute("data-ir")];
