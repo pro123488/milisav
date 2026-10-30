@@ -315,15 +315,142 @@ function loadSheetJS() {
   return sheetJSPromise;
 }
 
+const filasConDatos = (rows) => rows.filter((r) => r.some((cell) => String(cell ?? '').trim() !== ''));
+
+// Lee el archivo y devuelve { hoja, rows } con los encabezados en rows[0]. En libros con varias hojas
+// (tablas dinámicas, resúmenes…) elige la hoja y la fila de encabezados que mejor coinciden con los campos.
 async function readSpreadsheet(file) {
   const buffer = await file.arrayBuffer();
   const isExcel = /\.(xlsx|xlsm|xls|ods)$/i.test(file.name);
-  if (!isExcel) return parseCSV(decodeText(buffer));
+  if (!isExcel) return elegirHoja([{ name: '', rows: filasConDatos(parseCSV(decodeText(buffer))) }]);
   const XLSX = await loadSheetJS();
   const wb = XLSX.read(buffer, { type: 'array', cellDates: true });
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
-  return rows.filter((r) => r.some((cell) => String(cell).trim() !== ''));
+  return elegirHoja(
+    wb.SheetNames.map((name) => ({
+      name,
+      rows: filasConDatos(XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: true, defval: '' })),
+    })),
+  );
+}
+
+function elegirHoja(sheets) {
+  let mejor = { score: -1, hoja: '', rows: [] };
+  for (const { name, rows } of sheets) {
+    for (let i = 0; i < Math.min(rows.length, 15); i++) {
+      const head = rows[i].map((h) => String(h ?? '').trim());
+      const score = detectarAvance(head) ? 100 : Object.values(autoMap(head)).filter((v) => v !== '').length;
+      if (score > mejor.score) mejor = { score, hoja: name, rows: rows.slice(i) };
+    }
+  }
+  return mejor;
+}
+
+/* Formato «Avance de gestión» (hoja BASE AVVILLAS de Marval): se convierte a la plantilla automáticamente. */
+
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const espacios = (v) => String(v ?? '').replace(/\s+/g, ' ').trim();
+
+// Devuelve los índices de las columnas del avance, o null si los encabezados no son de ese formato.
+function detectarAvance(headers) {
+  const norm = headers.map(normalize);
+  const empieza = (pre) => (h) => h.startsWith(pre);
+  const col = (...preds) => norm.findIndex((h) => preds.some((p) => (typeof p === 'string' ? h === p : p(h))));
+  const c = {
+    hn: col('hn'),
+    proyecto: col('proyecto'),
+    torre: col('torre'),
+    unidad: col('unidad'),
+    cedula: col('idenfiticacion', 'identificacion', 'cedula', 'documento'),
+    nombre: col('nombre', 'nombrecompleto'),
+    valorInmueble: col(empieza('valorinmueble')),
+    valorCredito: col(empieza('vrcredito'), empieza('valorcredito')),
+    anio: col(empieza('pptoescrituracion')),
+    mes: col(empieza('mesescrituracion')),
+    movil: col('movil', 'celular', 'telefono'),
+    nuevoContacto: col('nuevocontacto'),
+    correos: col('correos', 'correo', 'email'),
+    estadoBanco: col(empieza('estadobanco')),
+    subEstado: col('subestado'),
+    radicado: col('noradicado', empieza('numeroradicado')),
+    observaciones: col('observaciones', 'observacion'),
+    estadoMarval: col(empieza('estadomarval')),
+  };
+  return c.estadoMarval > -1 && c.nombre > -1 && c.cedula > -1 ? c : null;
+}
+
+// Estado Marval (o el sub estado del banco si está vacío) -> etapa del tablero.
+function etapaDesdeAvance(valor) {
+  const v = normalize(valor);
+  const es = (...pre) => pre.some((p) => v.startsWith(p));
+  if (!v) return ESTADO_POR_DEFECTO;
+  if (es('aprobadootrobanco', 'desistido', 'eligeotra', 'compradecontado', 'filtrado', 'negado')) return 'Negados';
+  if (es('aprobado')) return 'Aprobados';
+  if (es('radicado')) return 'Radicados';
+  if (es('recopilacion')) return 'Entregaron parte de docs';
+  if (es('volverallamar', 'gestionfutura', 'conintencion', 'enproceso', 'clientefuera')) return 'Contactados';
+  if (es('nocont', 'numeroerrado', 'ilocalizado')) return 'Pendientes por contactar';
+  return matchEstado(valor) || ESTADO_POR_DEFECTO;
+}
+
+// "AVANCE_GESTION_..._CORTE_27_octubre_2026.xlsx" -> "2026-10-27"
+function fechaDeCorte(nombreArchivo) {
+  const m = normalize(nombreArchivo.replace(/[_\-.]/g, ' ').replace(/(\d)\s*([a-z])/gi, '$1 $2').replace(/([a-z])\s*(\d)/gi, '$1 $2'))
+    .match(/corte(\d{1,2})([a-z]+?)(\d{4})/);
+  if (!m || !MESES.includes(m[2])) return '';
+  const [d, mo, y] = [+m[1], MESES.indexOf(m[2]) + 1, +m[3]];
+  return isValidYMD(y, mo, d) ? `${y}-${pad2(mo)}-${pad2(d)}` : '';
+}
+
+function telefonoLimpio(v) {
+  let d = String(v ?? '').replace(/\D/g, '');
+  if (d.length === 12 && d.startsWith('57')) d = d.slice(2);
+  return d;
+}
+
+// Convierte las filas del avance en filas con el orden exacto de la plantilla (CAMPOS).
+function convertirAvance(rows, c, fechaRegistro) {
+  const get = (r, k) => (c[k] > -1 ? r[c[k]] : '');
+  return rows.map((r) => {
+    const idTexto = espacios(get(r, 'cedula'));
+    const idMatch = idTexto.match(/^[\d.\-]+/);
+    const cedula = idMatch ? idMatch[0] : idTexto;
+    const idExtra = idMatch ? idTexto.slice(idMatch[0].length).replace(/^[\s/]+/, '') : '';
+    const tel = telefonoLimpio(get(r, 'movil'));
+    const tel2 = telefonoLimpio(get(r, 'nuevoContacto'));
+    const correos = String(get(r, 'correos') ?? '').match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g) || [];
+    const mes = MESES.indexOf(normalize(get(r, 'mes'))) + 1;
+    const anio = parseInt(get(r, 'anio'), 10);
+    const entrega = mes && anio ? `${anio}-${pad2(mes)}-${pad2(new Date(Date.UTC(anio, mes, 0)).getUTCDate())}` : '';
+    const marval = espacios(get(r, 'estadoMarval'));
+    const banco = espacios(get(r, 'estadoBanco'));
+    const sub = espacios(get(r, 'subEstado'));
+    const torre = espacios(get(r, 'torre')).toLowerCase().replace(/^\p{L}/u, (x) => x.toUpperCase());
+    const ubicacion = [torre, get(r, 'unidad') !== '' ? `Unidad ${espacios(get(r, 'unidad'))}` : '', get(r, 'hn') !== '' ? `HN ${espacios(get(r, 'hn'))}` : '']
+      .filter(Boolean)
+      .join(' · ');
+    const notas = [
+      marval && `Estado Marval: ${marval}`,
+      (banco || sub) && `AV Villas: ${banco} / ${sub}`,
+      espacios(get(r, 'radicado')) && `Radicado No. ${espacios(get(r, 'radicado'))}`,
+      ubicacion,
+      idExtra && `Doc.: ${idExtra}`,
+      correos.length > 1 && `Otros correos: ${correos.slice(1).join(', ')}`,
+      espacios(get(r, 'observaciones')) && `Seguimiento: ${espacios(get(r, 'observaciones'))}`,
+    ].filter(Boolean);
+    return [
+      fechaRegistro,
+      espacios(get(r, 'nombre')),
+      cedula,
+      tel + (tel2 && tel2 !== tel ? ` / ${tel2}` : ''),
+      (correos[0] || '').toLowerCase(),
+      espacios(get(r, 'proyecto')),
+      entrega,
+      get(r, 'valorInmueble'),
+      get(r, 'valorCredito'),
+      etapaDesdeAvance(marval || sub),
+      notas.join(' | '),
+    ];
+  });
 }
 
 // Empareja encabezados del archivo con campos del cliente. Devuelve { campo: índiceDeColumna | '' }.
@@ -626,6 +753,7 @@ function ImportModal({ open, onClose, onImport }) {
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [formato, setFormato] = useState(null);
   const inputRef = useRef(null);
 
   const reset = useCallback(() => {
@@ -636,6 +764,7 @@ function ImportModal({ open, onClose, onImport }) {
     setMapping({});
     setMode('append');
     setError('');
+    setFormato(null);
     setLoading(false);
   }, []);
 
@@ -652,11 +781,21 @@ function ImportModal({ open, onClose, onImport }) {
     setError('');
     setLoading(true);
     try {
-      const rows = await readSpreadsheet(file);
+      const { rows, hoja } = await readSpreadsheet(file);
       if (rows.length < 2) throw new Error('El archivo no tiene filas de datos debajo de los encabezados.');
-      const head = rows[0].map((h, i) => String(h ?? '').trim() || `Columna ${i + 1}`);
+      let head = rows[0].map((h, i) => String(h ?? '').trim() || `Columna ${i + 1}`);
+      let body = rows.slice(1);
+      const avance = detectarAvance(head);
+      if (avance) {
+        const fecha = fechaDeCorte(file.name) || todayISO();
+        body = convertirAvance(body, avance, fecha);
+        head = CAMPOS.map((c) => c.label);
+        setFormato({ hoja, fecha });
+      } else {
+        setFormato(null);
+      }
       setHeaders(head);
-      setDataRows(rows.slice(1));
+      setDataRows(body);
       setMapping(autoMap(head));
       setFileName(file.name);
       setStep('map');
@@ -675,6 +814,7 @@ function ImportModal({ open, onClose, onImport }) {
   const validos = procesados.filter((p) => p.cliente.nombre && p.cliente.cedula);
   const omitidos = procesados.length - validos.length;
   const estadosInvalidos = validos.filter((p) => p.estadoInvalido).length;
+  const duplicadas = validos.length - new Set(validos.map((p) => String(p.cliente.cedula).trim())).size;
   const faltanObligatorios = mapping.nombre === '' || mapping.cedula === '';
 
   const confirmar = () => onImport(validos.map((p) => p.cliente), mode);
@@ -695,6 +835,17 @@ function ImportModal({ open, onClose, onImport }) {
         ) : (
           <>
             <button type="button" className={btn.secondary} onClick={reset}><RotateCcw className="h-4 w-4" />Elegir otro archivo</button>
+            {formato && (
+              <button
+                type="button"
+                className={btn.secondary}
+                onClick={() =>
+                  Promise.resolve(downloadBlob(buildCSV([CAMPOS.map((c) => c.label), ...dataRows]), `plantilla_${fileName.replace(/\.[^.]+$/, '')}.csv`, 'text/csv;charset=utf-8')).catch((err) => setError(err.message))
+                }
+              >
+                <Download className="h-4 w-4" />Descargar como plantilla
+              </button>
+            )}
             <button type="button" className={btn.primary} disabled={faltanObligatorios || validos.length === 0} onClick={confirmar}>
               <Upload className="h-4 w-4" />Importar {validos.length} {validos.length === 1 ? 'registro' : 'registros'}
             </button>
@@ -725,7 +876,7 @@ function ImportModal({ open, onClose, onImport }) {
               <FileSpreadsheet className="h-8 w-8 text-blue-600" />
             </div>
             <p className="text-sm font-medium text-slate-800">{loading ? 'Leyendo archivo…' : 'Arrastra tu archivo aquí o haz clic para seleccionarlo'}</p>
-            <p className="mt-1 text-xs text-slate-500">CSV (separado por coma o punto y coma), XLSX o XLS · se lee la primera hoja</p>
+            <p className="mt-1 text-xs text-slate-500">Plantilla CSV, Excel (XLSX o XLS) o el Excel de «Avance de gestión», que se convierte solo</p>
             <input ref={inputRef} type="file" accept=".csv,.txt,.tsv,.xlsx,.xlsm,.xls,.ods" className="hidden" onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ''; }} />
           </div>
           {error && (
@@ -751,6 +902,20 @@ function ImportModal({ open, onClose, onImport }) {
 
       {step === 'map' && (
         <div className="space-y-6">
+          {formato && (
+            <div className="flex items-start gap-3 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800 ring-1 ring-blue-200">
+              <FileSpreadsheet className="mt-0.5 h-4 w-4 flex-shrink-0" />
+              <p>
+                Detectamos el formato <strong>Avance de gestión</strong>{formato.hoja ? <> (hoja «{formato.hoja}»)</> : null} y lo convertimos a la plantilla.
+                La etapa sale del Estado Marval; los estados de AV Villas, la torre, la unidad y el historial quedan en la observación. Fecha de registro: {formatDate(formato.fecha)}.
+              </p>
+            </div>
+          )}
+          {error && (
+            <div className="flex items-start gap-2 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700 ring-1 ring-rose-200">
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />{error}
+            </div>
+          )}
           <section>
             <h3 className="text-sm font-semibold text-slate-800">1. Relaciona las columnas</h3>
             <p className="mt-0.5 text-xs text-slate-500">Detectamos automáticamente las que coinciden. Los campos con * son obligatorios.</p>
@@ -808,6 +973,7 @@ function ImportModal({ open, onClose, onImport }) {
             <div className="flex flex-wrap gap-2 text-xs">
               <span className="rounded-full bg-emerald-50 px-3 py-1 font-medium text-emerald-700 ring-1 ring-emerald-200">{validos.length} listos para importar</span>
               {omitidos > 0 && <span className="rounded-full bg-rose-50 px-3 py-1 font-medium text-rose-700 ring-1 ring-rose-200">{omitidos} sin nombre o cédula (se omiten)</span>}
+              {duplicadas > 0 && <span className="rounded-full bg-amber-50 px-3 py-1 font-medium text-amber-700 ring-1 ring-amber-200">{duplicadas} con cédula repetida en el archivo (se guarda la última fila)</span>}
               {estadosInvalidos > 0 && <span className="rounded-full bg-amber-50 px-3 py-1 font-medium text-amber-700 ring-1 ring-amber-200">{estadosInvalidos} con estado no reconocido → «{ESTADO_POR_DEFECTO}»</span>}
             </div>
             {faltanObligatorios && <p className="text-xs text-rose-600">Debes relacionar las columnas de Nombre completo y Cédula para continuar.</p>}
