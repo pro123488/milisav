@@ -109,3 +109,16 @@ assets/apple-touch-icon.png  Ícono para iPhone
 assets/favicon.svg      Ícono del sitio (también va incrustado en los HTML)
 images/                 Fotos (ejecutivo.jpg, propiedades…)
 ```
+
+## Tablero de créditos de vivienda (uso interno)
+
+En `tablero-creditos/` está el tablero para el seguimiento de créditos de vivienda de los clientes
+(11 etapas, buscador, filtros, tabla con orden y paginación, formulario de clientes, carga masiva desde
+Excel/CSV con plantilla descargable y exportación a Excel/CSV).
+
+- **`tablero-creditos/DashboardCreditos.jsx`**: el componente React completo en un solo archivo. Para usarlo en
+  un proyecto React necesita `lucide-react` y Tailwind CSS (la lectura de `.xlsx` carga SheetJS sola desde internet).
+- **`tablero-creditos/index.html`**: vista previa sin instalar nada. Con GitHub Pages queda en
+  `https://<usuario>.github.io/<nombre-del-repositorio>/tablero-creditos/` (no funciona con doble clic: necesita un servidor).
+
+Los datos se guardan en el navegador de cada persona; usa «Exportar → Excel» para respaldarlos o compartirlos.
