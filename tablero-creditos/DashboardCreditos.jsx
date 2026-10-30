@@ -35,6 +35,7 @@ import {
   Send,
   Trash2,
   Upload,
+  UserX,
   Users,
   Wallet,
   X,
@@ -62,6 +63,8 @@ const ESTADOS = [
   { id: 'Pendientes por desembolso', icon: Clock, card: 'bg-orange-50 text-orange-700 ring-orange-200', badge: 'bg-orange-100 text-orange-800', dot: 'bg-orange-500' },
   { id: 'Por desembolsar', icon: Hourglass, card: 'bg-cyan-50 text-cyan-700 ring-cyan-200', badge: 'bg-cyan-100 text-cyan-800', dot: 'bg-cyan-500' },
   { id: 'Desembolsados', icon: Banknote, card: 'bg-green-50 text-green-700 ring-green-200', badge: 'bg-green-100 text-green-800', dot: 'bg-green-600' },
+  // Clientes que se retiraron: desistieron, escrituraron con otro banco, eligieron otra entidad o pagaron de contado.
+  { id: 'Desistidos', icon: UserX, card: 'bg-stone-50 text-stone-700 ring-stone-200', badge: 'bg-stone-200 text-stone-800', dot: 'bg-stone-500' },
 ];
 const ESTADO_MAP = Object.fromEntries(ESTADOS.map((e) => [e.id, e]));
 
@@ -383,7 +386,8 @@ function etapaDesdeAvance(valor) {
   const v = normalize(valor);
   const es = (...pre) => pre.some((p) => v.startsWith(p));
   if (!v) return ESTADO_POR_DEFECTO;
-  if (es('aprobadootrobanco', 'desistido', 'eligeotra', 'compradecontado', 'filtrado', 'negado')) return 'Negados';
+  if (es('aprobadootrobanco', 'desistido', 'eligeotra', 'compradecontado')) return 'Desistidos';
+  if (es('filtrado', 'negado')) return 'Negados';
   if (es('aprobado')) return 'Aprobados';
   if (es('radicado')) return 'Radicados';
   if (es('recopilacion')) return 'Entregaron parte de docs';
@@ -1103,7 +1107,8 @@ export default function DashboardCreditos() {
     const totalFinanciar = filtrados.reduce((s, c) => s + (Number(c.valorFinanciar) || 0), 0);
     const totalInmuebles = filtrados.reduce((s, c) => s + (Number(c.valorInmueble) || 0), 0);
     const desembolsado = filtrados.filter((c) => c.estado === 'Desembolsados').reduce((s, c) => s + (Number(c.valorFinanciar) || 0), 0);
-    const decididos = baseFiltrada.filter((c) => c.estado !== 'Contactados' && c.estado !== 'Pendientes por contactar' && c.estado !== 'Entregaron parte de docs' && c.estado !== 'Radicados');
+    const sinRespuesta = ['Contactados', 'Pendientes por contactar', 'Entregaron parte de docs', 'Radicados', 'Desistidos'];
+    const decididos = baseFiltrada.filter((c) => !sinRespuesta.includes(c.estado));
     const aprobadosOMas = decididos.filter((c) => c.estado !== 'Negados').length;
     const tasaAprobacion = decididos.length ? Math.round((aprobadosOMas / decididos.length) * 100) : null;
     return { totalFinanciar, totalInmuebles, desembolsado, tasaAprobacion };
